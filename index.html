@@ -179,7 +179,21 @@ $("xl").addEventListener("change", async e => {
 $("urls").addEventListener("input", () => { rows = []; });
 
 // ---------- Image helpers ----------
-const proxied = u => { const p = $("proxy").value.trim(); return p ? p + encodeURIComponent(u) : u; };
+const dead = new Set();
+function candidates(u) {
+  const p = $("proxy").value.trim();
+  if (p) return [{kind:"proxy", src:p + encodeURIComponent(u)}];
+  const c = [];
+  if (u.startsWith("http:")) c.push({kind:"https", src:u.replace(/^http:/, "https:")}); // try https upgrade first
+  if (location.protocol !== "https:") c.push({kind:"direct", src:u});
+  return c;
+}
+async function canFetch(u) {
+  for (const c of candidates(u)) {
+    try { await fetch(c.src); return true; } catch { if (c.kind !== "proxy") dead.add(c.kind); }
+  }
+  return false;
+}
 
 function cropCanvas(bmp) {
   const sx = Math.floor(bmp.width * +$("sx").value), sy = Math.floor(bmp.height * +$("sy").value);
@@ -275,15 +289,16 @@ async function processRow(r, ocr, clip) {
   const res = {...r, status:"", reason:"", urlDate:"", stampDate:"", gps:"", ai:"", aiStatus:"", aiScore:"", ocr:"", hash:null, thumb:"", dup:"", failed:false};
   const fail = msg => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = msg; return res; };
   try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
-  if (location.protocol === "https:" && r.url.startsWith("http:") && !$("proxy").value.trim())
-    return fail("Mixed content: halaman https tidak bisa memuat http. Isi Proxy URL.");
   let bmp, blob;
-  try {
-    const resp = await fetch(proxied(r.url));
+  for (const c of candidates(r.url)) {
+    if (dead.has(c.kind)) continue;
+    let resp;
+    try { resp = await fetch(c.src); } catch { if (c.kind !== "proxy") dead.add(c.kind); continue; }
     if (!resp.ok) return fail("HTTP " + resp.status);
-    blob = await resp.blob();
-    bmp = await createImageBitmap(blob);
-  } catch (e) { return fail("Gagal fetch (CORS / offline / bukan gambar). Isi Proxy URL."); }
+    try { blob = await resp.blob(); bmp = await createImageBitmap(blob); break; }
+    catch { return fail("File bukan gambar yang valid"); }
+  }
+  if (!bmp) return fail("Gagal fetch: server menolak (CORS) / tidak mendukung https. Isi Proxy URL.");
 
   res.thumb = thumb(bmp); res.hash = dhash(bmp);
   try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
@@ -330,6 +345,14 @@ $("go").onclick = async () => {
   results = []; stopFlag = false; $("body").innerHTML = "";
   $("sum").classList.remove("hidden"); $("exp").classList.add("hidden");
   $("go").disabled = true; $("stop").classList.remove("hidden"); summary();
+
+  dead.clear();
+  $("st").textContent = "Mengetes koneksi ke server foto...";
+  if (!(await canFetch(list[0].url))) {
+    alert("Browser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
+    $("go").disabled = false; $("stop").classList.add("hidden"); $("st").textContent = "Koneksi ke server foto gagal.";
+    return;
+  }
 
   $("st").textContent = "Memuat OCR...";
   const ocr = await Tesseract.createWorker("eng");

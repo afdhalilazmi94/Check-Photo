@@ -115,6 +115,7 @@ const LABELS = [
 ];
 const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
 let rows = [], results = [], stopFlag = false;
+if (["localhost", "127.0.0.1"].includes(location.hostname)) $("proxy").value = "/proxy?url=";
 
 // ---------- Excel import ----------
 function normDate(v) {
@@ -179,18 +180,38 @@ $("xl").addEventListener("change", async e => {
 $("urls").addEventListener("input", () => { rows = []; });
 
 // ---------- Image helpers ----------
-const dead = new Set();
+let preferred = null;
 function candidates(u) {
   const p = $("proxy").value.trim();
   if (p) return [{kind:"proxy", src:p + encodeURIComponent(u)}];
-  const c = [];
-  if (u.startsWith("http:")) c.push({kind:"https", src:u.replace(/^http:/, "https:")}); // try https upgrade first
-  if (location.protocol !== "https:") c.push({kind:"direct", src:u});
+  const c = [{kind:"direct", src:u}]; // same way as the first version: <img crossOrigin>, browser may auto-upgrade to https
+  if (u.startsWith("http:")) c.push({kind:"https", src:u.replace(/^http:/, "https:")});
+  if (preferred) c.sort((x, y) => (y.kind === preferred) - (x.kind === preferred));
   return c;
 }
-async function canFetch(u) {
-  for (const c of candidates(u)) {
-    try { await fetch(c.src); return true; } catch { if (c.kind !== "proxy") dead.add(c.kind); }
+async function viaImg(src) {
+  const img = await new Promise((ok, no) => {
+    const i = new Image(); i.crossOrigin = "Anonymous";
+    i.onload = () => ok(i); i.onerror = () => no(new Error("img")); i.src = src;
+  });
+  const bmp = await createImageBitmap(img);
+  const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+  c.getContext("2d").drawImage(bmp, 0, 0);
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
+  return {bmp, blob};
+}
+async function fetchPhoto(c) {
+  if (c.kind === "proxy") {
+    const resp = await fetch(c.src);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const blob = await resp.blob();
+    return {bmp: await createImageBitmap(blob), blob};
+  }
+  return viaImg(c.src);
+}
+async function canFetchAny(urls) {
+  for (const u of urls) for (const c of candidates(u)) {
+    try { (await fetchPhoto(c)).bmp.close(); preferred = c.kind; return true; } catch {}
   }
   return false;
 }
@@ -291,14 +312,9 @@ async function processRow(r, ocr, clip) {
   try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
   let bmp, blob;
   for (const c of candidates(r.url)) {
-    if (dead.has(c.kind)) continue;
-    let resp;
-    try { resp = await fetch(c.src); } catch { if (c.kind !== "proxy") dead.add(c.kind); continue; }
-    if (!resp.ok) return fail("HTTP " + resp.status);
-    try { blob = await resp.blob(); bmp = await createImageBitmap(blob); break; }
-    catch { return fail("File bukan gambar yang valid"); }
+    try { ({bmp, blob} = await fetchPhoto(c)); preferred = c.kind; break; } catch {}
   }
-  if (!bmp) return fail("Gagal fetch: server menolak (CORS) / tidak mendukung https. Isi Proxy URL.");
+  if (!bmp) return fail("Foto tidak bisa dimuat (404 / CORS / mixed content). Coba buka index.html dari komputer atau isi Proxy URL.");
 
   res.thumb = thumb(bmp); res.hash = dhash(bmp);
   try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
@@ -346,10 +362,10 @@ $("go").onclick = async () => {
   $("sum").classList.remove("hidden"); $("exp").classList.add("hidden");
   $("go").disabled = true; $("stop").classList.remove("hidden"); summary();
 
-  dead.clear();
+  preferred = null;
   $("st").textContent = "Mengetes koneksi ke server foto...";
-  if (!(await canFetch(list[0].url))) {
-    alert("Browser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
+  if (!(await canFetchAny(list.slice(0, 3).map(r => r.url)))) {
+    alert("Browser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: buka index.html langsung dari komputer (klik dua kali) atau jalankan local_server.py; atau deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
     $("go").disabled = false; $("stop").classList.add("hidden"); $("st").textContent = "Koneksi ke server foto gagal.";
     return;
   }

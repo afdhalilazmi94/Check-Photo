@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bulk Photo Stamp Checker</title>
-  <script src="https://jsdelivr.net"></script>
-  <script src="https://sheetjs.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
@@ -13,19 +13,16 @@
     h1 { font-size: 24px; margin: 0 0 6px; color: #0f172a; }
     .subtitle { font-size: 14px; color: #475569; margin: 0 0 20px; }
     code { background: #e2e8f0; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
-    .card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
     .upload-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
     .label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; margin-bottom: 6px; }
     .hint { font-size: 12px; color: #64748b; margin: 0; }
     textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 12px; resize: vertical; }
-    textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
     .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 20px; }
     button { border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: #2563eb; color: #ffffff; }
-    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-    .btn-success { background: #059669; color: #ffffff; }
-    .btn-success:hover { background: #047857; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-success { background: #059669; color: #fff; }
     .hidden { display: none !important; }
     .status-text { font-size: 13px; color: #475569; font-weight: 500; }
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -45,6 +42,7 @@
     .badge-FAIL { background: #ffe4e6; color: #9f1239; }
     .badge-WARNING, .badge-ERROR { background: #fef3c7; color: #92400e; }
     .mono { font-family: monospace; }
+    .ocr { max-width: 320px; word-break: break-word; color: #64748b; }
   </style>
 </head>
 <body>
@@ -55,17 +53,17 @@
     <div class="card upload-row">
       <div>
         <span class="label">1. Import from Excel (.xlsx / .xls / .csv)</span>
-        <p class="hint">Automatically extracts all <code>getImage</code> links from any column in your first sheet.</p>
+        <p class="hint">Automatically extracts all <code>getImage</code> links from every sheet (text, hyperlinks and formulas).</p>
       </div>
-      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)" />
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" />
     </div>
 
     <label class="label" for="urlInput">2. URLs to Check (One per line)</label>
-    <textarea id="urlInput" rows="6" placeholder="http://sehati.co.id"></textarea>
+    <textarea id="urlInput" rows="6" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
 
     <div class="actions">
-      <button onclick="startBulkCheck()" id="checkBtn" class="btn-primary">Check All Photos</button>
-      <button onclick="exportExcel()" id="exportBtn" class="btn-success hidden">Download Excel (.xlsx)</button>
+      <button id="checkBtn" class="btn-primary">Check All Photos</button>
+      <button id="exportBtn" class="btn-success hidden">Download Excel (.xlsx)</button>
       <span id="statusText" class="status-text"></span>
     </div>
 
@@ -80,13 +78,8 @@
       <table>
         <thead>
           <tr>
-            <th>Preview</th>
-            <th>Status</th>
-            <th>Reason</th>
-            <th>URL Date</th>
-            <th>Photo Date</th>
-            <th>GPS Coords</th>
-            <th>Raw Stamp OCR</th>
+            <th>Preview</th><th>Status</th><th>Reason</th><th>URL Date</th>
+            <th>Photo Date</th><th>GPS Coords</th><th>Raw Stamp OCR</th>
           </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
@@ -97,45 +90,59 @@
   <canvas id="cropCanvas" class="hidden"></canvas>
 
   <script>
-    const MONTHS_ID = {
-      januari: "01", februari: "02", maret: "03", april: "04",
-      mei: "05", juni: "06", juli: "07", agustus: "08",
-      september: "09", oktober: "10", november: "11", desember: "12"
+    const MONTHS = {
+      januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
+      juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12",
+      january: "01", february: "02", march: "03", may: "05", june: "06", july: "07",
+      august: "08", october: "10", december: "12"
     };
 
     let latestResults = [];
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-    function handleExcelUpload(event) {
+    // ---------- Excel import ----------
+    const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/gi;
+
+    $("excelFile").addEventListener("change", (event) => {
       const file = event.target.files[0];
       if (!file) return;
-
+      if (typeof XLSX === "undefined") {
+        alert("Excel library failed to load. Check your internet connection and reload the page.");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-        const extractedUrls = [];
-        rows.forEach(row => {
-          row.forEach(cell => {
-            if (typeof cell === "string" && cell.includes("http") && cell.includes("getImage")) {
-              extractedUrls.push(cell.trim());
-            }
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array", cellFormula: true });
+          const found = new Set();
+          wb.SheetNames.forEach(name => {
+            const sheet = wb.Sheets[name];
+            Object.keys(sheet).forEach(addr => {
+              if (addr[0] === "!") return;
+              const cell = sheet[addr];
+              [cell.v, cell.w, cell.f, cell.l && cell.l.Target].forEach(val => {
+                if (typeof val !== "string") return;
+                const matches = val.match(URL_RE);
+                if (matches) matches.forEach(m => found.add(m.trim()));
+              });
+            });
           });
-        });
-
-        if (extractedUrls.length === 0) {
-          alert("No 'getImage' URLs found in the uploaded Excel file.");
-          return;
+          const urls = [...found];
+          if (!urls.length) {
+            alert("No 'getImage' URLs found in the uploaded file.");
+            return;
+          }
+          $("urlInput").value = urls.join("\n");
+          $("statusText").textContent = `Loaded ${urls.length} URLs from Excel.`;
+        } catch (err) {
+          alert("Could not read the file: " + err.message);
         }
-
-        document.getElementById("urlInput").value = extractedUrls.join("\n");
-        document.getElementById("statusText").textContent = `Loaded ${extractedUrls.length} URLs from Excel.`;
       };
       reader.readAsArrayBuffer(file);
-    }
+    });
 
+    // ---------- Image + OCR ----------
     function loadImage(url) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -147,8 +154,7 @@
     }
 
     async function processSingleUrl(url, worker) {
-      let urlDate = null;
-      let imageName = "-";
+      let urlDate = null, imageName = "-";
       try {
         const parsed = new URL(url);
         urlDate = parsed.searchParams.get("date");
@@ -159,14 +165,14 @@
 
       try {
         const img = await loadImage(url);
-        const canvas = document.getElementById("cropCanvas");
+        const canvas = $("cropCanvas");
         const ctx = canvas.getContext("2d");
 
+        // Crop bottom-right area where the stamp is
         const sx = Math.floor(img.width * 0.35);
         const sy = Math.floor(img.height * 0.80);
         const sw = img.width - sx;
         const sh = img.height - sy;
-
         canvas.width = sw;
         canvas.height = sh;
         ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
@@ -175,26 +181,20 @@
         const ocrText = text.replace(/\n+/g, " ").trim();
 
         let stampDate = null;
-        const dateMatch = ocrText.match(/(\d{2})\s+([A-Za-z]+)\s+(\d{4})/);
+        const dateMatch = ocrText.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
         if (dateMatch) {
           const [, day, monthName, year] = dateMatch;
-          const monthNum = MONTHS_ID[monthName.toLowerCase()];
-          if (monthNum) stampDate = `${year}${monthNum}${day}`;
+          const monthNum = MONTHS[monthName.toLowerCase()];
+          if (monthNum) stampDate = `${year}${monthNum}${day.padStart(2, "0")}`;
         }
 
         const coordMatch = ocrText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
         const coords = coordMatch ? `${coordMatch[1]}, ${coordMatch[2]}` : "Not found";
 
-        let status = "WARNING";
-        let reason = "Missing URL or stamp date";
+        let status = "WARNING", reason = "Missing URL or stamp date";
         if (urlDate && stampDate) {
-          if (urlDate === stampDate) {
-            status = "PASS";
-            reason = "Date matches stamp";
-          } else {
-            status = "FAIL";
-            reason = `Mismatch (${urlDate} != ${stampDate})`;
-          }
+          if (urlDate === stampDate) { status = "PASS"; reason = "Date matches stamp"; }
+          else { status = "FAIL"; reason = `Mismatch (${urlDate} != ${stampDate})`; }
         }
 
         return { url, image: imageName, status, reason, url_date: urlDate || "-", stamp_date: stampDate || "-", coords, raw_ocr: ocrText };
@@ -203,4 +203,82 @@
       }
     }
 
+    // ---------- Run ----------
+    function addRow(r) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><img class="thumb" src="${esc(r.url)}" alt="" loading="lazy" /></td>
+        <td><span class="badge badge-${r.status}">${r.status}</span></td>
+        <td>${esc(r.reason)}</td>
+        <td class="mono">${esc(r.url_date)}</td>
+        <td class="mono">${esc(r.stamp_date)}</td>
+        <td class="mono">${esc(r.coords)}</td>
+        <td class="ocr">${esc(r.raw_ocr)}</td>`;
+      $("resultsBody").appendChild(tr);
+    }
+
+    function updateSummary() {
+      $("cntTotal").textContent = latestResults.length;
+      $("cntPass").textContent = latestResults.filter(r => r.status === "PASS").length;
+      $("cntFail").textContent = latestResults.filter(r => r.status === "FAIL").length;
+      $("cntWarn").textContent = latestResults.filter(r => r.status === "WARNING" || r.status === "ERROR").length;
+    }
+
     async function startBulkCheck() {
+      if (typeof Tesseract === "undefined") {
+        alert("OCR library failed to load. Check your internet connection and reload the page.");
+        return;
+      }
+      const urls = [...new Set($("urlInput").value.split("\n").map(u => u.trim()).filter(Boolean))];
+      if (!urls.length) {
+        alert("Please paste URLs or upload an Excel file first.");
+        return;
+      }
+
+      latestResults = [];
+      $("resultsBody").innerHTML = "";
+      $("summaryBar").classList.remove("hidden");
+      $("exportBtn").classList.add("hidden");
+      $("checkBtn").disabled = true;
+      updateSummary();
+
+      $("statusText").textContent = "Loading OCR engine...";
+      const worker = await Tesseract.createWorker("eng");
+
+      for (let i = 0; i < urls.length; i++) {
+        $("statusText").textContent = `Checking ${i + 1} / ${urls.length}...`;
+        const result = await processSingleUrl(urls[i], worker);
+        latestResults.push(result);
+        addRow(result);
+        updateSummary();
+      }
+
+      await worker.terminate();
+      $("statusText").textContent = `Done. ${urls.length} photos checked.`;
+      $("checkBtn").disabled = false;
+      $("exportBtn").classList.remove("hidden");
+    }
+
+    function exportExcel() {
+      if (!latestResults.length) return;
+      const rows = latestResults.map(r => ({
+        URL: r.url,
+        Image: r.image,
+        Status: r.status,
+        Reason: r.reason,
+        "URL Date": r.url_date,
+        "Photo Date": r.stamp_date,
+        "GPS Coords": r.coords,
+        "Raw Stamp OCR": r.raw_ocr
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Results");
+      XLSX.writeFile(wb, "photo-stamp-results.xlsx");
+    }
+
+    $("checkBtn").addEventListener("click", startBulkCheck);
+    $("exportBtn").addEventListener("click", exportExcel);
+  </script>
+</body>
+</html>

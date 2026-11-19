@@ -16,24 +16,22 @@ h1{font-size:24px;margin:0 0 6px}
 .label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:#334155;margin-bottom:6px}
 .hint{font-size:12px;color:#64748b;margin:4px 0 0}
 textarea,input[type=text],input[type=number]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+input[type=number]:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
 textarea{font-family:monospace;resize:vertical}
 details summary{cursor:pointer;font-weight:600;font-size:13px}
 .setting-block{margin-top:12px}
 .setting-block label.field-lbl{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
 .sep{border:0;border-top:1px solid #e2e8f0;margin:14px 0}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px}
-.toggle-title{font-size:12px;font-weight:600;color:#334155}
-.toggle-sub{font-size:11px;color:#64748b;margin-top:2px}
-.switch-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
-.switch-txt{font-size:11px;font-weight:700;color:#64748b;min-width:24px;text-align:right}
-.switch{position:relative;display:inline-block;width:40px;height:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:10px}
+.opt-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px}
+.opt-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.opt-head label.opt-lbl{font-size:11px;font-weight:600;color:#475569;margin:0}
+.switch{position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;cursor:pointer}
 .switch input{opacity:0;width:0;height:0}
 .slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.2s}
-.slider:before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.slider:before{content:"";position:absolute;height:14px;width:14px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
 .switch input:checked + .slider{background:#2563eb}
-.switch input:checked + .slider:before{transform:translateX(18px)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
-.grid label{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
+.switch input:checked + .slider:before{transform:translateX(16px)}
 .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 16px}
 button{border:0;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;color:#fff}
 button:disabled{opacity:.5;cursor:not-allowed}
@@ -74,7 +72,6 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
   <details open>
     <summary>Pengaturan</summary>
 
-    <!-- Proxy URL -->
     <div class="setting-block">
       <label class="field-lbl" for="proxy">Proxy URL (opsional — kosongkan untuk auto-fallback CORS proxy)</label>
       <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=">
@@ -82,7 +79,6 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 
     <hr class="sep">
 
-    <!-- Wilayah terpisah sendiri -->
     <div class="setting-block">
       <label class="field-lbl" for="wil">Wilayah (pisah koma, kosong = semua)</label>
       <input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4">
@@ -90,29 +86,63 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 
     <hr class="sep">
 
-    <!-- Toggle ON/OFF untuk Crop Stamp, GPS & Duplikat (OFF by default) -->
-    <div class="toggle-row">
-      <div>
-        <div class="toggle-title">Pengaturan Lanjutan (Crop Stamp, GPS &amp; Batas Duplikat)</div>
-        <div class="toggle-sub">Aktifkan untuk mengubah area crop stamp, batas koordinat GPS, dan batas beda bit duplikat.</div>
+    <p class="hint" style="margin-bottom:8px">Toggle di bawah default <b>OFF</b>. Jika tidak diaktifkan, aturan tersebut tidak akan memengaruhi <b>Status</b> maupun <b>Alasan</b>.</p>
+    <div class="grid">
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="sx">Crop stamp X mulai (0-1)</label>
+          <label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="sx" value="0.35" step="0.05" disabled>
       </div>
-      <label class="switch-wrap">
-        <span id="advTxt" class="switch-txt">OFF</span>
-        <span class="switch">
-          <input type="checkbox" id="advToggle">
-          <span class="slider"></span>
-        </span>
-      </label>
-    </div>
 
-    <div id="advPanel" class="grid hidden">
-      <div><label for="sx">Crop stamp X mulai (0-1)</label><input type="number" id="sx" value="0.35" step="0.05"></div>
-      <div><label for="sy">Crop stamp Y mulai (0-1)</label><input type="number" id="sy" value="0.80" step="0.05"></div>
-      <div><label for="lat0">Lat min</label><input type="number" id="lat0" value="-9.3" step="0.1"></div>
-      <div><label for="lat1">Lat max</label><input type="number" id="lat1" value="-8.0" step="0.1"></div>
-      <div><label for="lon0">Lon min</label><input type="number" id="lon0" value="115.7" step="0.1"></div>
-      <div><label for="lon1">Lon max</label><input type="number" id="lon1" value="116.9" step="0.1"></div>
-      <div><label for="ham">Batas beda bit duplikat</label><input type="number" id="ham" value="5" min="0" max="20"></div>
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="sy">Crop stamp Y mulai (0-1)</label>
+          <label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="sy" value="0.80" step="0.05" disabled>
+      </div>
+
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="lat0">Lat min</label>
+          <label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="lat0" value="-9.3" step="0.1" disabled>
+      </div>
+
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="lat1">Lat max</label>
+          <label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="lat1" value="-8.0" step="0.1" disabled>
+      </div>
+
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="lon0">Lon min</label>
+          <label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="lon0" value="115.7" step="0.1" disabled>
+      </div>
+
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="lon1">Lon max</label>
+          <label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="lon1" value="116.9" step="0.1" disabled>
+      </div>
+
+      <div class="opt-box">
+        <div class="opt-head">
+          <label class="opt-lbl" for="ham">Batas beda bit duplikat</label>
+          <label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label>
+        </div>
+        <input type="number" id="ham" value="5" min="0" max="20" disabled>
+      </div>
     </div>
   </details>
 </div>
@@ -141,6 +171,7 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";
 
 const $ = id => document.getElementById(id);
+const isOn = id => $(id).checked;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const MONTHS = {
   januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",
@@ -165,18 +196,18 @@ const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
 
 let loadedFiles = [];
 let rows = [];
-let rowMap = new Map(); // Menyimpan metadata Excel per URL agar tidak hilang jika textarea diedit
+let rowMap = new Map();
 let results = [];
 let stopFlag = false;
 
 if (["localhost", "127.0.0.1"].includes(location.hostname)) $("proxy").value = "/proxy?url=";
 
-// Toggle pengaturan lanjutan (default OFF)
-$("advToggle").addEventListener("change", e => {
-  const on = e.target.checked;
-  $("advPanel").classList.toggle("hidden", !on);
-  $("advTxt").textContent = on ? "ON" : "OFF";
-  $("advTxt").style.color = on ? "#2563eb" : "#64748b";
+// Bind setiap toggle ke input angkanya (default OFF / disabled)
+document.querySelectorAll('input[type="checkbox"][data-target]').forEach(cb => {
+  const target = $(cb.dataset.target);
+  const sync = () => { target.disabled = !cb.checked; };
+  cb.addEventListener("change", sync);
+  sync();
 });
 
 // ---------- Excel import ----------
@@ -305,11 +336,9 @@ $("xl").addEventListener("change", async e => {
   loadedFiles = [...e.target.files];
   await refreshFromFiles();
 });
-
-// Otomatis filter ulang saat Wilayah diubah setelah upload Excel
 $("wil").addEventListener("change", refreshFromFiles);
 
-// ---------- Image helpers (dengan auto-fallback CORS proxy) ----------
+// ---------- Image helpers ----------
 let preferred = null;
 function candidates(u) {
   const p = $("proxy").value.trim();
@@ -373,7 +402,7 @@ async function diagnose(u) {
   const [a, b, c, d] = await Promise.all([testImg(u, false), testImg(h, false), testImg(u, true), testImg(h, true)]);
   const y = v => v ? "BISA" : "GAGAL";
   const why = (c || d) ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)."
-    : (a || b) ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto (kemungkinan server hanya bisa diakses dari jaringan/VPN internal)."
+    : (a || b) ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto."
     : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
   return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
 }
@@ -390,8 +419,10 @@ async function canFetchAny(urls) {
 }
 
 function cropCanvas(bmp) {
-  const sx = Math.floor(bmp.width * +$("sx").value), sy = Math.floor(bmp.height * +$("sy").value);
-  const sw = bmp.width - sx, sh = bmp.height - sy, sc = sw > 1000 ? 1000 / sw : 1;
+  const sx = isOn("t_sx") ? Math.floor(bmp.width * +$("sx").value) : 0;
+  const sy = isOn("t_sy") ? Math.floor(bmp.height * +$("sy").value) : 0;
+  const sw = Math.max(1, bmp.width - sx), sh = Math.max(1, bmp.height - sy);
+  const sc = sw > 1000 ? 1000 / sw : 1;
   const c = document.createElement("canvas");
   c.width = Math.max(1, Math.round(sw * sc)); c.height = Math.max(1, Math.round(sh * sc));
   c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
@@ -453,26 +484,52 @@ function stampCoords(t) {
   return [lat, lon];
 }
 
-// ---------- Verdict ----------
+// ---------- Verdict (hanya cek aturan yang toggle-nya ON) ----------
 function verdict(r) {
   if (r.failed) return;
   const hard = [], warn = [];
+  const checkStamp = isOn("t_sx") || isOn("t_sy");
+  const checkLat0 = isOn("t_lat0"), checkLat1 = isOn("t_lat1");
+  const checkLon0 = isOn("t_lon0"), checkLon1 = isOn("t_lon1");
+  const checkGps = checkLat0 || checkLat1 || checkLon0 || checkLon1;
+  const checkDup = isOn("t_ham");
+
+  // 1. Cek AI konten foto (selalu aktif)
   if (["FOTO UANG", "Foto dari foto"].includes(r.ai)) hard.push(r.ai);
   else if (r.aiStatus === "Tidak Sesuai") warn.push(r.ai);
-  if (!r.stampDate) warn.push("Stamp tanggal tidak terbaca/tidak ada");
-  else if (r.urlDate && r.stampDate !== r.urlDate) hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
-  else if (r.tgl && r.stampDate !== r.tgl) warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
-  if (!r.gps) warn.push("GPS tidak terbaca di stamp");
-  else {
-    const [la, lo] = r.gps.split(",").map(Number);
-    if (!(la >= +$("lat0").value && la <= +$("lat1").value && lo >= +$("lon0").value && lo <= +$("lon1").value)) warn.push("GPS di luar area");
+
+  // 2. Cek Stamp Tanggal (hanya jika Crop X atau Y aktif)
+  if (checkStamp) {
+    if (!r.stampDate) warn.push("Stamp tanggal tidak terbaca/tidak ada");
+    else if (r.urlDate && r.stampDate !== r.urlDate) hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
+    else if (r.tgl && r.stampDate !== r.tgl) warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
   }
-  if (r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
+
+  // 3. Cek GPS (hanya jika minimal satu batas Lat/Lon aktif)
+  if (checkGps) {
+    if (!r.gps) warn.push("GPS tidak terbaca di stamp");
+    else {
+      const [la, lo] = r.gps.split(",").map(Number);
+      const out = (checkLat0 && la < +$("lat0").value)
+        || (checkLat1 && la > +$("lat1").value)
+        || (checkLon0 && lo < +$("lon0").value)
+        || (checkLon1 && lo > +$("lon1").value);
+      if (out) warn.push("GPS di luar area");
+    }
+  }
+
+  // 4. Cek Duplikat (hanya jika toggle Duplikat aktif)
+  if (checkDup && r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
+
   r.status = hard.length ? "TIDAK VALID" : warn.length ? "PERLU CEK" : "VALID";
   r.reason = [...hard, ...warn].join(" | ");
 }
 
 function findDups(list) {
+  if (!isOn("t_ham")) {
+    for (const a of list) a.dup = "";
+    return;
+  }
   const th = +$("ham").value, idx = list.filter(r => r.hash);
   for (const a of idx) {
     const refs = [];
@@ -489,7 +546,7 @@ async function processRow(r, ocr, clip) {
   const res = {...r, status:"", reason:"", urlDate:"", stampDate:"", gps:"", ai:"", aiStatus:"", aiScore:"", ocr:"", hash:null, thumb:"", dup:"", failed:false};
   const fail = msg => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = msg; return res; };
   try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
-  if (!res.tgl && res.urlDate) res.tgl = res.urlDate; // Fallback TGL LKP dari URL jika tempel manual
+  if (!res.tgl && res.urlDate) res.tgl = res.urlDate;
 
   let bmp, blob;
   for (const c of candidates(r.url)) {
@@ -497,11 +554,15 @@ async function processRow(r, ocr, clip) {
   }
   if (!bmp) return fail("Foto tidak bisa dimuat (404 / CORS / proxy gagal).");
 
-  res.thumb = thumb(bmp); res.hash = dhash(bmp);
-  try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
-  res.stampDate = stampDate(res.ocr);
-  const g = stampCoords(res.ocr);
-  res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
+  res.thumb = thumb(bmp);
+  if (isOn("t_ham")) res.hash = dhash(bmp);
+
+  if (ocr) {
+    try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
+    res.stampDate = stampDate(res.ocr);
+    const g = stampCoords(res.ocr);
+    res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
+  }
 
   if (clip) {
     const u = URL.createObjectURL(blob);
@@ -538,7 +599,6 @@ $("go").onclick = async () => {
   const pastedUrls = $("urls").value.match(new RegExp(URL_RE.source, "g")) || [];
   let list = [];
   if (pastedUrls.length) {
-    // Tetap ambil metadata Excel dari rowMap meskipun daftar URL diedit
     list = pastedUrls.map(u => rowMap.has(u) ? {...rowMap.get(u)} : {file:"", tgl:"", wilayah:"", kontrak:"", idpic:"", nama:"", url:u});
   } else if (rows.length) {
     list = rows.map(r => ({...r}));
@@ -559,8 +619,13 @@ $("go").onclick = async () => {
     return;
   }
 
-  $("st").textContent = `Terhubung via [${preferred}]. Memuat OCR...`;
-  const ocr = await Tesseract.createWorker("eng");
+  const needOcr = isOn("t_sx") || isOn("t_sy") || isOn("t_lat0") || isOn("t_lat1") || isOn("t_lon0") || isOn("t_lon1");
+  let ocr = null;
+  if (needOcr) {
+    $("st").textContent = `Terhubung via [${preferred}]. Memuat OCR...`;
+    ocr = await Tesseract.createWorker("eng");
+  }
+
   $("st").textContent = `Terhubung via [${preferred}]. Memuat model AI (pertama kali ±90 MB)...`;
   let clip = null;
   try { clip = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32"); }
@@ -571,7 +636,7 @@ $("go").onclick = async () => {
     const r = await processRow(list[i], ocr, clip);
     verdict(r); results.push(r); addRow(r); summary();
   }
-  await ocr.terminate();
+  if (ocr) await ocr.terminate();
 
   findDups(results);
   results.forEach(verdict);

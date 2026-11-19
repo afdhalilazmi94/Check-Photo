@@ -59,7 +59,7 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 <div class="card" style="margin-top:14px">
   <details open><summary>Pengaturan</summary>
   <div class="grid">
-    <div style="grid-column:1/-1"><label>Proxy URL (wajib jika web di-hosting https / backend tanpa CORS)</label>
+    <div style="grid-column:1/-1"><label>Proxy URL (opsional — kosongkan untuk auto-fallback CORS proxy)</label>
       <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url="></div>
     <div><label>Wilayah (pisah koma, kosong = semua)</label><input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4"></div>
     <div><label>Crop stamp X mulai (0-1)</label><input type="number" id="sx" value="0.35" step="0.05"></div>
@@ -179,20 +179,32 @@ $("xl").addEventListener("change", async e => {
 });
 $("urls").addEventListener("input", () => { rows = []; });
 
-// ---------- Image helpers ----------
+// ---------- Image helpers (dengan auto-fallback CORS proxy) ----------
 let preferred = null;
 function candidates(u) {
   const p = $("proxy").value.trim();
-  if (p) return [{kind:"proxy", src:p + encodeURIComponent(u)}];
-  const c = [{kind:"direct", src:u}]; // same way as the first version: <img crossOrigin>, browser may auto-upgrade to https
-  if (u.startsWith("http:")) c.push({kind:"https", src:u.replace(/^http:/, "https:")});
+  if (p) return [{kind:"proxy", via:"fetch", src:p + encodeURIComponent(u)}];
+
+  const httpsUrl = u.startsWith("http:") ? u.replace(/^http:/, "https:") : u;
+  const c = [
+    {kind:"direct", via:"img", src:u},
+    ...(u.startsWith("http:") ? [{kind:"https", via:"img", src:httpsUrl}] : []),
+    // Auto-fallback CORS-enabled proxies jika server foto tidak mengirim header CORS
+    {kind:"wsrv", via:"fetch", src:"https://wsrv.nl/?url=" + encodeURIComponent(httpsUrl)},
+    {kind:"corsproxy", via:"fetch", src:"https://corsproxy.io/?url=" + encodeURIComponent(httpsUrl)},
+    {kind:"allorigins", via:"fetch", src:"https://api.allorigins.win/raw?url=" + encodeURIComponent(httpsUrl)}
+  ];
   if (preferred) c.sort((x, y) => (y.kind === preferred) - (x.kind === preferred));
   return c;
 }
+
 async function viaImg(src) {
   const img = await new Promise((ok, no) => {
     const i = new Image(); i.crossOrigin = "Anonymous";
-    i.onload = () => ok(i); i.onerror = () => no(new Error("img")); i.src = src;
+    const t = setTimeout(() => no(new Error("timeout")), 12000);
+    i.onload = () => { clearTimeout(t); ok(i); };
+    i.onerror = () => { clearTimeout(t); no(new Error("img")); };
+    i.src = src;
   });
   const bmp = await createImageBitmap(img);
   const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
@@ -200,35 +212,50 @@ async function viaImg(src) {
   const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
   return {bmp, blob};
 }
+
 async function fetchPhoto(c) {
-  if (c.kind === "proxy") {
-    const resp = await fetch(c.src);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const blob = await resp.blob();
-    return {bmp: await createImageBitmap(blob), blob};
+  if (c.via === "fetch") {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const resp = await fetch(c.src, {signal: ctrl.signal});
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const blob = await resp.blob();
+      if (!blob.type.startsWith("image/") && blob.size < 1000) throw new Error("Bukan gambar");
+      return {bmp: await createImageBitmap(blob), blob};
+    } finally {
+      clearTimeout(t);
+    }
   }
   return viaImg(c.src);
 }
+
 const testImg = (src, cors) => new Promise(ok => {
   const i = new Image(); if (cors) i.crossOrigin = "Anonymous";
   const t = setTimeout(() => ok(false), 10000);
   i.onload = () => { clearTimeout(t); ok(true); };
   i.onerror = () => { clearTimeout(t); ok(false); };
-  i.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now(); // cache-buster so tests don't reuse each other
+  i.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now();
 });
+
 async function diagnose(u) {
-  if ($("proxy").value.trim()) return "proxy tidak bisa dijangkau / salah alamat.";
+  if ($("proxy").value.trim()) return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
   const h = u.replace(/^http:/, "https:");
   const [a, b, c, d] = await Promise.all([testImg(u, false), testImg(h, false), testImg(u, true), testImg(h, true)]);
   const y = v => v ? "BISA" : "GAGAL";
   const why = (c || d) ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)."
-    : (a || b) ? "Foto bisa DITAMPILKAN tetapi server tidak mengirim izin CORS untuk halaman ini."
+    : (a || b) ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto (kemungkinan server hanya bisa diakses dari jaringan/VPN internal)."
     : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
   return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
 }
+
 async function canFetchAny(urls) {
   for (const u of urls) for (const c of candidates(u)) {
-    try { (await fetchPhoto(c)).bmp.close(); preferred = c.kind; return true; } catch {}
+    try {
+      (await fetchPhoto(c)).bmp.close();
+      preferred = c.kind;
+      return true;
+    } catch {}
   }
   return false;
 }
@@ -286,8 +313,15 @@ function stampDate(t) {
 function stampCoords(t) {
   const m = t.match(/(-?\d{1,3}\.\d{3,})\s*[,;]?\s*(-?\d{1,3}\.\d{3,})/);
   if (!m) return null;
-  let lat = +m[1]; const lon = +m[2];
-  if (lat > 0 && -lat >= +$("lat0").value && -lat <= +$("lat1").value) lat = -lat; // OCR often drops the minus
+  let a = +m[1], b = +m[2];
+  const lat0 = +$("lat0").value, lat1 = +$("lat1").value;
+  const lon0 = +$("lon0").value, lon1 = +$("lon1").value;
+  // Auto-detect jika format kamera adalah Longitude, Latitude (contoh: 116.459, -8.711)
+  let lat = a, lon = b;
+  if (Math.abs(a) > 90 || (a >= lon0 && a <= lon1 && Math.abs(b) <= 90)) {
+    lon = a; lat = b;
+  }
+  if (lat > 0 && -lat >= lat0 && -lat <= lat1) lat = -lat; // OCR sering kehilangan tanda minus
   return [lat, lon];
 }
 
@@ -331,7 +365,7 @@ async function processRow(r, ocr, clip) {
   for (const c of candidates(r.url)) {
     try { ({bmp, blob} = await fetchPhoto(c)); preferred = c.kind; break; } catch {}
   }
-  if (!bmp) return fail("Foto tidak bisa dimuat (404 / CORS / mixed content). Coba buka index.html dari komputer atau isi Proxy URL.");
+  if (!bmp) return fail("Foto tidak bisa dimuat (404 / CORS / proxy gagal).");
 
   res.thumb = thumb(bmp); res.hash = dhash(bmp);
   try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
@@ -383,20 +417,20 @@ $("go").onclick = async () => {
   $("st").textContent = "Mengetes koneksi ke server foto...";
   if (!(await canFetchAny(list.slice(0, 3).map(r => r.url)))) {
     const diag = await diagnose(list[0].url);
-    alert("Diagnosa: " + diag + "\n\nBrowser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: buka index.html langsung dari komputer (klik dua kali) atau jalankan local_server.py; atau deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
+    alert("Diagnosa: " + diag + "\n\nSolusi: isi kolom Proxy URL dengan Cloudflare Worker pribadi, atau jalankan local_server.py di komputer Anda.");
     $("go").disabled = false; $("stop").classList.add("hidden"); $("st").textContent = "Koneksi ke server foto gagal.";
     return;
   }
 
-  $("st").textContent = "Memuat OCR...";
+  $("st").textContent = `Terhubung via [${preferred}]. Memuat OCR...`;
   const ocr = await Tesseract.createWorker("eng");
-  $("st").textContent = "Memuat model AI (pertama kali ±90 MB)...";
+  $("st").textContent = `Terhubung via [${preferred}]. Memuat model AI (pertama kali ±90 MB)...`;
   let clip = null;
   try { clip = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32"); }
   catch (e) { alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message); }
 
   for (let i = 0; i < list.length && !stopFlag; i++) {
-    $("st").textContent = `Memeriksa ${i + 1} / ${list.length}...`;
+    $("st").textContent = `Memeriksa ${i + 1} / ${list.length} (via ${preferred})...`;
     const r = await processRow(list[i], ocr, clip);
     verdict(r); results.push(r); addRow(r); summary();
   }

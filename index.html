@@ -179,18 +179,18 @@ const MONTHS = {
   jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"
 };
 const LABELS = [
-  ["a selfie of a person in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
-  ["a selfie of two or more people together","Sesuai","Selfie PIC bersama orang lain"],
-  ["a photo of a person standing in front of a house","Sesuai","Foto orang berdiri di depan rumah"],
-  ["a photo of a house or building exterior with no person","Sesuai","Hanya foto rumah"],
-  ["a photo of paper money, Indonesian rupiah cash, or banknotes","Tidak Sesuai","FOTO UANG"],
-  ["a person or hand holding paper money, cash, or banknotes","Tidak Sesuai","FOTO UANG"],
-  ["a photo taken of a smartphone screen, computer monitor, or another photo","Tidak Sesuai","Foto dari foto"],
-  ["a picture of a printed photograph or image displayed on a phone screen","Tidak Sesuai","Foto dari foto"],
-  ["a close-up face selfie with no house and no other person","Tidak Sesuai","Foto hanya selfie saja"],
-  ["a photo of a road, street, trees, or motorcycle with no people","Tidak Sesuai","Foto jalan/motor tanpa orang"],
-  ["a dark, blurry, or blank photo","Tidak Sesuai","Foto tidak jelas"],
-  ["a photo of a document, receipt, or paper","Tidak Sesuai","Foto dokumen atau kertas"]
+  ["a selfie of a person wearing a helmet or standing outdoors in front of a house or building", "Sesuai", "Selfie PIC di depan rumah/bangunan"],
+  ["a selfie of a person at a small shop, warung, or market stall with people or goods", "Sesuai", "Selfie PIC di warung/toko"],
+  ["a photo of two or more people together", "Sesuai", "Foto bersama orang lain"],
+  ["a photo of a person standing in front of a house or yard", "Sesuai", "Foto orang di depan rumah"],
+  ["a photo of a house, building, or front porch exterior", "Sesuai", "Hanya foto rumah"],
+  ["a close-up photo of paper money, cash, or banknotes", "Tidak Sesuai", "FOTO UANG"],
+  ["a hand holding paper money, cash, or banknotes", "Tidak Sesuai", "FOTO UANG"],
+  ["a photo taken of a smartphone screen, computer monitor, or printed photograph", "Tidak Sesuai", "Foto dari foto"],
+  ["an extreme close-up portrait of only a face filling the entire frame indoors", "Tidak Sesuai", "Foto hanya selfie saja"],
+  ["a photo of an empty road, street, trees, or parked motorcycle", "Tidak Sesuai", "Foto jalan/motor tanpa orang"],
+  ["a completely dark, black, blurry, or blank photo", "Tidak Sesuai", "Foto tidak jelas"],
+  ["a close-up photo of a paper document, receipt, or form", "Tidak Sesuai", "Foto dokumen atau kertas"]
 ];
 const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
 
@@ -253,7 +253,6 @@ function readSheet(wb, name) {
   const grid = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ""});
   if (!grid.length) return [];
 
-  // Cari baris header (cek 30 baris pertama)
   let h = 0;
   for (let i = 0; i < Math.min(grid.length, 30); i++) {
     const v = grid[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
@@ -494,6 +493,46 @@ function stampCoords(t) {
   return [lat, lon];
 }
 
+// ---------- AI with rotation check ----------
+async function rotatedBlob(bmp, deg) {
+  const c = document.createElement("canvas");
+  const swap = deg === 90 || deg === 270;
+  c.width = swap ? bmp.height : bmp.width;
+  c.height = swap ? bmp.width : bmp.height;
+  const ctx = c.getContext("2d");
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate((deg * Math.PI) / 180);
+  ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+  return new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
+}
+
+async function classifyWithRotation(clip, bmp, blob) {
+  const texts = LABELS.map(l => l[0]);
+  const run = async b => {
+    const u = URL.createObjectURL(b);
+    try {
+      const out = await clip(u, texts, {hypothesis_template: "{}"});
+      const top = out[0], L = LABELS.find(l => l[0] === top.label);
+      return L ? {status: L[1], label: L[2], score: top.score} : null;
+    } finally {
+      URL.revokeObjectURL(u);
+    }
+  };
+
+  let best = await run(blob);
+  // Jika 0° terdeteksi Tidak Sesuai, cek rotasi 90° & 270° untuk menghindari false flag foto miring
+  if (best && best.status === "Tidak Sesuai") {
+    for (const deg of [90, 270]) {
+      const alt = await run(await rotatedBlob(bmp, deg));
+      if (alt && alt.status === "Sesuai") {
+        best = alt;
+        break;
+      }
+    }
+  }
+  return best;
+}
+
 // ---------- Verdict (hanya cek aturan yang toggle-nya ON) ----------
 function verdict(r) {
   if (r.failed) return;
@@ -504,9 +543,10 @@ function verdict(r) {
   const checkGps = checkLat0 || checkLat1 || checkLon0 || checkLon1;
   const checkDup = isOn("t_ham");
 
-  // 1. Cek AI konten foto (selalu aktif)
-  if (["FOTO UANG", "Foto dari foto"].includes(r.ai)) hard.push(r.ai);
-  else if (r.aiStatus === "Tidak Sesuai") warn.push(r.ai);
+  // 1. Cek AI konten foto (dengan ambang batas skor kepercayaan)
+  const aiConf = parseFloat(r.aiScore) || 0;
+  if (["FOTO UANG", "Foto dari foto"].includes(r.ai) && aiConf >= 55) hard.push(r.ai);
+  else if (r.aiStatus === "Tidak Sesuai" && aiConf >= 45) warn.push(r.ai);
 
   // 2. Cek Stamp Tanggal (hanya jika Crop X atau Y aktif)
   if (checkStamp) {
@@ -575,13 +615,14 @@ async function processRow(r, ocr, clip) {
   }
 
   if (clip) {
-    const u = URL.createObjectURL(blob);
     try {
-      const out = await clip(u, LABELS.map(l => l[0]), {hypothesis_template: "{}"});
-      const top = out[0], L = LABELS.find(l => l[0] === top.label);
-      if (L) { res.aiStatus = L[1]; res.ai = L[2]; res.aiScore = (top.score * 100).toFixed(1) + "%"; }
+      const best = await classifyWithRotation(clip, bmp, blob);
+      if (best) {
+        res.aiStatus = best.status;
+        res.ai = best.label;
+        res.aiScore = (best.score * 100).toFixed(1) + "%";
+      }
     } catch {}
-    URL.revokeObjectURL(u);
   }
   bmp.close();
   return res;

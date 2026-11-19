@@ -250,20 +250,36 @@ const pick = (r, ...keys) => {
 
 function readSheet(wb, name) {
   const ws = wb.Sheets[name];
-  const pre = XLSX.utils.sheet_to_json(ws, {header:1, defval:""}).slice(0, 20);
+  const grid = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ""});
+  if (!grid.length) return [];
+
+  // Cari baris header (cek 30 baris pertama)
   let h = 0;
-  for (let i = 0; i < pre.length; i++) {
-    const v = pre[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
-    if (v.includes("ID PIC") || v.includes("NO KONTRAK") || v.includes("LINK FOTO KUNJUNGAN") || (v.includes("KETERANGAN") && v.includes("TGL LKP"))) {
+  for (let i = 0; i < Math.min(grid.length, 30); i++) {
+    const v = grid[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
+    if (
+      v.includes("NAMA WILAYAH") ||
+      v.includes("ID PIC") ||
+      v.includes("NO KONTRAK") ||
+      v.includes("LINK FOTO KUNJUNGAN")
+    ) {
       h = i;
       break;
     }
   }
-  return XLSX.utils.sheet_to_json(ws, {range:h, defval:""}).map(r => {
-    const o = {};
-    for (const k in r) o[k.trim().replace(/\s+/g, " ").toUpperCase()] = r[k];
-    return o;
-  });
+
+  const headers = grid[h].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
+  const out = [];
+  for (let i = h + 1; i < grid.length; i++) {
+    const rowArr = grid[i];
+    if (!rowArr || rowArr.every(c => String(c).trim() === "")) continue;
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) {
+      if (headers[j]) obj[headers[j]] = rowArr[j] ?? "";
+    }
+    out.push(obj);
+  }
+  return out;
 }
 
 async function loadFiles(files) {
@@ -271,44 +287,37 @@ async function loadFiles(files) {
   const wil = $("wil").value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
   for (const f of files) {
     const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), {type:"array"});
-    const mon = findSheet(wb, ["MONITORING"]), fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
+    const mon = findSheet(wb, ["MONITORING"]);
+    const fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
     if (!fs) { notes.push(`${f.name}: sheet FOTO tidak ada`); continue; }
+
     let valid = null;
-    const monInfo = new Map();
     if (mon) {
-      valid = new Set();
-      for (const mr of readSheet(wb, mon)) {
-        const key = normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")) + "|" + normId(pick(mr, "ID PIC", "ID_PIC"));
-        valid.add(key);
-        monInfo.set(key, {
-          wilayah: String(pick(mr, "CLUSTER", "NAMA WILAYAH", "WILAYAH")).trim().toUpperCase(),
-          nama: String(pick(mr, "NAMA PIC", "NAMA_PIC")).trim()
-        });
-      }
+      valid = new Set(
+        readSheet(wb, mon).map(mr => normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")) + "|" + normId(pick(mr, "ID PIC")))
+      );
     } else {
       notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
     }
 
     for (const r of readSheet(wb, fs)) {
-      const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN", "TANGGAL LKP"));
-      const id = normId(pick(r, "ID PIC", "ID_PIC", "PIC ID"));
-      const pairKey = tgl + "|" + id;
-      const mInfo = monInfo.get(pairKey) || {};
-      const w = (String(pick(r, "NAMA WILAYAH", "CLUSTER", "WILAYAH")).trim().toUpperCase()) || mInfo.wilayah || "";
+      const wilayah = String(pick(r, "NAMA WILAYAH", "CLUSTER")).trim().toUpperCase();
+      if (wil.length && !wil.includes(wilayah)) continue;
 
-      if (wil.length && !wil.includes(w)) continue;
-      if (valid && !valid.has(pairKey)) continue;
+      const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN"));
+      const idpic = normId(pick(r, "ID PIC"));
+      if (valid && !valid.has(tgl + "|" + idpic)) continue;
 
-      let url = String(pick(r, "LINK FOTO KUNJUNGAN", "FOTO KUNJUNGAN", "LINK FOTO", "URL FOTO")).trim();
+      let url = String(pick(r, "LINK FOTO KUNJUNGAN", "FOTO KUNJUNGAN")).trim();
       if (!/^https?:/i.test(url)) {
         const m = Object.values(r).map(String).join(" ").match(URL_RE);
         url = m ? m[0] : "";
       }
       if (!url) continue;
 
-      const kontrak = normId(pick(r, "NO KONTRAK", "NO_KONTRAK", "KONTRAK"));
-      const nama = String(pick(r, "NAMA PIC", "NAMA_PIC", "PIC")).trim() || mInfo.nama || "";
-      out.push({file:f.name, tgl, wilayah:w, kontrak, idpic:id, nama, url});
+      const kontrak = normId(pick(r, "NO KONTRAK"));
+      const nama = String(pick(r, "NAMA PIC")).trim();
+      out.push({file: f.name, tgl, wilayah, kontrak, idpic, nama, url});
     }
   }
   return {out, notes};
@@ -321,9 +330,10 @@ async function refreshFromFiles() {
     const {out, notes} = await loadFiles(loadedFiles);
     rows = out;
     rowMap = new Map();
-    for (const r of out) rowMap.set(r.url, r);
+    for (const r of out) rowMap.set(r.url.trim(), r);
     $("urls").value = out.map(r => r.url).join("\n");
-    $("st").textContent = `${out.length} foto dimuat.` + (notes.length ? " " + notes.join("; ") : "");
+    const withMeta = out.filter(r => r.wilayah || r.idpic || r.nama || r.kontrak).length;
+    $("st").textContent = `${out.length} foto dimuat (${withMeta} dengan data Wilayah/PIC/Kontrak).` + (notes.length ? " " + notes.join("; ") : "");
     if (!out.length) alert("Tidak ada foto yang cocok (cek wilayah / kolom LINK FOTO KUNJUNGAN).");
   } catch (err) {
     $("st").textContent = "";

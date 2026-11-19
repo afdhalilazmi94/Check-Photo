@@ -209,6 +209,11 @@ async function fetchPhoto(c) {
   }
   return viaImg(c.src);
 }
+async function diagnose(u) {
+  if ($("proxy").value.trim()) return "proxy tidak bisa dijangkau / salah alamat.";
+  try { await fetch(u.replace(/^http:/, "https:"), {mode:"no-cors"}); return "https tersedia di server, tetapi server tidak mengirim izin CORS (header Access-Control-Allow-Origin)."; }
+  catch { return "server tidak melayani https (atau tidak terjangkau), sedangkan http diblokir di halaman https."; }
+}
 async function canFetchAny(urls) {
   for (const u of urls) for (const c of candidates(u)) {
     try { (await fetchPhoto(c)).bmp.close(); preferred = c.kind; return true; } catch {}
@@ -365,7 +370,8 @@ $("go").onclick = async () => {
   preferred = null;
   $("st").textContent = "Mengetes koneksi ke server foto...";
   if (!(await canFetchAny(list.slice(0, 3).map(r => r.url)))) {
-    alert("Browser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: buka index.html langsung dari komputer (klik dua kali) atau jalankan local_server.py; atau deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
+    const diag = await diagnose(list[0].url);
+    alert("Diagnosa: " + diag + "\n\nBrowser tidak bisa mengambil foto dari server.\n\nPenyebab: halaman GitHub Pages memakai https, sedangkan server foto http dan/atau tidak mengizinkan CORS.\n\nSolusi: buka index.html langsung dari komputer (klik dua kali) atau jalankan local_server.py; atau deploy cors-proxy-worker.js (Cloudflare Worker) lalu isi kolom Proxy URL, atau minta tim backend mengaktifkan CORS + https. Tanpa setup, pakai versi Colab.");
     $("go").disabled = false; $("stop").classList.add("hidden"); $("st").textContent = "Koneksi ke server foto gagal.";
     return;
   }

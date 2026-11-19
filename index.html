@@ -209,10 +209,22 @@ async function fetchPhoto(c) {
   }
   return viaImg(c.src);
 }
+const testImg = (src, cors) => new Promise(ok => {
+  const i = new Image(); if (cors) i.crossOrigin = "Anonymous";
+  const t = setTimeout(() => ok(false), 10000);
+  i.onload = () => { clearTimeout(t); ok(true); };
+  i.onerror = () => { clearTimeout(t); ok(false); };
+  i.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now(); // cache-buster so tests don't reuse each other
+});
 async function diagnose(u) {
   if ($("proxy").value.trim()) return "proxy tidak bisa dijangkau / salah alamat.";
-  try { await fetch(u.replace(/^http:/, "https:"), {mode:"no-cors"}); return "https tersedia di server, tetapi server tidak mengirim izin CORS (header Access-Control-Allow-Origin)."; }
-  catch { return "server tidak melayani https (atau tidak terjangkau), sedangkan http diblokir di halaman https."; }
+  const h = u.replace(/^http:/, "https:");
+  const [a, b, c, d] = await Promise.all([testImg(u, false), testImg(h, false), testImg(u, true), testImg(h, true)]);
+  const y = v => v ? "BISA" : "GAGAL";
+  const why = (c || d) ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)."
+    : (a || b) ? "Foto bisa DITAMPILKAN tetapi server tidak mengirim izin CORS untuk halaman ini."
+    : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
+  return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
 }
 async function canFetchAny(urls) {
   for (const u of urls) for (const c of candidates(u)) {

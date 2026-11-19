@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk Photo Stamp Checker (Excel)</title>
+  <script src="https://tailwindcss.com"></script>
+  <script src="https://jsdelivr.net"></script>
+  <script src="https://sheetjs.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 p-6 md:p-10">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold">Bulk Photo Stamp Checker</h1>
+      <p class="text-sm text-slate-600">Upload an Excel file (<code>.xlsx</code> / <code>.xls</code>) or paste <code>getImage</code> URLs below, then export results to Excel.</p>
+    </div>
+
+    <!-- Excel Upload Box -->
+    <div class="bg-white p-4 rounded-lg border shadow-sm mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">1. Import from Excel (.xlsx / .xls / .csv)</label>
+        <p class="text-xs text-slate-500">Automatically extracts all <code>getImage</code> links from any column in your first sheet.</p>
+      </div>
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)"
+        class="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+    </div>
+
+    <!-- URL Textarea -->
+    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">2. URLs to Check (One per line)</label>
+    <textarea id="urlInput" rows="6" class="w-full p-3 border rounded-lg font-mono text-xs bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      placeholder="http://sehati.co.id"></textarea>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap items-center gap-3 mt-4">
+      <button onclick="startBulkCheck()" id="checkBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg font-medium text-sm transition">
+        Check All Photos
+      </button>
+      <button onclick="exportExcel()" id="exportBtn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium text-sm transition">
+        Download Excel (.xlsx)
+      </button>
+      <span id="statusText" class="text-sm text-slate-600 font-medium"></span>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="summaryBar" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+      <div class="bg-white p-4 rounded-lg border shadow-sm"><div class="text-xs text-slate-500">Total</div><div id="cntTotal" class="text-xl font-bold">0</div></div>
+      <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><div class="text-xs text-emerald-700">PASS</div><div id="cntPass" class="text-xl font-bold text-emerald-700">0</div></div>
+      <div class="bg-rose-50 p-4 rounded-lg border border-rose-200"><div class="text-xs text-rose-700">FAIL</div><div id="cntFail" class="text-xl font-bold text-rose-700">0</div></div>
+      <div class="bg-amber-50 p-4 rounded-lg border border-amber-200"><div class="text-xs text-amber-700">WARNING / ERROR</div><div id="cntWarn" class="text-xl font-bold text-amber-700">0</div></div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="overflow-x-auto bg-white rounded-lg border shadow-sm mt-4">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-100 border-b text-slate-600 uppercase">
+          <tr>
+            <th class="p-3">Preview</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Reason</th>
+            <th class="p-3">URL Date</th>
+            <th class="p-3">Photo Date</th>
+            <th class="p-3">GPS Coords</th>
+            <th class="p-3">Raw Stamp OCR</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <canvas id="cropCanvas" class="hidden"></canvas>
+
+  <script>
+    const MONTHS_ID = {
+      januari: "01", februari: "02", maret: "03", april: "04",
+      mei: "05", juni: "06", juli: "07", agustus: "08",
+      september: "09", oktober: "10", november: "11", desember: "12"
+    };
+
+    let latestResults = [];
+
+    // Read Excel file and extract URLs
+    function handleExcelUpload(event) {
+      const file = event.target.files;
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        const extractedUrls = [];
+        rows.forEach(row => {
+          row.forEach(cell => {
+            if (typeof cell === "string" && cell.includes("http") && cell.includes("getImage")) {
+              extractedUrls.push(cell.trim());
+            }
+          });
+        });
+
+        if (extractedUrls.length === 0) {
+          alert("No 'getImage' URLs found in the uploaded Excel file.");
+          return;
+        }
+
+        document.getElementById("urlInput").value = extractedUrls.join("\n");
+        document.getElementById("statusText").textContent = `Loaded ${extractedUrls.length} URLs from Excel.`;
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Image load blocked (CORS/HTTP or offline)"));
+        img.src = url;
+      });
+    }
+
+    async function processSingleUrl(url, worker) {
+      let urlDate = null;
+      let imageName = "-";
+      try {
+        const parsed = new URL(url);
+        urlDate = parsed.searchParams.get("date");
+        imageName = parsed.searchParams.get("image") || "-";
+      } catch (e) {
+        return { url, image: imageName, status: "ERROR", reason: "Invalid URL", url_date: "-", stamp_date: "-", coords: "-", raw_ocr: "-" };
+      }
+
+      try {
+        const img = await loadImage(url);
+        const canvas = document.getElementById("cropCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Crop bottom-right stamp (x: 35% to 100%, y: 80% to 100%)
+        const sx = Math.floor(img.width * 0.35);
+        const sy = Math.floor(img.height * 0.80);
+        const sw = img.width - sx;
+        const sh = img.height - sy;
+
+        canvas.width = sw;
+        canvas.height = sh;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+        const { data: { text } } = await worker.recognize(canvas);
+        const ocrText = text.replace(/\n+/g, " ").trim();
+
+        // Parse Indonesian Date (e.g., "05 November 2026" -> "20261105")
+        let stampDate = null;
+        const dateMatch = ocrText.match(/(\d{2})\s+([A-Za-z]+)\s+(\d{4})/);
+        if (dateMatch) {
+          const [, day, monthName, year] = dateMatch;
+          const monthNum = MONTHS_ID[monthName.toLowerCase()];
+          if (monthNum) stampDate = `${year}${monthNum}${day}`;
+        }
+
+        // Parse GPS Coordinates
+        const coordMatch = ocrText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+        const coords = coordMatch ? `${coordMatch}, ${coordMatch}` : "Not found";
+
+        // Validate
+        let status = "WARNING";
+        let reason = "Missing URL or stamp date";
+        if (urlDate && stampDate) {
+          if (urlDate === stampDate) {
+            status = "PASS";
+            reason = "Date matches stamp";
+          } else {
+            status = "FAIL";
+            reason = `Mismatch (${urlDate} != ${stampDate})`;
+          }
+        }
+
+        return { url, image: imageName, status, reason, url_date: urlDate || "-", stamp_date: stampDate || "-", coords, raw_ocr: ocrText };
+      } catch (err) {
+        return { url, image: imageName, status: "ERROR", reason: err.message, url_date: urlDate || "-", stamp_date: "-", coords: "-", raw_ocr: "-" };
+      }
+    }
+
+    async function startBulkCheck() {
+      const urls = document.getElementById("urlInput").value.split("\n").map(u => u.trim()).filter(Boolean);
+      if (!urls.length) return alert("Please upload an Excel file or paste at least one URL.");
+
+      const btn = document.getElementById("checkBtn");
+      const statusText = document.getElementById("statusText");
+      btn.disabled = true;
+      latestResults = [];
+      document.getElementById("resultsBody").innerHTML = "";
+
+      statusText.textContent = "Initializing OCR engine...";
+      const worker = await Tesseract.createWorker("eng");
+
+      for (let i = 0; i < urls.length; i++) {
+        statusText.textContent = `Checking ${i + 1} of ${urls.length}...`;
+        const result = await processSingleUrl(urls[i], worker);
+        latestResults.push(result);
+        renderTable(latestResults);
+      }
+
+      await worker.terminate();
+      btn.disabled = false;
+      statusText.textContent = `Completed ${urls.length} checks.`;
+      document.getElementById("exportBtn").classList.remove("hidden");
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById("resultsBody");
+      tbody.innerHTML = "";
+      let pass = 0, fail = 0, warn = 0;
+
+      rows.forEach(r => {
+        if (r.status === "PASS") pass++;
+        else if (r.status === "FAIL") fail++;
+        else warn++;
+
+        const badge = r.status === "PASS" ? "bg-emerald-100 text-emerald-800"
+                    : r.status === "FAIL" ? "bg-rose-100 text-rose-800"
+                    : "bg-amber-100 text-amber-800";
+
+        tbody.innerHTML += `
+          <tr>

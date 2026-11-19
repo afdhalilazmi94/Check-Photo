@@ -18,8 +18,22 @@ h1{font-size:24px;margin:0 0 6px}
 textarea,input[type=text],input[type=number]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
 textarea{font-family:monospace;resize:vertical}
 details summary{cursor:pointer;font-weight:600;font-size:13px}
+.setting-block{margin-top:12px}
+.setting-block label.field-lbl{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
+.sep{border:0;border-top:1px solid #e2e8f0;margin:14px 0}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px}
+.toggle-title{font-size:12px;font-weight:600;color:#334155}
+.toggle-sub{font-size:11px;color:#64748b;margin-top:2px}
+.switch-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.switch-txt{font-size:11px;font-weight:700;color:#64748b;min-width:24px;text-align:right}
+.switch{position:relative;display:inline-block;width:40px;height:22px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.2s}
+.slider:before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked + .slider{background:#2563eb}
+.switch input:checked + .slider:before{transform:translateX(18px)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
-.grid label{font-size:11px;font-weight:600;color:#475569}
+.grid label{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
 .actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 16px}
 button{border:0;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;color:#fff}
 button:disabled{opacity:.5;cursor:not-allowed}
@@ -57,19 +71,50 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 <textarea id="urls" rows="4" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
 
 <div class="card" style="margin-top:14px">
-  <details open><summary>Pengaturan</summary>
-  <div class="grid">
-    <div style="grid-column:1/-1"><label>Proxy URL (opsional — kosongkan untuk auto-fallback CORS proxy)</label>
-      <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url="></div>
-    <div><label>Wilayah (pisah koma, kosong = semua)</label><input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4"></div>
-    <div><label>Crop stamp X mulai (0-1)</label><input type="number" id="sx" value="0.35" step="0.05"></div>
-    <div><label>Crop stamp Y mulai (0-1)</label><input type="number" id="sy" value="0.80" step="0.05"></div>
-    <div><label>Lat min</label><input type="number" id="lat0" value="-9.3" step="0.1"></div>
-    <div><label>Lat max</label><input type="number" id="lat1" value="-8.0" step="0.1"></div>
-    <div><label>Lon min</label><input type="number" id="lon0" value="115.7" step="0.1"></div>
-    <div><label>Lon max</label><input type="number" id="lon1" value="116.9" step="0.1"></div>
-    <div><label>Batas beda bit duplikat</label><input type="number" id="ham" value="5" min="0" max="20"></div>
-  </div></details>
+  <details open>
+    <summary>Pengaturan</summary>
+
+    <!-- Proxy URL -->
+    <div class="setting-block">
+      <label class="field-lbl" for="proxy">Proxy URL (opsional — kosongkan untuk auto-fallback CORS proxy)</label>
+      <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=">
+    </div>
+
+    <hr class="sep">
+
+    <!-- Wilayah terpisah sendiri -->
+    <div class="setting-block">
+      <label class="field-lbl" for="wil">Wilayah (pisah koma, kosong = semua)</label>
+      <input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4">
+    </div>
+
+    <hr class="sep">
+
+    <!-- Toggle ON/OFF untuk Crop Stamp, GPS & Duplikat (OFF by default) -->
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-title">Pengaturan Lanjutan (Crop Stamp, GPS &amp; Batas Duplikat)</div>
+        <div class="toggle-sub">Aktifkan untuk mengubah area crop stamp, batas koordinat GPS, dan batas beda bit duplikat.</div>
+      </div>
+      <label class="switch-wrap">
+        <span id="advTxt" class="switch-txt">OFF</span>
+        <span class="switch">
+          <input type="checkbox" id="advToggle">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+
+    <div id="advPanel" class="grid hidden">
+      <div><label for="sx">Crop stamp X mulai (0-1)</label><input type="number" id="sx" value="0.35" step="0.05"></div>
+      <div><label for="sy">Crop stamp Y mulai (0-1)</label><input type="number" id="sy" value="0.80" step="0.05"></div>
+      <div><label for="lat0">Lat min</label><input type="number" id="lat0" value="-9.3" step="0.1"></div>
+      <div><label for="lat1">Lat max</label><input type="number" id="lat1" value="-8.0" step="0.1"></div>
+      <div><label for="lon0">Lon min</label><input type="number" id="lon0" value="115.7" step="0.1"></div>
+      <div><label for="lon1">Lon max</label><input type="number" id="lon1" value="116.9" step="0.1"></div>
+      <div><label for="ham">Batas beda bit duplikat</label><input type="number" id="ham" value="5" min="0" max="20"></div>
+    </div>
+  </details>
 </div>
 
 <div class="actions">
@@ -97,8 +142,11 @@ import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const MONTHS = {januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",desember:"12",
-  january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",november:"11"};
+const MONTHS = {
+  januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",
+  january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",
+  jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"
+};
 const LABELS = [
   ["a selfie of a person in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
   ["a selfie of two or more people together","Sesuai","Selfie PIC bersama orang lain"],
@@ -114,32 +162,77 @@ const LABELS = [
   ["a photo of a document, receipt, or paper","Tidak Sesuai","Foto dokumen atau kertas"]
 ];
 const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
-let rows = [], results = [], stopFlag = false;
+
+let loadedFiles = [];
+let rows = [];
+let rowMap = new Map(); // Menyimpan metadata Excel per URL agar tidak hilang jika textarea diedit
+let results = [];
+let stopFlag = false;
+
 if (["localhost", "127.0.0.1"].includes(location.hostname)) $("proxy").value = "/proxy?url=";
+
+// Toggle pengaturan lanjutan (default OFF)
+$("advToggle").addEventListener("change", e => {
+  const on = e.target.checked;
+  $("advPanel").classList.toggle("hidden", !on);
+  $("advTxt").textContent = on ? "ON" : "OFF";
+  $("advTxt").style.color = on ? "#2563eb" : "#64748b";
+});
 
 // ---------- Excel import ----------
 function normDate(v) {
   if (v == null || v === "") return "";
-  if (typeof v === "number") { const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}${String(d.m).padStart(2,"0")}${String(d.d).padStart(2,"0")}` : ""; }
+  if (v instanceof Date && !isNaN(v)) {
+    return `${v.getFullYear()}${String(v.getMonth() + 1).padStart(2, "0")}${String(v.getDate()).padStart(2, "0")}`;
+  }
+  if (typeof v === "number") {
+    const d = XLSX.SSF.parse_date_code(v);
+    return d ? `${d.y}${String(d.m).padStart(2,"0")}${String(d.d).padStart(2,"0")}` : "";
+  }
   const s = String(v).trim();
   let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if (m) return m[1] + m[2].padStart(2,"0") + m[3].padStart(2,"0");
-  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
-  if (m) return m[3] + m[2].padStart(2,"0") + m[1].padStart(2,"0");
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+  if (m) {
+    const yr = m[3].length === 2 ? "20" + m[3] : m[3];
+    return yr + m[2].padStart(2,"0") + m[1].padStart(2,"0");
+  }
+  m = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})/);
+  if (m) {
+    const mon = MONTHS[m[2].toLowerCase()];
+    if (mon) {
+      const yr = m[3].length === 2 ? "20" + m[3] : m[3];
+      return yr + mon + m[1].padStart(2,"0");
+    }
+  }
   return "";
 }
 const normId = v => String(v ?? "").trim().replace(/\.0$/, "");
 const findSheet = (wb, kws) => wb.SheetNames.find(n => kws.some(k => n.trim().toUpperCase().includes(k)));
+const pick = (r, ...keys) => {
+  for (const k of keys) {
+    const val = r[k];
+    if (val !== undefined && val !== null && String(val).trim() !== "") return val;
+  }
+  return "";
+};
 
 function readSheet(wb, name) {
   const ws = wb.Sheets[name];
-  const pre = XLSX.utils.sheet_to_json(ws, {header:1, defval:""}).slice(0, 10);
+  const pre = XLSX.utils.sheet_to_json(ws, {header:1, defval:""}).slice(0, 20);
   let h = 0;
   for (let i = 0; i < pre.length; i++) {
-    const v = pre[i].map(x => String(x).trim().toUpperCase());
-    if (v.includes("ID PIC") || (v.includes("KETERANGAN") && v.includes("TGL LKP"))) { h = i; break; }
+    const v = pre[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
+    if (v.includes("ID PIC") || v.includes("NO KONTRAK") || v.includes("LINK FOTO KUNJUNGAN") || (v.includes("KETERANGAN") && v.includes("TGL LKP"))) {
+      h = i;
+      break;
+    }
   }
-  return XLSX.utils.sheet_to_json(ws, {range:h, defval:""}).map(r => { const o = {}; for (const k in r) o[k.trim()] = r[k]; return o; });
+  return XLSX.utils.sheet_to_json(ws, {range:h, defval:""}).map(r => {
+    const o = {};
+    for (const k in r) o[k.trim().replace(/\s+/g, " ").toUpperCase()] = r[k];
+    return o;
+  });
 }
 
 async function loadFiles(files) {
@@ -150,34 +243,71 @@ async function loadFiles(files) {
     const mon = findSheet(wb, ["MONITORING"]), fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
     if (!fs) { notes.push(`${f.name}: sheet FOTO tidak ada`); continue; }
     let valid = null;
-    if (mon) valid = new Set(readSheet(wb, mon).map(r => normDate(r["TGL LKP"]) + "|" + normId(r["ID PIC"])));
-    else notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
+    const monInfo = new Map();
+    if (mon) {
+      valid = new Set();
+      for (const mr of readSheet(wb, mon)) {
+        const key = normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")) + "|" + normId(pick(mr, "ID PIC", "ID_PIC"));
+        valid.add(key);
+        monInfo.set(key, {
+          wilayah: String(pick(mr, "CLUSTER", "NAMA WILAYAH", "WILAYAH")).trim().toUpperCase(),
+          nama: String(pick(mr, "NAMA PIC", "NAMA_PIC")).trim()
+        });
+      }
+    } else {
+      notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
+    }
+
     for (const r of readSheet(wb, fs)) {
-      const w = String(r["NAMA WILAYAH"] ?? r["CLUSTER"] ?? "").trim().toUpperCase();
+      const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN", "TANGGAL LKP"));
+      const id = normId(pick(r, "ID PIC", "ID_PIC", "PIC ID"));
+      const pairKey = tgl + "|" + id;
+      const mInfo = monInfo.get(pairKey) || {};
+      const w = (String(pick(r, "NAMA WILAYAH", "CLUSTER", "WILAYAH")).trim().toUpperCase()) || mInfo.wilayah || "";
+
       if (wil.length && !wil.includes(w)) continue;
-      const tgl = normDate(r["TGL LKP"] || r["TGL PENUGASAN"]), id = normId(r["ID PIC"]);
-      if (valid && !valid.has(tgl + "|" + id)) continue;
-      let url = String(r["LINK FOTO KUNJUNGAN"] ?? r["FOTO KUNJUNGAN"] ?? "").trim();
-      if (!/^https?:/i.test(url)) { const m = Object.values(r).map(String).join(" ").match(URL_RE); url = m ? m[0] : ""; }
+      if (valid && !valid.has(pairKey)) continue;
+
+      let url = String(pick(r, "LINK FOTO KUNJUNGAN", "FOTO KUNJUNGAN", "LINK FOTO", "URL FOTO")).trim();
+      if (!/^https?:/i.test(url)) {
+        const m = Object.values(r).map(String).join(" ").match(URL_RE);
+        url = m ? m[0] : "";
+      }
       if (!url) continue;
-      out.push({file:f.name, tgl, wilayah:w, kontrak:normId(r["NO KONTRAK"]), idpic:id, nama:String(r["NAMA PIC"] ?? "").trim(), url});
+
+      const kontrak = normId(pick(r, "NO KONTRAK", "NO_KONTRAK", "KONTRAK"));
+      const nama = String(pick(r, "NAMA PIC", "NAMA_PIC", "PIC")).trim() || mInfo.nama || "";
+      out.push({file:f.name, tgl, wilayah:w, kontrak, idpic:id, nama, url});
     }
   }
   return {out, notes};
 }
 
-$("xl").addEventListener("change", async e => {
-  if (!e.target.files.length) return;
+async function refreshFromFiles() {
+  if (!loadedFiles.length) return;
   $("st").textContent = "Membaca Excel...";
   try {
-    const {out, notes} = await loadFiles([...e.target.files]);
+    const {out, notes} = await loadFiles(loadedFiles);
     rows = out;
+    rowMap = new Map();
+    for (const r of out) rowMap.set(r.url, r);
     $("urls").value = out.map(r => r.url).join("\n");
     $("st").textContent = `${out.length} foto dimuat.` + (notes.length ? " " + notes.join("; ") : "");
     if (!out.length) alert("Tidak ada foto yang cocok (cek wilayah / kolom LINK FOTO KUNJUNGAN).");
-  } catch (err) { $("st").textContent = ""; alert("Gagal membaca file: " + err.message); }
+  } catch (err) {
+    $("st").textContent = "";
+    alert("Gagal membaca file: " + err.message);
+  }
+}
+
+$("xl").addEventListener("change", async e => {
+  if (!e.target.files.length) return;
+  loadedFiles = [...e.target.files];
+  await refreshFromFiles();
 });
-$("urls").addEventListener("input", () => { rows = []; });
+
+// Otomatis filter ulang saat Wilayah diubah setelah upload Excel
+$("wil").addEventListener("change", refreshFromFiles);
 
 // ---------- Image helpers (dengan auto-fallback CORS proxy) ----------
 let preferred = null;
@@ -189,7 +319,6 @@ function candidates(u) {
   const c = [
     {kind:"direct", via:"img", src:u},
     ...(u.startsWith("http:") ? [{kind:"https", via:"img", src:httpsUrl}] : []),
-    // Auto-fallback CORS-enabled proxies jika server foto tidak mengirim header CORS
     {kind:"wsrv", via:"fetch", src:"https://wsrv.nl/?url=" + encodeURIComponent(httpsUrl)},
     {kind:"corsproxy", via:"fetch", src:"https://corsproxy.io/?url=" + encodeURIComponent(httpsUrl)},
     {kind:"allorigins", via:"fetch", src:"https://api.allorigins.win/raw?url=" + encodeURIComponent(httpsUrl)}
@@ -316,12 +445,11 @@ function stampCoords(t) {
   let a = +m[1], b = +m[2];
   const lat0 = +$("lat0").value, lat1 = +$("lat1").value;
   const lon0 = +$("lon0").value, lon1 = +$("lon1").value;
-  // Auto-detect jika format kamera adalah Longitude, Latitude (contoh: 116.459, -8.711)
   let lat = a, lon = b;
   if (Math.abs(a) > 90 || (a >= lon0 && a <= lon1 && Math.abs(b) <= 90)) {
     lon = a; lat = b;
   }
-  if (lat > 0 && -lat >= lat0 && -lat <= lat1) lat = -lat; // OCR sering kehilangan tanda minus
+  if (lat > 0 && -lat >= lat0 && -lat <= lat1) lat = -lat;
   return [lat, lon];
 }
 
@@ -361,6 +489,8 @@ async function processRow(r, ocr, clip) {
   const res = {...r, status:"", reason:"", urlDate:"", stampDate:"", gps:"", ai:"", aiStatus:"", aiScore:"", ocr:"", hash:null, thumb:"", dup:"", failed:false};
   const fail = msg => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = msg; return res; };
   try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
+  if (!res.tgl && res.urlDate) res.tgl = res.urlDate; // Fallback TGL LKP dari URL jika tempel manual
+
   let bmp, blob;
   for (const c of candidates(r.url)) {
     try { ({bmp, blob} = await fetchPhoto(c)); preferred = c.kind; break; } catch {}
@@ -405,7 +535,14 @@ function summary() {
 $("stop").onclick = () => { stopFlag = true; $("st").textContent = "Menghentikan..."; };
 
 $("go").onclick = async () => {
-  let list = rows.length ? rows : ($("urls").value.match(new RegExp(URL_RE.source, "g")) || []).map(u => ({file:"", tgl:"", wilayah:"", kontrak:"", idpic:"", nama:"", url:u}));
+  const pastedUrls = $("urls").value.match(new RegExp(URL_RE.source, "g")) || [];
+  let list = [];
+  if (pastedUrls.length) {
+    // Tetap ambil metadata Excel dari rowMap meskipun daftar URL diedit
+    list = pastedUrls.map(u => rowMap.has(u) ? {...rowMap.get(u)} : {file:"", tgl:"", wilayah:"", kontrak:"", idpic:"", nama:"", url:u});
+  } else if (rows.length) {
+    list = rows.map(r => ({...r}));
+  }
   if (!list.length) { alert("Upload Excel atau tempel URL getImage dulu."); return; }
   list = list.map((r, i) => ({...r, key: r.kontrak ? `${r.tgl}|${r.kontrak}|${r.idpic}` : "u" + i}));
 
@@ -448,10 +585,22 @@ $("go").onclick = async () => {
 $("exp").onclick = () => {
   const fmt = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "";
   const all = results.map(r => ({
-    "TGL LKP": fmt(r.tgl), CLUSTER: r.wilayah, "NO KONTRAK": r.kontrak, "ID PIC": r.idpic, "NAMA PIC": r.nama,
-    "FOTO KUNJUNGAN": r.url, "STATUS KEASLIAN": r.status, ALASAN: r.reason.toUpperCase(),
-    "TGL URL": r.urlDate, "TGL STAMP": r.stampDate, "GPS STAMP": r.gps, "DETEKSI AI": r.ai, "SKOR AI": r.aiScore,
-    "DUPLIKAT DENGAN": r.dup, "OCR STAMP": r.ocr, "SUMBER FILE": r.file
+    "TGL LKP": fmt(r.tgl),
+    CLUSTER: r.wilayah,
+    "NO KONTRAK": r.kontrak,
+    "ID PIC": r.idpic,
+    "NAMA PIC": r.nama,
+    "FOTO KUNJUNGAN": r.url,
+    "STATUS KEASLIAN": r.status,
+    ALASAN: r.reason.toUpperCase(),
+    "TGL URL": r.urlDate,
+    "TGL STAMP": r.stampDate,
+    "GPS STAMP": r.gps,
+    "DETEKSI AI": r.ai,
+    "SKOR AI": r.aiScore,
+    "DUPLIKAT DENGAN": r.dup,
+    "OCR STAMP": r.ocr,
+    "SUMBER FILE": r.file
   }));
   const flagged = all.filter(r => r["STATUS KEASLIAN"] !== "VALID");
   const wb = XLSX.utils.book_new();

@@ -3,67 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bulk Photo Stamp Checker (Excel)</title>
-  <script src="https://tailwindcss.com"></script>
+  <title>Bulk Photo Stamp Checker</title>
   <script src="https://jsdelivr.net"></script>
   <script src="https://sheetjs.com"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
+    .container { max-width: 1150px; margin: 0 auto; }
+    h1 { font-size: 24px; margin: 0 0 6px; color: #0f172a; }
+    .subtitle { font-size: 14px; color: #475569; margin: 0 0 20px; }
+    code { background: #e2e8f0; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    .card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .upload-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+    .label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; margin-bottom: 6px; }
+    .hint { font-size: 12px; color: #64748b; margin: 0; }
+    textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 12px; resize: vertical; }
+    textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 20px; }
+    button { border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #2563eb; color: #ffffff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-success { background: #059669; color: #ffffff; }
+    .btn-success:hover { background: #047857; }
+    .hidden { display: none !important; }
+    .status-text { font-size: 13px; color: #475569; font-weight: 500; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-box { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; }
+    .stat-box.pass { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .stat-box.fail { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
+    .stat-box.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .stat-num { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .table-wrap { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+    th { background: #f1f5f9; color: #475569; font-weight: 700; text-transform: uppercase; padding: 12px; border-bottom: 1px solid #cbd5e1; }
+    td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; background: #f1f5f9; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
+    .badge-PASS { background: #d1fae5; color: #065f46; }
+    .badge-FAIL { background: #ffe4e6; color: #9f1239; }
+    .badge-WARNING, .badge-ERROR { background: #fef3c7; color: #92400e; }
+    .mono { font-family: monospace; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 p-6 md:p-10">
-  <div class="max-w-7xl mx-auto">
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold">Bulk Photo Stamp Checker</h1>
-      <p class="text-sm text-slate-600">Upload an Excel file (<code>.xlsx</code> / <code>.xls</code>) or paste <code>getImage</code> URLs below, then export results to Excel.</p>
-    </div>
+<body>
+  <div class="container">
+    <h1>Bulk Photo Stamp Checker</h1>
+    <p class="subtitle">Upload an Excel file (<code>.xlsx</code> / <code>.xls</code>) or paste <code>getImage</code> URLs below, then export results to Excel.</p>
 
-    <!-- Excel Upload Box -->
-    <div class="bg-white p-4 rounded-lg border shadow-sm mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="card upload-row">
       <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">1. Import from Excel (.xlsx / .xls / .csv)</label>
-        <p class="text-xs text-slate-500">Automatically extracts all <code>getImage</code> links from any column in your first sheet.</p>
+        <span class="label">1. Import from Excel (.xlsx / .xls / .csv)</span>
+        <p class="hint">Automatically extracts all <code>getImage</code> links from any column in your first sheet.</p>
       </div>
-      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)"
-        class="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)" />
     </div>
 
-    <!-- URL Textarea -->
-    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">2. URLs to Check (One per line)</label>
-    <textarea id="urlInput" rows="6" class="w-full p-3 border rounded-lg font-mono text-xs bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      placeholder="http://sehati.co.id"></textarea>
+    <label class="label" for="urlInput">2. URLs to Check (One per line)</label>
+    <textarea id="urlInput" rows="6" placeholder="http://sehati.co.id"></textarea>
 
-    <!-- Action Buttons -->
-    <div class="flex flex-wrap items-center gap-3 mt-4">
-      <button onclick="startBulkCheck()" id="checkBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg font-medium text-sm transition">
-        Check All Photos
-      </button>
-      <button onclick="exportExcel()" id="exportBtn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium text-sm transition">
-        Download Excel (.xlsx)
-      </button>
-      <span id="statusText" class="text-sm text-slate-600 font-medium"></span>
+    <div class="actions">
+      <button onclick="startBulkCheck()" id="checkBtn" class="btn-primary">Check All Photos</button>
+      <button onclick="exportExcel()" id="exportBtn" class="btn-success hidden">Download Excel (.xlsx)</button>
+      <span id="statusText" class="status-text"></span>
     </div>
 
-    <!-- Summary Cards -->
-    <div id="summaryBar" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
-      <div class="bg-white p-4 rounded-lg border shadow-sm"><div class="text-xs text-slate-500">Total</div><div id="cntTotal" class="text-xl font-bold">0</div></div>
-      <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200"><div class="text-xs text-emerald-700">PASS</div><div id="cntPass" class="text-xl font-bold text-emerald-700">0</div></div>
-      <div class="bg-rose-50 p-4 rounded-lg border border-rose-200"><div class="text-xs text-rose-700">FAIL</div><div id="cntFail" class="text-xl font-bold text-rose-700">0</div></div>
-      <div class="bg-amber-50 p-4 rounded-lg border border-amber-200"><div class="text-xs text-amber-700">WARNING / ERROR</div><div id="cntWarn" class="text-xl font-bold text-amber-700">0</div></div>
+    <div id="summaryBar" class="summary-grid hidden">
+      <div class="stat-box"><div class="stat-title">Total</div><div id="cntTotal" class="stat-num">0</div></div>
+      <div class="stat-box pass"><div class="stat-title">PASS</div><div id="cntPass" class="stat-num">0</div></div>
+      <div class="stat-box fail"><div class="stat-title">FAIL</div><div id="cntFail" class="stat-num">0</div></div>
+      <div class="stat-box warn"><div class="stat-title">WARNING / ERROR</div><div id="cntWarn" class="stat-num">0</div></div>
     </div>
 
-    <!-- Results Table -->
-    <div class="overflow-x-auto bg-white rounded-lg border shadow-sm mt-4">
-      <table class="w-full text-left text-xs">
-        <thead class="bg-slate-100 border-b text-slate-600 uppercase">
+    <div class="table-wrap">
+      <table>
+        <thead>
           <tr>
-            <th class="p-3">Preview</th>
-            <th class="p-3">Status</th>
-            <th class="p-3">Reason</th>
-            <th class="p-3">URL Date</th>
-            <th class="p-3">Photo Date</th>
-            <th class="p-3">GPS Coords</th>
-            <th class="p-3">Raw Stamp OCR</th>
+            <th>Preview</th>
+            <th>Status</th>
+            <th>Reason</th>
+            <th>URL Date</th>
+            <th>Photo Date</th>
+            <th>GPS Coords</th>
+            <th>Raw Stamp OCR</th>
           </tr>
         </thead>
-        <tbody id="resultsBody" class="divide-y"></tbody>
+        <tbody id="resultsBody"></tbody>
       </table>
     </div>
   </div>
@@ -79,16 +105,15 @@
 
     let latestResults = [];
 
-    // Read Excel file and extract URLs
     function handleExcelUpload(event) {
-      const file = event.target.files;
+      const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: "array" });
-        const firstSheet = workbook.Sheets[workbook.SheetNames];
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
         const extractedUrls = [];
@@ -137,7 +162,6 @@
         const canvas = document.getElementById("cropCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Crop bottom-right stamp (x: 35% to 100%, y: 80% to 100%)
         const sx = Math.floor(img.width * 0.35);
         const sy = Math.floor(img.height * 0.80);
         const sw = img.width - sx;
@@ -150,7 +174,6 @@
         const { data: { text } } = await worker.recognize(canvas);
         const ocrText = text.replace(/\n+/g, " ").trim();
 
-        // Parse Indonesian Date (e.g., "05 November 2026" -> "20261105")
         let stampDate = null;
         const dateMatch = ocrText.match(/(\d{2})\s+([A-Za-z]+)\s+(\d{4})/);
         if (dateMatch) {
@@ -159,11 +182,9 @@
           if (monthNum) stampDate = `${year}${monthNum}${day}`;
         }
 
-        // Parse GPS Coordinates
         const coordMatch = ocrText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-        const coords = coordMatch ? `${coordMatch}, ${coordMatch}` : "Not found";
+        const coords = coordMatch ? `${coordMatch[1]}, ${coordMatch[2]}` : "Not found";
 
-        // Validate
         let status = "WARNING";
         let reason = "Missing URL or stamp date";
         if (urlDate && stampDate) {
@@ -183,44 +204,3 @@
     }
 
     async function startBulkCheck() {
-      const urls = document.getElementById("urlInput").value.split("\n").map(u => u.trim()).filter(Boolean);
-      if (!urls.length) return alert("Please upload an Excel file or paste at least one URL.");
-
-      const btn = document.getElementById("checkBtn");
-      const statusText = document.getElementById("statusText");
-      btn.disabled = true;
-      latestResults = [];
-      document.getElementById("resultsBody").innerHTML = "";
-
-      statusText.textContent = "Initializing OCR engine...";
-      const worker = await Tesseract.createWorker("eng");
-
-      for (let i = 0; i < urls.length; i++) {
-        statusText.textContent = `Checking ${i + 1} of ${urls.length}...`;
-        const result = await processSingleUrl(urls[i], worker);
-        latestResults.push(result);
-        renderTable(latestResults);
-      }
-
-      await worker.terminate();
-      btn.disabled = false;
-      statusText.textContent = `Completed ${urls.length} checks.`;
-      document.getElementById("exportBtn").classList.remove("hidden");
-    }
-
-    function renderTable(rows) {
-      const tbody = document.getElementById("resultsBody");
-      tbody.innerHTML = "";
-      let pass = 0, fail = 0, warn = 0;
-
-      rows.forEach(r => {
-        if (r.status === "PASS") pass++;
-        else if (r.status === "FAIL") fail++;
-        else warn++;
-
-        const badge = r.status === "PASS" ? "bg-emerald-100 text-emerald-800"
-                    : r.status === "FAIL" ? "bg-rose-100 text-rose-800"
-                    : "bg-amber-100 text-amber-800";
-
-        tbody.innerHTML += `
-          <tr>

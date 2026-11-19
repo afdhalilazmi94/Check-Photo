@@ -1,284 +1,378 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bulk Photo Stamp Checker</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-  <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
-    .container { max-width: 1150px; margin: 0 auto; }
-    h1 { font-size: 24px; margin: 0 0 6px; color: #0f172a; }
-    .subtitle { font-size: 14px; color: #475569; margin: 0 0 20px; }
-    code { background: #e2e8f0; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
-    .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .upload-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
-    .label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; margin-bottom: 6px; }
-    .hint { font-size: 12px; color: #64748b; margin: 0; }
-    textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 12px; resize: vertical; }
-    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 20px; }
-    button { border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-success { background: #059669; color: #fff; }
-    .hidden { display: none !important; }
-    .status-text { font-size: 13px; color: #475569; font-weight: 500; }
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .stat-box { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; }
-    .stat-box.pass { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
-    .stat-box.fail { background: #fff1f2; border-color: #fecdd3; color: #9f1239; }
-    .stat-box.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-    .stat-title { font-size: 12px; font-weight: 600; text-transform: uppercase; }
-    .stat-num { font-size: 24px; font-weight: 700; margin-top: 4px; }
-    .table-wrap { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-    th { background: #f1f5f9; color: #475569; font-weight: 700; text-transform: uppercase; padding: 12px; border-bottom: 1px solid #cbd5e1; }
-    td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
-    .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; background: #f1f5f9; }
-    .badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
-    .badge-PASS { background: #d1fae5; color: #065f46; }
-    .badge-FAIL { background: #ffe4e6; color: #9f1239; }
-    .badge-WARNING, .badge-ERROR { background: #fef3c7; color: #92400e; }
-    .mono { font-family: monospace; }
-    .ocr { max-width: 320px; word-break: break-word; color: #64748b; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulk Photo Authenticity Checker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:#f8fafc;color:#1e293b;margin:0;padding:24px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{font-size:24px;margin:0 0 6px}
+.sub{font-size:14px;color:#475569;margin:0 0 18px}
+.card{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:14px;margin-bottom:14px}
+.label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:#334155;margin-bottom:6px}
+.hint{font-size:12px;color:#64748b;margin:4px 0 0}
+textarea,input[type=text],input[type=number]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+textarea{font-family:monospace;resize:vertical}
+details summary{cursor:pointer;font-weight:600;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+.grid label{font-size:11px;font-weight:600;color:#475569}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 16px}
+button{border:0;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.p{background:#2563eb}.s{background:#059669}.d{background:#64748b}
+.hidden{display:none!important}
+#st{font-size:13px;color:#475569}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.box{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:12px}
+.box b{display:block;font-size:22px;margin-top:2px}
+.box span{font-size:11px;font-weight:600;text-transform:uppercase}
+.box.g{background:#ecfdf5;color:#065f46}.box.r{background:#fff1f2;color:#9f1239}.box.y{background:#fffbeb;color:#92400e}
+.tw{background:#fff;border:1px solid #cbd5e1;border-radius:8px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
+th{background:#f1f5f9;color:#475569;text-transform:uppercase;padding:10px;border-bottom:1px solid #cbd5e1}
+td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+.thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1}
+.bd{padding:3px 8px;border-radius:4px;font-weight:700;font-size:11px;white-space:nowrap}
+.b-VALID{background:#d1fae5;color:#065f46}.b-TIDAKVALID{background:#ffe4e6;color:#9f1239}
+.b-PERLUCEK,.b-GAGALDOWNLOAD{background:#fef3c7;color:#92400e}
+.mono{font-family:monospace}.ocr{max-width:280px;word-break:break-word;color:#64748b}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Bulk Photo Stamp Checker</h1>
-    <p class="subtitle">Upload an Excel file (<code>.xlsx</code> / <code>.xls</code>) or paste <code>getImage</code> URLs below, then export results to Excel.</p>
+<div class="wrap">
+<h1>Bulk Photo Authenticity Checker</h1>
+<p class="sub">Upload file <code>Monitoring LKP *.xlsx</code> (bisa banyak file) atau tempel URL <code>getImage</code>. Semua pemeriksaan (OCR stamp, AI konten, duplikat) berjalan di browser.</p>
 
-    <div class="card upload-row">
-      <div>
-        <span class="label">1. Import from Excel (.xlsx / .xls / .csv)</span>
-        <p class="hint">Automatically extracts all <code>getImage</code> links from every sheet (text, hyperlinks and formulas).</p>
-      </div>
-      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" />
-    </div>
+<div class="card">
+  <span class="label">1. Import Excel (sheet MONITORING + FOTO KUNJUNGAN)</span>
+  <input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple>
+  <p class="hint">Filter wilayah &amp; pasangan (TGL LKP, ID PIC) sama seperti script Colab.</p>
+</div>
 
-    <label class="label" for="urlInput">2. URLs to Check (One per line)</label>
-    <textarea id="urlInput" rows="6" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
+<label class="label" for="urls">2. Atau tempel URL (satu per baris)</label>
+<textarea id="urls" rows="4" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
 
-    <div class="actions">
-      <button id="checkBtn" class="btn-primary">Check All Photos</button>
-      <button id="exportBtn" class="btn-success hidden">Download Excel (.xlsx)</button>
-      <span id="statusText" class="status-text"></span>
-    </div>
+<div class="card" style="margin-top:14px">
+  <details open><summary>Pengaturan</summary>
+  <div class="grid">
+    <div style="grid-column:1/-1"><label>Proxy URL (wajib jika web di-hosting https / backend tanpa CORS)</label>
+      <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url="></div>
+    <div><label>Wilayah (pisah koma, kosong = semua)</label><input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4"></div>
+    <div><label>Crop stamp X mulai (0-1)</label><input type="number" id="sx" value="0.35" step="0.05"></div>
+    <div><label>Crop stamp Y mulai (0-1)</label><input type="number" id="sy" value="0.80" step="0.05"></div>
+    <div><label>Lat min</label><input type="number" id="lat0" value="-9.3" step="0.1"></div>
+    <div><label>Lat max</label><input type="number" id="lat1" value="-8.0" step="0.1"></div>
+    <div><label>Lon min</label><input type="number" id="lon0" value="115.7" step="0.1"></div>
+    <div><label>Lon max</label><input type="number" id="lon1" value="116.9" step="0.1"></div>
+    <div><label>Batas beda bit duplikat</label><input type="number" id="ham" value="5" min="0" max="20"></div>
+  </div></details>
+</div>
 
-    <div id="summaryBar" class="summary-grid hidden">
-      <div class="stat-box"><div class="stat-title">Total</div><div id="cntTotal" class="stat-num">0</div></div>
-      <div class="stat-box pass"><div class="stat-title">PASS</div><div id="cntPass" class="stat-num">0</div></div>
-      <div class="stat-box fail"><div class="stat-title">FAIL</div><div id="cntFail" class="stat-num">0</div></div>
-      <div class="stat-box warn"><div class="stat-title">WARNING / ERROR</div><div id="cntWarn" class="stat-num">0</div></div>
-    </div>
+<div class="actions">
+  <button id="go" class="p">Check All Photos</button>
+  <button id="stop" class="d hidden">Stop</button>
+  <button id="exp" class="s hidden">Download Excel (.xlsx)</button>
+  <span id="st"></span>
+</div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Preview</th><th>Status</th><th>Reason</th><th>URL Date</th>
-            <th>Photo Date</th><th>GPS Coords</th><th>Raw Stamp OCR</th>
-          </tr>
-        </thead>
-        <tbody id="resultsBody"></tbody>
-      </table>
-    </div>
-  </div>
+<div id="sum" class="sum hidden">
+  <div class="box"><span>Total</span><b id="nT">0</b></div>
+  <div class="box g"><span>Valid</span><b id="nV">0</b></div>
+  <div class="box y"><span>Perlu cek</span><b id="nC">0</b></div>
+  <div class="box r"><span>Tidak valid</span><b id="nX">0</b></div>
+  <div class="box y"><span>Gagal download</span><b id="nF">0</b></div>
+</div>
 
-  <canvas id="cropCanvas" class="hidden"></canvas>
+<div class="tw"><table>
+<thead><tr><th>Preview</th><th>Status</th><th>Alasan</th><th>PIC / Kontrak</th><th>Tgl URL</th><th>Tgl Stamp</th><th>GPS</th><th>OCR Stamp</th></tr></thead>
+<tbody id="body"></tbody></table></div>
+</div>
 
-  <script>
-    const MONTHS = {
-      januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
-      juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12",
-      january: "01", february: "02", march: "03", may: "05", june: "06", july: "07",
-      august: "08", october: "10", december: "12"
-    };
+<script type="module">
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";
 
-    let latestResults = [];
-    const $ = (id) => document.getElementById(id);
-    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MONTHS = {januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",desember:"12",
+  january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",november:"11"};
+const LABELS = [
+  ["a selfie of a person in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
+  ["a selfie of two or more people together","Sesuai","Selfie PIC bersama orang lain"],
+  ["a photo of a person standing in front of a house","Sesuai","Foto orang berdiri di depan rumah"],
+  ["a photo of a house or building exterior with no person","Sesuai","Hanya foto rumah"],
+  ["a photo of paper money, Indonesian rupiah cash, or banknotes","Tidak Sesuai","FOTO UANG"],
+  ["a person or hand holding paper money, cash, or banknotes","Tidak Sesuai","FOTO UANG"],
+  ["a photo taken of a smartphone screen, computer monitor, or another photo","Tidak Sesuai","Foto dari foto"],
+  ["a picture of a printed photograph or image displayed on a phone screen","Tidak Sesuai","Foto dari foto"],
+  ["a close-up face selfie with no house and no other person","Tidak Sesuai","Foto hanya selfie saja"],
+  ["a photo of a road, street, trees, or motorcycle with no people","Tidak Sesuai","Foto jalan/motor tanpa orang"],
+  ["a dark, blurry, or blank photo","Tidak Sesuai","Foto tidak jelas"],
+  ["a photo of a document, receipt, or paper","Tidak Sesuai","Foto dokumen atau kertas"]
+];
+const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
+let rows = [], results = [], stopFlag = false;
 
-    // ---------- Excel import ----------
-    const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/gi;
+// ---------- Excel import ----------
+function normDate(v) {
+  if (v == null || v === "") return "";
+  if (typeof v === "number") { const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}${String(d.m).padStart(2,"0")}${String(d.d).padStart(2,"0")}` : ""; }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) return m[1] + m[2].padStart(2,"0") + m[3].padStart(2,"0");
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/);
+  if (m) return m[3] + m[2].padStart(2,"0") + m[1].padStart(2,"0");
+  return "";
+}
+const normId = v => String(v ?? "").trim().replace(/\.0$/, "");
+const findSheet = (wb, kws) => wb.SheetNames.find(n => kws.some(k => n.trim().toUpperCase().includes(k)));
 
-    $("excelFile").addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (typeof XLSX === "undefined") {
-        alert("Excel library failed to load. Check your internet connection and reload the page.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array", cellFormula: true });
-          const found = new Set();
-          wb.SheetNames.forEach(name => {
-            const sheet = wb.Sheets[name];
-            Object.keys(sheet).forEach(addr => {
-              if (addr[0] === "!") return;
-              const cell = sheet[addr];
-              [cell.v, cell.w, cell.f, cell.l && cell.l.Target].forEach(val => {
-                if (typeof val !== "string") return;
-                const matches = val.match(URL_RE);
-                if (matches) matches.forEach(m => found.add(m.trim()));
-              });
-            });
-          });
-          const urls = [...found];
-          if (!urls.length) {
-            alert("No 'getImage' URLs found in the uploaded file.");
-            return;
-          }
-          $("urlInput").value = urls.join("\n");
-          $("statusText").textContent = `Loaded ${urls.length} URLs from Excel.`;
-        } catch (err) {
-          alert("Could not read the file: " + err.message);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    });
+function readSheet(wb, name) {
+  const ws = wb.Sheets[name];
+  const pre = XLSX.utils.sheet_to_json(ws, {header:1, defval:""}).slice(0, 10);
+  let h = 0;
+  for (let i = 0; i < pre.length; i++) {
+    const v = pre[i].map(x => String(x).trim().toUpperCase());
+    if (v.includes("ID PIC") || (v.includes("KETERANGAN") && v.includes("TGL LKP"))) { h = i; break; }
+  }
+  return XLSX.utils.sheet_to_json(ws, {range:h, defval:""}).map(r => { const o = {}; for (const k in r) o[k.trim()] = r[k]; return o; });
+}
 
-    // ---------- Image + OCR ----------
-    function loadImage(url) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Image load blocked (CORS/HTTP or offline)"));
-        img.src = url;
-      });
+async function loadFiles(files) {
+  const out = [], notes = [];
+  const wil = $("wil").value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  for (const f of files) {
+    const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), {type:"array"});
+    const mon = findSheet(wb, ["MONITORING"]), fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
+    if (!fs) { notes.push(`${f.name}: sheet FOTO tidak ada`); continue; }
+    let valid = null;
+    if (mon) valid = new Set(readSheet(wb, mon).map(r => normDate(r["TGL LKP"]) + "|" + normId(r["ID PIC"])));
+    else notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
+    for (const r of readSheet(wb, fs)) {
+      const w = String(r["NAMA WILAYAH"] ?? r["CLUSTER"] ?? "").trim().toUpperCase();
+      if (wil.length && !wil.includes(w)) continue;
+      const tgl = normDate(r["TGL LKP"] || r["TGL PENUGASAN"]), id = normId(r["ID PIC"]);
+      if (valid && !valid.has(tgl + "|" + id)) continue;
+      let url = String(r["LINK FOTO KUNJUNGAN"] ?? r["FOTO KUNJUNGAN"] ?? "").trim();
+      if (!/^https?:/i.test(url)) { const m = Object.values(r).map(String).join(" ").match(URL_RE); url = m ? m[0] : ""; }
+      if (!url) continue;
+      out.push({file:f.name, tgl, wilayah:w, kontrak:normId(r["NO KONTRAK"]), idpic:id, nama:String(r["NAMA PIC"] ?? "").trim(), url});
     }
+  }
+  return {out, notes};
+}
 
-    async function processSingleUrl(url, worker) {
-      let urlDate = null, imageName = "-";
-      try {
-        const parsed = new URL(url);
-        urlDate = parsed.searchParams.get("date");
-        imageName = parsed.searchParams.get("image") || "-";
-      } catch (e) {
-        return { url, image: imageName, status: "ERROR", reason: "Invalid URL", url_date: "-", stamp_date: "-", coords: "-", raw_ocr: "-" };
-      }
+$("xl").addEventListener("change", async e => {
+  if (!e.target.files.length) return;
+  $("st").textContent = "Membaca Excel...";
+  try {
+    const {out, notes} = await loadFiles([...e.target.files]);
+    rows = out;
+    $("urls").value = out.map(r => r.url).join("\n");
+    $("st").textContent = `${out.length} foto dimuat.` + (notes.length ? " " + notes.join("; ") : "");
+    if (!out.length) alert("Tidak ada foto yang cocok (cek wilayah / kolom LINK FOTO KUNJUNGAN).");
+  } catch (err) { $("st").textContent = ""; alert("Gagal membaca file: " + err.message); }
+});
+$("urls").addEventListener("input", () => { rows = []; });
 
-      try {
-        const img = await loadImage(url);
-        const canvas = $("cropCanvas");
-        const ctx = canvas.getContext("2d");
+// ---------- Image helpers ----------
+const proxied = u => { const p = $("proxy").value.trim(); return p ? p + encodeURIComponent(u) : u; };
 
-        // Crop bottom-right area where the stamp is
-        const sx = Math.floor(img.width * 0.35);
-        const sy = Math.floor(img.height * 0.80);
-        const sw = img.width - sx;
-        const sh = img.height - sy;
-        canvas.width = sw;
-        canvas.height = sh;
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+function cropCanvas(bmp) {
+  const sx = Math.floor(bmp.width * +$("sx").value), sy = Math.floor(bmp.height * +$("sy").value);
+  const sw = bmp.width - sx, sh = bmp.height - sy, sc = sw > 1000 ? 1000 / sw : 1;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(sw * sc)); c.height = Math.max(1, Math.round(sh * sc));
+  c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+function thumb(bmp) {
+  const c = document.createElement("canvas"); c.width = c.height = 48;
+  const s = Math.max(48 / bmp.width, 48 / bmp.height);
+  c.getContext("2d").drawImage(bmp, (48 - bmp.width * s) / 2, (48 - bmp.height * s) / 2, bmp.width * s, bmp.height * s);
+  return c.toDataURL("image/jpeg", 0.6);
+}
+function dhash(bmp) {
+  const c = document.createElement("canvas"); c.width = 9; c.height = 8;
+  const x = c.getContext("2d"); x.drawImage(bmp, 0, 0, 9, 8);
+  const d = x.getImageData(0, 0, 9, 8).data;
+  const g = i => d[i*4]*0.299 + d[i*4+1]*0.587 + d[i*4+2]*0.114;
+  let hi = 0, lo = 0, n = 0;
+  for (let y = 0; y < 8; y++) for (let xx = 0; xx < 8; xx++) {
+    const bit = g(y*9 + xx + 1) > g(y*9 + xx) ? 1 : 0;
+    if (n < 32) hi = (hi * 2 + bit) >>> 0; else lo = (lo * 2 + bit) >>> 0;
+    n++;
+  }
+  return [hi, lo];
+}
+function pop(x) {
+  x = x >>> 0; x = x - ((x >>> 1) & 0x55555555); x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+  return Math.imul((x + (x >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24;
+}
 
-        const { data: { text } } = await worker.recognize(canvas);
-        const ocrText = text.replace(/\n+/g, " ").trim();
+// ---------- Stamp parsing ----------
+function lev(a, b) {
+  const m = Array.from({length:a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) m[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    m[i][j] = Math.min(m[i-1][j] + 1, m[i][j-1] + 1, m[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return m[a.length][b.length];
+}
+function stampDate(t) {
+  let m = t.match(/(\d{1,2})\s*([A-Za-z]{3,9})\s*(\d{4})/);
+  if (m) {
+    const w = m[2].toLowerCase(); let best = null, bd = 99;
+    for (const k in MONTHS) { const d = lev(w, k); if (d < bd) { bd = d; best = k; } }
+    if (best && bd <= 2) return m[3] + MONTHS[best] + m[1].padStart(2, "0");
+  }
+  m = t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  return m ? m[3] + m[2].padStart(2, "0") + m[1].padStart(2, "0") : "";
+}
+function stampCoords(t) {
+  const m = t.match(/(-?\d{1,3}\.\d{3,})\s*[,;]?\s*(-?\d{1,3}\.\d{3,})/);
+  if (!m) return null;
+  let lat = +m[1]; const lon = +m[2];
+  if (lat > 0 && -lat >= +$("lat0").value && -lat <= +$("lat1").value) lat = -lat; // OCR often drops the minus
+  return [lat, lon];
+}
 
-        let stampDate = null;
-        const dateMatch = ocrText.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
-        if (dateMatch) {
-          const [, day, monthName, year] = dateMatch;
-          const monthNum = MONTHS[monthName.toLowerCase()];
-          if (monthNum) stampDate = `${year}${monthNum}${day.padStart(2, "0")}`;
-        }
+// ---------- Verdict ----------
+function verdict(r) {
+  if (r.failed) return;
+  const hard = [], warn = [];
+  if (["FOTO UANG", "Foto dari foto"].includes(r.ai)) hard.push(r.ai);
+  else if (r.aiStatus === "Tidak Sesuai") warn.push(r.ai);
+  if (!r.stampDate) warn.push("Stamp tanggal tidak terbaca/tidak ada");
+  else if (r.urlDate && r.stampDate !== r.urlDate) hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
+  else if (r.tgl && r.stampDate !== r.tgl) warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
+  if (!r.gps) warn.push("GPS tidak terbaca di stamp");
+  else {
+    const [la, lo] = r.gps.split(",").map(Number);
+    if (!(la >= +$("lat0").value && la <= +$("lat1").value && lo >= +$("lon0").value && lo <= +$("lon1").value)) warn.push("GPS di luar area");
+  }
+  if (r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
+  r.status = hard.length ? "TIDAK VALID" : warn.length ? "PERLU CEK" : "VALID";
+  r.reason = [...hard, ...warn].join(" | ");
+}
 
-        const coordMatch = ocrText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-        const coords = coordMatch ? `${coordMatch[1]}, ${coordMatch[2]}` : "Not found";
-
-        let status = "WARNING", reason = "Missing URL or stamp date";
-        if (urlDate && stampDate) {
-          if (urlDate === stampDate) { status = "PASS"; reason = "Date matches stamp"; }
-          else { status = "FAIL"; reason = `Mismatch (${urlDate} != ${stampDate})`; }
-        }
-
-        return { url, image: imageName, status, reason, url_date: urlDate || "-", stamp_date: stampDate || "-", coords, raw_ocr: ocrText };
-      } catch (err) {
-        return { url, image: imageName, status: "ERROR", reason: err.message, url_date: urlDate || "-", stamp_date: "-", coords: "-", raw_ocr: "-" };
-      }
+function findDups(list) {
+  const th = +$("ham").value, idx = list.filter(r => r.hash);
+  for (const a of idx) {
+    const refs = [];
+    for (const b of idx) {
+      if (a === b || a.key === b.key) continue;
+      if (pop(a.hash[0] ^ b.hash[0]) + pop(a.hash[1] ^ b.hash[1]) <= th) refs.push(b.kontrak || b.url.slice(-12));
     }
+    a.dup = refs.slice(0, 3).join(", ") + (refs.length > 3 ? ` (+${refs.length - 3})` : "");
+  }
+}
 
-    // ---------- Run ----------
-    function addRow(r) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><img class="thumb" src="${esc(r.url)}" alt="" loading="lazy" /></td>
-        <td><span class="badge badge-${r.status}">${r.status}</span></td>
-        <td>${esc(r.reason)}</td>
-        <td class="mono">${esc(r.url_date)}</td>
-        <td class="mono">${esc(r.stamp_date)}</td>
-        <td class="mono">${esc(r.coords)}</td>
-        <td class="ocr">${esc(r.raw_ocr)}</td>`;
-      $("resultsBody").appendChild(tr);
-    }
+// ---------- Process one photo ----------
+async function processRow(r, ocr, clip) {
+  const res = {...r, status:"", reason:"", urlDate:"", stampDate:"", gps:"", ai:"", aiStatus:"", aiScore:"", ocr:"", hash:null, thumb:"", dup:"", failed:false};
+  const fail = msg => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = msg; return res; };
+  try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
+  if (location.protocol === "https:" && r.url.startsWith("http:") && !$("proxy").value.trim())
+    return fail("Mixed content: halaman https tidak bisa memuat http. Isi Proxy URL.");
+  let bmp, blob;
+  try {
+    const resp = await fetch(proxied(r.url));
+    if (!resp.ok) return fail("HTTP " + resp.status);
+    blob = await resp.blob();
+    bmp = await createImageBitmap(blob);
+  } catch (e) { return fail("Gagal fetch (CORS / offline / bukan gambar). Isi Proxy URL."); }
 
-    function updateSummary() {
-      $("cntTotal").textContent = latestResults.length;
-      $("cntPass").textContent = latestResults.filter(r => r.status === "PASS").length;
-      $("cntFail").textContent = latestResults.filter(r => r.status === "FAIL").length;
-      $("cntWarn").textContent = latestResults.filter(r => r.status === "WARNING" || r.status === "ERROR").length;
-    }
+  res.thumb = thumb(bmp); res.hash = dhash(bmp);
+  try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
+  res.stampDate = stampDate(res.ocr);
+  const g = stampCoords(res.ocr);
+  res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
 
-    async function startBulkCheck() {
-      if (typeof Tesseract === "undefined") {
-        alert("OCR library failed to load. Check your internet connection and reload the page.");
-        return;
-      }
-      const urls = [...new Set($("urlInput").value.split("\n").map(u => u.trim()).filter(Boolean))];
-      if (!urls.length) {
-        alert("Please paste URLs or upload an Excel file first.");
-        return;
-      }
+  if (clip) {
+    const u = URL.createObjectURL(blob);
+    try {
+      const out = await clip(u, LABELS.map(l => l[0]), {hypothesis_template: "{}"});
+      const top = out[0], L = LABELS.find(l => l[0] === top.label);
+      if (L) { res.aiStatus = L[1]; res.ai = L[2]; res.aiScore = (top.score * 100).toFixed(1) + "%"; }
+    } catch {}
+    URL.revokeObjectURL(u);
+  }
+  bmp.close();
+  return res;
+}
 
-      latestResults = [];
-      $("resultsBody").innerHTML = "";
-      $("summaryBar").classList.remove("hidden");
-      $("exportBtn").classList.add("hidden");
-      $("checkBtn").disabled = true;
-      updateSummary();
+// ---------- UI ----------
+function addRow(r) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${r.thumb ? `<img class="thumb" src="${r.thumb}">` : ""}</td>
+    <td><span class="bd b-${r.status.replace(/ /g, "")}">${esc(r.status)}</span></td>
+    <td>${esc(r.reason)}</td><td>${esc(r.nama)}<br><small>${esc(r.kontrak)}</small></td>
+    <td class="mono">${esc(r.urlDate)}</td><td class="mono">${esc(r.stampDate)}</td>
+    <td class="mono">${esc(r.gps)}</td><td class="ocr">${esc(r.ocr)}</td>`;
+  $("body").appendChild(tr);
+}
+function summary() {
+  const c = s => results.filter(r => r.status === s).length;
+  $("nT").textContent = results.length; $("nV").textContent = c("VALID"); $("nC").textContent = c("PERLU CEK");
+  $("nX").textContent = c("TIDAK VALID"); $("nF").textContent = c("GAGAL DOWNLOAD");
+}
 
-      $("statusText").textContent = "Loading OCR engine...";
-      const worker = await Tesseract.createWorker("eng");
+$("stop").onclick = () => { stopFlag = true; $("st").textContent = "Menghentikan..."; };
 
-      for (let i = 0; i < urls.length; i++) {
-        $("statusText").textContent = `Checking ${i + 1} / ${urls.length}...`;
-        const result = await processSingleUrl(urls[i], worker);
-        latestResults.push(result);
-        addRow(result);
-        updateSummary();
-      }
+$("go").onclick = async () => {
+  let list = rows.length ? rows : ($("urls").value.match(new RegExp(URL_RE.source, "g")) || []).map(u => ({file:"", tgl:"", wilayah:"", kontrak:"", idpic:"", nama:"", url:u}));
+  if (!list.length) { alert("Upload Excel atau tempel URL getImage dulu."); return; }
+  list = list.map((r, i) => ({...r, key: r.kontrak ? `${r.tgl}|${r.kontrak}|${r.idpic}` : "u" + i}));
 
-      await worker.terminate();
-      $("statusText").textContent = `Done. ${urls.length} photos checked.`;
-      $("checkBtn").disabled = false;
-      $("exportBtn").classList.remove("hidden");
-    }
+  results = []; stopFlag = false; $("body").innerHTML = "";
+  $("sum").classList.remove("hidden"); $("exp").classList.add("hidden");
+  $("go").disabled = true; $("stop").classList.remove("hidden"); summary();
 
-    function exportExcel() {
-      if (!latestResults.length) return;
-      const rows = latestResults.map(r => ({
-        URL: r.url,
-        Image: r.image,
-        Status: r.status,
-        Reason: r.reason,
-        "URL Date": r.url_date,
-        "Photo Date": r.stamp_date,
-        "GPS Coords": r.coords,
-        "Raw Stamp OCR": r.raw_ocr
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Results");
-      XLSX.writeFile(wb, "photo-stamp-results.xlsx");
-    }
+  $("st").textContent = "Memuat OCR...";
+  const ocr = await Tesseract.createWorker("eng");
+  $("st").textContent = "Memuat model AI (pertama kali ±90 MB)...";
+  let clip = null;
+  try { clip = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32"); }
+  catch (e) { alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message); }
 
-    $("checkBtn").addEventListener("click", startBulkCheck);
-    $("exportBtn").addEventListener("click", exportExcel);
-  </script>
+  for (let i = 0; i < list.length && !stopFlag; i++) {
+    $("st").textContent = `Memeriksa ${i + 1} / ${list.length}...`;
+    const r = await processRow(list[i], ocr, clip);
+    verdict(r); results.push(r); addRow(r); summary();
+  }
+  await ocr.terminate();
+
+  findDups(results);
+  results.forEach(verdict);
+  $("body").innerHTML = ""; results.forEach(addRow); summary();
+
+  $("st").textContent = stopFlag ? `Dihentikan di ${results.length} foto.` : `Selesai. ${results.length} foto diperiksa.`;
+  $("go").disabled = false; $("stop").classList.add("hidden");
+  if (results.length) $("exp").classList.remove("hidden");
+};
+
+$("exp").onclick = () => {
+  const fmt = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "";
+  const all = results.map(r => ({
+    "TGL LKP": fmt(r.tgl), CLUSTER: r.wilayah, "NO KONTRAK": r.kontrak, "ID PIC": r.idpic, "NAMA PIC": r.nama,
+    "FOTO KUNJUNGAN": r.url, "STATUS KEASLIAN": r.status, ALASAN: r.reason.toUpperCase(),
+    "TGL URL": r.urlDate, "TGL STAMP": r.stampDate, "GPS STAMP": r.gps, "DETEKSI AI": r.ai, "SKOR AI": r.aiScore,
+    "DUPLIKAT DENGAN": r.dup, "OCR STAMP": r.ocr, "SUMBER FILE": r.file
+  }));
+  const flagged = all.filter(r => r["STATUS KEASLIAN"] !== "VALID");
+  const wb = XLSX.utils.book_new();
+  const add = (data, name) => {
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [12,12,18,10,24,70,16,60,10,10,22,28,8,16,50,24].map(w => ({wch:w}));
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+  add(flagged, "KUALITAS LKP FOTO");
+  add(all, "AUDIT KEASLIAN FOTO");
+  XLSX.writeFile(wb, "Hasil_Keaslian_Foto_LKP.xlsx");
+};
+</script>
 </body>
 </html>

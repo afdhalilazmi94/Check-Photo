@@ -184,12 +184,11 @@ const LABELS = [
   ["a photo of two or more people together", "Sesuai", "Foto bersama orang lain"],
   ["a photo of a person standing in front of a house or yard", "Sesuai", "Foto orang di depan rumah"],
   ["a photo of a house, building, or front porch exterior", "Sesuai", "Hanya foto rumah"],
-  ["a close-up photo of paper money, cash, or banknotes", "Tidak Sesuai", "FOTO UANG"],
-  ["a hand holding paper money, cash, or banknotes", "Tidak Sesuai", "FOTO UANG"],
+  ["a photo of paper money, banknotes, cash, or currency bills on a table or in hand", "Tidak Sesuai", "FOTO UANG"],
   ["a photo taken of a smartphone screen, computer monitor, or printed photograph", "Tidak Sesuai", "Foto dari foto"],
   ["an extreme close-up portrait of only a face filling the entire frame indoors", "Tidak Sesuai", "Foto hanya selfie saja"],
-  ["a photo of an empty road, street, trees, or parked motorcycle", "Tidak Sesuai", "Foto jalan/motor tanpa orang"],
-  ["a completely dark, black, blurry, or blank photo", "Tidak Sesuai", "Foto tidak jelas"],
+  ["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle", "Tidak Sesuai", "Foto jalan/lantai/motor tanpa orang"],
+  ["a completely dark, black, white, red, blurry, or blank photo", "Tidak Sesuai", "Foto tidak jelas"],
   ["a close-up photo of a paper document, receipt, or form", "Tidak Sesuai", "Foto dokumen atau kertas"]
 ];
 const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
@@ -493,7 +492,30 @@ function stampCoords(t) {
   return [lat, lon];
 }
 
-// ---------- AI with rotation check ----------
+// ---------- Deteksi foto polos & AI dengan rotasi ----------
+function isBlankOrSolidColor(bmp) {
+  const c = document.createElement("canvas");
+  c.width = 40; c.height = 30;
+  // Cek 75% area atas agar teks watermark di bawah tidak mengganggu perhitungan
+  const ctx = c.getContext("2d");
+  ctx.drawImage(bmp, 0, 0, bmp.width, Math.floor(bmp.height * 0.75), 0, 0, 40, 30);
+  const d = ctx.getImageData(0, 0, 40, 30).data;
+  const n = 40 * 30;
+  let rSum = 0, gSum = 0, bSum = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    rSum += d[i]; gSum += d[i + 1]; bSum += d[i + 2];
+  }
+  const rM = rSum / n, gM = gSum / n, bM = bSum / n;
+  let rVar = 0, gVar = 0, bVar = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    rVar += (d[i] - rM) ** 2;
+    gVar += (d[i + 1] - gM) ** 2;
+    bVar += (d[i + 2] - bM) ** 2;
+  }
+  const maxStd = Math.max(Math.sqrt(rVar / n), Math.sqrt(gVar / n), Math.sqrt(bVar / n));
+  return maxStd < 14;
+}
+
 async function rotatedBlob(bmp, deg) {
   const c = document.createElement("canvas");
   const swap = deg === 90 || deg === 270;
@@ -520,11 +542,11 @@ async function classifyWithRotation(clip, bmp, blob) {
   };
 
   let best = await run(blob);
-  // Jika 0° terdeteksi Tidak Sesuai, cek rotasi 90° & 270° untuk menghindari false flag foto miring
-  if (best && best.status === "Tidak Sesuai") {
+  const noRotateLabels = ["FOTO UANG", "Foto jalan/lantai/motor tanpa orang"];
+  if (best && best.status === "Tidak Sesuai" && !noRotateLabels.includes(best.label)) {
     for (const deg of [90, 270]) {
       const alt = await run(await rotatedBlob(bmp, deg));
-      if (alt && alt.status === "Sesuai") {
+      if (alt && alt.status === "Sesuai" && alt.score >= 0.45) {
         best = alt;
         break;
       }
@@ -543,10 +565,15 @@ function verdict(r) {
   const checkGps = checkLat0 || checkLat1 || checkLon0 || checkLon1;
   const checkDup = isOn("t_ham");
 
-  // 1. Cek AI konten foto (dengan ambang batas skor kepercayaan)
+  // 1. Cek AI & foto polos/satu warna
   const aiConf = parseFloat(r.aiScore) || 0;
-  if (["FOTO UANG", "Foto dari foto"].includes(r.ai) && aiConf >= 55) hard.push(r.ai);
-  else if (r.aiStatus === "Tidak Sesuai" && aiConf >= 45) warn.push(r.ai);
+  if (r.ai === "FOTO KOSONG / SATU WARNA") {
+    hard.push(r.ai);
+  } else if (["FOTO UANG", "Foto dari foto", "Foto jalan/lantai/motor tanpa orang", "Foto tidak jelas"].includes(r.ai) && aiConf >= 35) {
+    hard.push(r.ai);
+  } else if (r.aiStatus === "Tidak Sesuai" && aiConf >= 45) {
+    warn.push(r.ai);
+  }
 
   // 2. Cek Stamp Tanggal (hanya jika Crop X atau Y aktif)
   if (checkStamp) {
@@ -614,7 +641,11 @@ async function processRow(r, ocr, clip) {
     res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
   }
 
-  if (clip) {
+  if (isBlankOrSolidColor(bmp)) {
+    res.aiStatus = "Tidak Sesuai";
+    res.ai = "FOTO KOSONG / SATU WARNA";
+    res.aiScore = "100.0%";
+  } else if (clip) {
     try {
       const best = await classifyWithRotation(clip, bmp, blob);
       if (best) {

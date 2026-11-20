@@ -656,13 +656,10 @@ function checkImageQuality(bmp) {
   const maxStd = Math.max(Math.sqrt(rVar / n), Math.sqrt(gVar / n), Math.sqrt(bVar / n));
   if (maxStd < 14) return "FOTO KOSONG / SATU WARNA";
 
-  // 2. Cek overexposed / silau putih dominan (>55% area putih terang)
-  if (bright / n > 0.55) return "FOTO TERLALU TERANG / TIDAK JELAS";
-
-  // 3. Cek terlalu gelap (>80% area hitam/gelap)
+  // 2. Cek terlalu gelap (>80% area hitam/gelap)
   if (dark / n > 0.80) return "FOTO TERLALU GELAP / TIDAK JELAS";
 
-  // 4. Cek sangat blur / tidak ada objek (Laplacian variance rendah)
+  // 3. Cek sangat blur / tidak ada objek (Laplacian variance rendah)
   let lapSum = 0, lapSq = 0, cnt = 0;
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
@@ -676,6 +673,10 @@ function checkImageQuality(bmp) {
   const lapMean = lapSum / cnt;
   const lapVar = lapSq / cnt - lapMean * lapMean;
   if (lapVar < 25) return "FOTO BLUR / TIDAK JELAS";
+
+  // 4. Cek overexposed / silau putih dominan (>55% area putih terang)
+  // Catatan: akan tetap dicek AI dulu — jika wajah/orang terdeteksi Sesuai, tetap dianggap VALID
+  if (bright / n > 0.55) return "FOTO TERLALU TERANG / TIDAK JELAS";
 
   return "";
 }
@@ -827,33 +828,54 @@ async function processRow(r, ocr, clip) {
   }
 
   const badQuality = checkImageQuality(bmp);
-  if (badQuality) {
+  if (badQuality && badQuality !== "FOTO TERLALU TERANG / TIDAK JELAS") {
+    // Polos, terlalu gelap, atau sangat blur langsung TIDAK VALID
     res.aiStatus = "Tidak Sesuai";
     res.ai = badQuality;
     res.aiScore = "100.0%";
   } else if (clip) {
-    try {
-      const best = await classifyWithRotation(clip, bmp, blob);
-      if (best) {
-        res.aiStatus = best.status;
-        res.ai = best.label;
-        res.aiScore = (best.score * 100).toFixed(1) + "%";
-      }
-    } catch {}
+    let best = null;
+    try { best = await classifyWithRotation(clip, bmp, blob); } catch {}
+    if (best && best.status === "Sesuai") {
+      // Meskipun latar terang/silau, wajah/orang masih terdeteksi -> tetap VALID
+      res.aiStatus = best.status;
+      res.ai = best.label;
+      res.aiScore = (best.score * 100).toFixed(1) + "%";
+    } else if (badQuality) {
+      // Terlalu terang & tidak ada wajah/kunjungan terdeteksi -> TIDAK VALID
+      res.aiStatus = "Tidak Sesuai";
+      res.ai = badQuality;
+      res.aiScore = "100.0%";
+    } else if (best) {
+      res.aiStatus = best.status;
+      res.ai = best.label;
+      res.aiScore = (best.score * 100).toFixed(1) + "%";
+    }
+  } else if (badQuality) {
+    res.aiStatus = "Tidak Sesuai";
+    res.ai = badQuality;
+    res.aiScore = "100.0%";
   }
   bmp.close();
   return res;
 }
 
 // ---------- UI ----------
-function addRow(r) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `<td>${r.thumb ? `<img class="thumb" src="${r.thumb}">` : ""}</td>
+function rowHtml(r) {
+  return `<td>${r.thumb ? `<img class="thumb" src="${r.thumb}">` : ""}</td>
     <td><span class="bd b-${r.status.replace(/ /g, "")}">${esc(r.status)}</span></td>
     <td>${esc(r.reason)}</td><td>${esc(r.nama)}<br><small>${esc(r.kontrak)}</small></td>
     <td class="mono">${esc(r.urlDate)}</td><td class="mono">${esc(r.stampDate)}</td>
     <td class="mono">${esc(r.gps)}</td><td class="ocr">${esc(r.ocr)}</td>`;
+}
+function addRow(r) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = rowHtml(r);
   $("body").appendChild(tr);
+}
+function updateRow(idx, r) {
+  const tr = $("body").children[idx];
+  if (tr) tr.innerHTML = rowHtml(r);
 }
 function summary() {
   const c = s => results.filter(r => r.status === s).length;
@@ -902,11 +924,34 @@ $("go").onclick = async () => {
   try { clip = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32"); }
   catch (e) { alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message); }
 
+  // Pemeriksaan utama
   for (let i = 0; i < list.length && !stopFlag; i++) {
     $("st").textContent = `Memeriksa ${i + 1} / ${list.length} (via ${preferred})...`;
     const r = await processRow(list[i], ocr, clip);
     verdict(r); results.push(r); addRow(r); summary();
   }
+
+  // Cek ulang otomatis sebanyak 3 ronde secara berurutan untuk foto yang GAGAL DOWNLOAD
+  for (let round = 1; round <= 3 && !stopFlag; round++) {
+    const retryIdxs = [];
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].status === "GAGAL DOWNLOAD" && results[i].reason !== "URL tidak valid") {
+        retryIdxs.push(i);
+      }
+    }
+    if (!retryIdxs.length) break;
+
+    for (let k = 0; k < retryIdxs.length && !stopFlag; k++) {
+      const idx = retryIdxs[k];
+      $("st").textContent = `Cek ulang GAGAL DOWNLOAD — Ronde ${round}/3 (${k + 1} / ${retryIdxs.length})...`;
+      const r = await processRow(list[idx], ocr, clip);
+      verdict(r);
+      results[idx] = r;
+      updateRow(idx, r);
+      summary();
+    }
+  }
+
   if (ocr) await ocr.terminate();
 
   findDups(results);

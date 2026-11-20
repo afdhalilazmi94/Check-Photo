@@ -629,8 +629,14 @@ function checkImageQuality(bmp) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const ctx = c.getContext("2d");
-  // Cek 75% area atas agar teks watermark di bawah tidak mengganggu
-  ctx.drawImage(bmp, 0, 0, bmp.width, Math.floor(bmp.height * 0.75), 0, 0, w, h);
+
+  // Ambil area tengah (buang 10% kiri/kanan/atas dari border hitam, dan 25% bawah dari watermark)
+  const sx = Math.floor(bmp.width * 0.10);
+  const sy = Math.floor(bmp.height * 0.10);
+  const sw = Math.max(1, Math.floor(bmp.width * 0.80));
+  const sh = Math.max(1, Math.floor(bmp.height * 0.65));
+  ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
+
   const d = ctx.getImageData(0, 0, w, h).data;
   const n = w * h;
   const gray = new Float32Array(n);
@@ -659,20 +665,24 @@ function checkImageQuality(bmp) {
   // 2. Cek terlalu gelap (>80% area hitam/gelap)
   if (dark / n > 0.80) return "FOTO TERLALU GELAP / TIDAK JELAS";
 
-  // 3. Cek sangat blur / tidak ada objek (Laplacian variance rendah)
-  let lapSum = 0, lapSq = 0, cnt = 0;
+  // 3. Cek sangat blur / berkabut / tidak ada objek (Laplacian variance + Edge density)
+  let lapSum = 0, lapSq = 0, strongEdges = 0, cnt = 0;
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const idx = y * w + x;
       const lap = 4 * gray[idx] - gray[idx - 1] - gray[idx + 1] - gray[idx - w] - gray[idx + w];
       lapSum += lap;
       lapSq += lap * lap;
+      const gx = Math.abs(gray[idx + 1] - gray[idx - 1]);
+      const gy = Math.abs(gray[idx + w] - gray[idx - w]);
+      if (gx + gy > 22) strongEdges++;
       cnt++;
     }
   }
   const lapMean = lapSum / cnt;
   const lapVar = lapSq / cnt - lapMean * lapMean;
-  if (lapVar < 25) return "FOTO BLUR / TIDAK JELAS";
+  const edgeRatio = strongEdges / cnt;
+  if (lapVar < 40 || edgeRatio < 0.015) return "FOTO BLUR / TIDAK JELAS";
 
   // 4. Cek overexposed / silau putih dominan (>55% area putih terang)
   // Catatan: akan tetap dicek AI dulu — jika wajah/orang terdeteksi Sesuai, tetap dianggap VALID

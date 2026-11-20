@@ -22,6 +22,26 @@ details summary{cursor:pointer;font-weight:600;font-size:13px}
 .setting-block{margin-top:12px}
 .setting-block label.field-lbl{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
 .sep{border:0;border-top:1px solid #e2e8f0;margin:14px 0}
+
+/* Multi-select dropdown Wilayah */
+.ms-wrap{position:relative;width:100%}
+.ms-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;color:#1e293b;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:400;text-align:left;cursor:pointer}
+.ms-btn:hover{border-color:#94a3b8}
+.ms-btn-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-placeholder{color:#94a3b8}
+.ms-caret{font-size:10px;color:#64748b;flex-shrink:0}
+.ms-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.12);z-index:50;padding:8px}
+.ms-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ms-top input[type=text]{padding:6px 8px;font-size:12px}
+.ms-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 8px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;font-size:12px}
+.ms-bar label{display:flex;align-items:center;gap:6px;font-weight:600;color:#334155;cursor:pointer}
+.ms-reset{background:transparent;color:#2563eb;padding:2px 6px;font-size:11px;font-weight:600;border-radius:4px}
+.ms-reset:hover{background:#eff6ff}
+.ms-list{max-height:220px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:4px}
+.ms-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:4px;font-size:12px;color:#1e293b;cursor:pointer;user-select:none}
+.ms-item:hover{background:#f1f5f9}
+.ms-item input{margin:0;cursor:pointer}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:10px}
 .opt-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px}
 .opt-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
@@ -80,8 +100,23 @@ td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
     <hr class="sep">
 
     <div class="setting-block">
-      <label class="field-lbl" for="wil">Wilayah (pisah koma, kosong = semua)</label>
-      <input type="text" id="wil" value="LOMBOK-1, LOMBOK-2, LOMBOK-3, LOMBOK-4">
+      <label class="field-lbl">Wilayah (pilih satu, beberapa, atau Select All untuk semua wilayah)</label>
+      <div class="ms-wrap" id="wilWrap">
+        <button type="button" class="ms-btn" id="wilBtn">
+          <span class="ms-btn-text ms-placeholder" id="wilBtnText">-- Pilih Wilayah --</span>
+          <span class="ms-caret">▼</span>
+        </button>
+        <div class="ms-menu hidden" id="wilMenu">
+          <div class="ms-top">
+            <input type="text" id="wilSearch" placeholder="Cari wilayah...">
+          </div>
+          <div class="ms-bar">
+            <label><input type="checkbox" id="wilAll"> Select All (Semua Wilayah)</label>
+            <button type="button" class="ms-reset" id="wilClear">Hapus Pilihan</button>
+          </div>
+          <div class="ms-list" id="wilList"></div>
+        </div>
+      </div>
     </div>
 
     <hr class="sep">
@@ -173,6 +208,19 @@ import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers
 const $ = id => document.getElementById(id);
 const isOn = id => $(id).checked;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const WILAYAH_LIST = [
+  "BANTEN-1","BANTEN-2",
+  "BEM-1","BEM-2","BEM-3","BEM-4",
+  "JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6",
+  "JAMBI-1","JAMBI-2","JAMBI-3",
+  "JATENG","KALIMANTAN",
+  "LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5",
+  "LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4",
+  "SUMBAWA-1","SUMBAWA-2","SUMBAWA-3",
+  "SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"
+];
+
 const MONTHS = {
   januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",
   january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",
@@ -200,6 +248,76 @@ let results = [];
 let stopFlag = false;
 
 if (["localhost", "127.0.0.1"].includes(location.hostname)) $("proxy").value = "/proxy?url=";
+
+// ---------- Multi-select Dropdown Wilayah (default kosong) ----------
+const wilCheckboxes = [];
+function getSelectedWilayah() {
+  return wilCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+}
+function updateWilayahUI() {
+  const sel = getSelectedWilayah();
+  const allChecked = sel.length === WILAYAH_LIST.length;
+  $("wilAll").checked = allChecked;
+  $("wilAll").indeterminate = sel.length > 0 && !allChecked;
+
+  const txt = $("wilBtnText");
+  if (sel.length === 0) {
+    txt.textContent = "-- Pilih Wilayah --";
+    txt.classList.add("ms-placeholder");
+  } else if (allChecked) {
+    txt.textContent = `Select All (Semua Wilayah - ${WILAYAH_LIST.length})`;
+    txt.classList.remove("ms-placeholder");
+  } else if (sel.length <= 5) {
+    txt.textContent = sel.join(", ");
+    txt.classList.remove("ms-placeholder");
+  } else {
+    txt.textContent = `${sel.length} wilayah dipilih (${sel.slice(0, 3).join(", ")}, ...)`;
+    txt.classList.remove("ms-placeholder");
+  }
+}
+
+for (const w of WILAYAH_LIST) {
+  const lbl = document.createElement("label");
+  lbl.className = "ms-item";
+  lbl.dataset.wil = w;
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.value = w;
+  cb.checked = false; // Default kosong
+  cb.addEventListener("change", () => {
+    updateWilayahUI();
+    refreshFromFiles();
+  });
+  lbl.append(cb, document.createTextNode(w));
+  $("wilList").appendChild(lbl);
+  wilCheckboxes.push(cb);
+}
+updateWilayahUI();
+
+$("wilBtn").addEventListener("click", () => {
+  $("wilMenu").classList.toggle("hidden");
+  if (!$("wilMenu").classList.contains("hidden")) $("wilSearch").focus();
+});
+document.addEventListener("click", e => {
+  if (!$("wilWrap").contains(e.target)) $("wilMenu").classList.add("hidden");
+});
+$("wilSearch").addEventListener("input", e => {
+  const q = e.target.value.trim().toUpperCase();
+  $("wilList").querySelectorAll(".ms-item").forEach(el => {
+    el.classList.toggle("hidden", q && !el.dataset.wil.includes(q));
+  });
+});
+$("wilAll").addEventListener("change", e => {
+  const on = e.target.checked;
+  wilCheckboxes.forEach(cb => { cb.checked = on; });
+  updateWilayahUI();
+  refreshFromFiles();
+});
+$("wilClear").addEventListener("click", () => {
+  wilCheckboxes.forEach(cb => { cb.checked = false; });
+  updateWilayahUI();
+  refreshFromFiles();
+});
 
 // Bind setiap toggle ke input angkanya (default OFF / disabled)
 document.querySelectorAll('input[type="checkbox"][data-target]').forEach(cb => {
@@ -282,7 +400,10 @@ function readSheet(wb, name) {
 
 async function loadFiles(files) {
   const out = [], notes = [];
-  const wil = $("wil").value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  const selectAll = $("wilAll").checked;
+  const wil = getSelectedWilayah();
+  if (!selectAll && wil.length === 0) return {out, notes};
+
   for (const f of files) {
     const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), {type:"array"});
     const mon = findSheet(wb, ["MONITORING"]);
@@ -300,7 +421,7 @@ async function loadFiles(files) {
 
     for (const r of readSheet(wb, fs)) {
       const wilayah = String(pick(r, "NAMA WILAYAH", "CLUSTER")).trim().toUpperCase();
-      if (wil.length && !wil.includes(wilayah)) continue;
+      if (!selectAll && !wil.includes(wilayah)) continue;
 
       const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN"));
       const idpic = normId(pick(r, "ID PIC"));
@@ -323,6 +444,16 @@ async function loadFiles(files) {
 
 async function refreshFromFiles() {
   if (!loadedFiles.length) return;
+  const selectAll = $("wilAll").checked;
+  const wil = getSelectedWilayah();
+  if (!selectAll && wil.length === 0) {
+    rows = [];
+    rowMap = new Map();
+    $("urls").value = "";
+    $("st").textContent = `${loadedFiles.length} file Excel siap. Pilih Wilayah di dropdown atau centang Select All.`;
+    return;
+  }
+
   $("st").textContent = "Membaca Excel...";
   try {
     const {out, notes} = await loadFiles(loadedFiles);
@@ -332,7 +463,7 @@ async function refreshFromFiles() {
     $("urls").value = out.map(r => r.url).join("\n");
     const withMeta = out.filter(r => r.wilayah || r.idpic || r.nama || r.kontrak).length;
     $("st").textContent = `${out.length} foto dimuat (${withMeta} dengan data Wilayah/PIC/Kontrak).` + (notes.length ? " " + notes.join("; ") : "");
-    if (!out.length) alert("Tidak ada foto yang cocok (cek wilayah / kolom LINK FOTO KUNJUNGAN).");
+    if (!out.length) alert("Tidak ada foto yang cocok untuk wilayah yang dipilih.");
   } catch (err) {
     $("st").textContent = "";
     alert("Gagal membaca file: " + err.message);
@@ -344,7 +475,6 @@ $("xl").addEventListener("change", async e => {
   loadedFiles = [...e.target.files];
   await refreshFromFiles();
 });
-$("wil").addEventListener("change", refreshFromFiles);
 
 // ---------- Image helpers ----------
 let preferred = null;
@@ -496,7 +626,6 @@ function stampCoords(t) {
 function isBlankOrSolidColor(bmp) {
   const c = document.createElement("canvas");
   c.width = 40; c.height = 30;
-  // Cek 75% area atas agar teks watermark di bawah tidak mengganggu perhitungan
   const ctx = c.getContext("2d");
   ctx.drawImage(bmp, 0, 0, bmp.width, Math.floor(bmp.height * 0.75), 0, 0, 40, 30);
   const d = ctx.getImageData(0, 0, 40, 30).data;
@@ -565,7 +694,6 @@ function verdict(r) {
   const checkGps = checkLat0 || checkLat1 || checkLon0 || checkLon1;
   const checkDup = isOn("t_ham");
 
-  // 1. Cek AI & foto polos/satu warna
   const aiConf = parseFloat(r.aiScore) || 0;
   if (r.ai === "FOTO KOSONG / SATU WARNA") {
     hard.push(r.ai);
@@ -575,14 +703,12 @@ function verdict(r) {
     warn.push(r.ai);
   }
 
-  // 2. Cek Stamp Tanggal (hanya jika Crop X atau Y aktif)
   if (checkStamp) {
     if (!r.stampDate) warn.push("Stamp tanggal tidak terbaca/tidak ada");
     else if (r.urlDate && r.stampDate !== r.urlDate) hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
     else if (r.tgl && r.stampDate !== r.tgl) warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
   }
 
-  // 3. Cek GPS (hanya jika minimal satu batas Lat/Lon aktif)
   if (checkGps) {
     if (!r.gps) warn.push("GPS tidak terbaca di stamp");
     else {
@@ -595,7 +721,6 @@ function verdict(r) {
     }
   }
 
-  // 4. Cek Duplikat (hanya jika toggle Duplikat aktif)
   if (checkDup && r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
 
   r.status = hard.length ? "TIDAK VALID" : warn.length ? "PERLU CEK" : "VALID";
@@ -685,7 +810,10 @@ $("go").onclick = async () => {
   } else if (rows.length) {
     list = rows.map(r => ({...r}));
   }
-  if (!list.length) { alert("Upload Excel atau tempel URL getImage dulu."); return; }
+  if (!list.length) {
+    alert(loadedFiles.length ? "Pilih Wilayah di dropdown atau centang Select All terlebih dahulu." : "Upload Excel atau tempel URL getImage dulu.");
+    return;
+  }
   list = list.map((r, i) => ({...r, key: r.kontrak ? `${r.tgl}|${r.kontrak}|${r.idpic}` : "u" + i}));
 
   results = []; stopFlag = false; $("body").innerHTML = "";

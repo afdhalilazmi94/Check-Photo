@@ -228,12 +228,13 @@ const MONTHS = {
 };
 const LABELS = [
   ["a selfie of a person wearing a helmet or standing outdoors in front of a house or building", "Sesuai", "Selfie PIC di depan rumah/bangunan"],
+  ["an indoor selfie of two people sitting or talking inside a house or living room", "Sesuai", "Selfie PIC bersama anggota di dalam rumah"],
   ["a selfie of a person at a small shop, warung, or market stall with people or goods", "Sesuai", "Selfie PIC di warung/toko"],
   ["a photo of two or more people together", "Sesuai", "Foto bersama orang lain"],
   ["a photo of a person standing in front of a house or yard", "Sesuai", "Foto orang di depan rumah"],
   ["a photo of a house, building, or front porch exterior", "Sesuai", "Hanya foto rumah"],
   ["a photo of paper money, banknotes, cash, or currency bills on a table or in hand", "Tidak Sesuai", "FOTO UANG"],
-  ["a photo taken of a smartphone screen, computer monitor, or printed photograph", "Tidak Sesuai", "Foto dari foto"],
+  ["a photo taken of a smartphone screen or computer monitor displaying an image", "Tidak Sesuai", "Foto dari foto"],
   ["an extreme close-up portrait of only a face filling the entire frame indoors", "Tidak Sesuai", "Foto hanya selfie saja"],
   ["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle", "Tidak Sesuai", "Foto jalan/lantai/motor tanpa orang"],
   ["a completely dark, black, white, red, blurry, or blank photo", "Tidak Sesuai", "Foto tidak jelas"],
@@ -697,21 +698,36 @@ async function classifyWithRotation(clip, bmp, blob) {
     const u = URL.createObjectURL(b);
     try {
       const out = await clip(u, texts, {hypothesis_template: "{}"});
+      let okSum = 0, badSum = 0, topOk = null;
+      for (const item of out) {
+        const L = LABELS.find(l => l[0] === item.label);
+        if (!L) continue;
+        if (L[1] === "Sesuai") {
+          okSum += item.score;
+          if (!topOk) topOk = {label: L[2], score: item.score};
+        } else {
+          badSum += item.score;
+        }
+      }
       const top = out[0], L = LABELS.find(l => l[0] === top.label);
-      return L ? {status: L[1], label: L[2], score: top.score} : null;
+      if (!L) return null;
+      if (okSum >= 0.50 && topOk) {
+        return {status: "Sesuai", label: topOk.label, score: okSum, okSum, badSum};
+      }
+      return {status: L[1], label: L[2], score: top.score, okSum, badSum};
     } finally {
       URL.revokeObjectURL(u);
     }
   };
 
   let best = await run(blob);
-  const noRotateLabels = ["FOTO UANG", "Foto jalan/lantai/motor tanpa orang"];
-  if (best && best.status === "Tidak Sesuai" && !noRotateLabels.includes(best.label)) {
+  // Cek rotasi 90° & 270° untuk semua hasil Tidak Sesuai (kecuali FOTO UANG yang sangat yakin)
+  if (best && best.status === "Tidak Sesuai" && !(best.label === "FOTO UANG" && best.score >= 0.55)) {
     for (const deg of [90, 270]) {
       const alt = await run(await rotatedBlob(bmp, deg));
-      if (alt && alt.status === "Sesuai" && alt.score >= 0.45) {
+      if (alt && (alt.status === "Sesuai" || alt.okSum > best.okSum)) {
         best = alt;
-        break;
+        if (alt.status === "Sesuai") break;
       }
     }
   }
@@ -737,10 +753,14 @@ function verdict(r) {
   ];
   if (qualityFlags.includes(r.ai)) {
     hard.push(r.ai);
-  } else if (["FOTO UANG", "Foto dari foto", "Foto jalan/lantai/motor tanpa orang", "Foto tidak jelas"].includes(r.ai) && aiConf >= 35) {
-    hard.push(r.ai);
-  } else if (r.aiStatus === "Tidak Sesuai" && aiConf >= 45) {
-    warn.push(r.ai);
+  } else if (r.aiStatus === "Tidak Sesuai") {
+    if (["FOTO UANG", "Foto jalan/lantai/motor tanpa orang", "Foto tidak jelas"].includes(r.ai) && aiConf >= 40) {
+      hard.push(r.ai);
+    } else if (r.ai === "Foto dari foto" && aiConf >= 55) {
+      hard.push(r.ai);
+    } else if (aiConf >= 45) {
+      warn.push(r.ai);
+    }
   }
 
   if (checkStamp) {

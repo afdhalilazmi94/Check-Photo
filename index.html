@@ -7,1003 +7,642 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <style>
-*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-body{background:#f8fafc;color:#1e293b;margin:0;padding:24px}
-.wrap{max-width:1200px;margin:0 auto}
-h1{font-size:24px;margin:0 0 6px}
-.sub{font-size:14px;color:#475569;margin:0 0 18px}
-.card{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:14px;margin-bottom:14px}
-.label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:#334155;margin-bottom:6px}
-.hint{font-size:12px;color:#64748b;margin:4px 0 0}
-textarea,input[type=text],input[type=number]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+:root{--ink:#0f172a;--mute:#64748b;--line:#dbe2ea;--bg:#f1f5f9;--brand:#1d4ed8;--ok:#047857;--warn:#b45309;--bad:#be123c}
+*{box-sizing:border-box;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}
+.top{background:linear-gradient(135deg,#0f2a5c,#1d4ed8);color:#fff;padding:22px 24px}
+.top h1{margin:0;font-size:22px}.top p{margin:4px 0 0;color:#cfe0ff;font-size:13px}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 24px 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.ch{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.ch h2{margin:0;font-size:16px}.ch p{margin:2px 0 0;color:var(--mute);font-size:12.5px}
+.n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;display:grid;place-items:center}
+.drop{display:grid;gap:4px;text-align:center;padding:26px 14px;border:2px dashed #9db4d8;border-radius:10px;background:#f8fbff;cursor:pointer}
+.drop.on{background:#e6efff;border-color:var(--brand)}.drop b{color:var(--brand);font-size:15px}.drop span{color:var(--mute);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.chip{background:#eaf1ff;color:#1e3a8a;border-radius:99px;padding:3px 10px;font-size:12px}
+.lnk{background:none;border:0;color:var(--bad);font-size:12px;font-weight:600;cursor:pointer;padding:0}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600;font-size:13px;color:#334155}
+textarea,input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid #c5d0de;border-radius:6px;font-size:13px;margin-top:6px}
+textarea{font-family:ui-monospace,Consolas,monospace;resize:vertical}
 input[type=number]:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
-textarea{font-family:monospace;resize:vertical}
-details summary{cursor:pointer;font-weight:600;font-size:13px}
-.setting-block{margin-top:12px}
-.setting-block label.field-lbl{display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px}
-.sep{border:0;border-top:1px solid #e2e8f0;margin:14px 0}
-
-/* Multi-select dropdown Wilayah */
-.ms-wrap{position:relative;width:100%}
-.ms-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;color:#1e293b;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;font-weight:400;text-align:left;cursor:pointer}
-.ms-btn:hover{border-color:#94a3b8}
-.ms-btn-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hint{font-size:12px;color:var(--mute);margin:6px 0 0}
+.ms-wrap{position:relative}
+.ms-btn{width:100%;display:flex;justify-content:space-between;gap:8px;padding:10px 12px;background:#fff;border:1px solid #c5d0de;border-radius:6px;font-size:13px;cursor:pointer;text-align:left;color:var(--ink)}
 .ms-placeholder{color:#94a3b8}
-.ms-caret{font-size:10px;color:#64748b;flex-shrink:0}
-.ms-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.12);z-index:50;padding:8px}
-.ms-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.ms-top input[type=text]{padding:6px 8px;font-size:12px}
-.ms-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 8px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;font-size:12px}
-.ms-bar label{display:flex;align-items:center;gap:6px;font-weight:600;color:#334155;cursor:pointer}
-.ms-reset{background:transparent;color:#2563eb;padding:2px 6px;font-size:11px;font-weight:600;border-radius:4px}
-.ms-reset:hover{background:#eff6ff}
-.ms-list{max-height:220px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:4px}
-.ms-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:4px;font-size:12px;color:#1e293b;cursor:pointer;user-select:none}
-.ms-item:hover{background:#f1f5f9}
-.ms-item input{margin:0;cursor:pointer}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:10px}
-.opt-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px}
-.opt-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
-.opt-head label.opt-lbl{font-size:11px;font-weight:600;color:#475569;margin:0}
-.switch{position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;cursor:pointer}
-.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.2s}
-.slider:before{content:"";position:absolute;height:14px;width:14px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
-.switch input:checked + .slider{background:#2563eb}
-.switch input:checked + .slider:before{transform:translateX(16px)}
-.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 16px}
-button{border:0;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;color:#fff}
-button:disabled{opacity:.5;cursor:not-allowed}
-.p{background:#2563eb}.s{background:#059669}.d{background:#64748b}
+.ms-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,.15);z-index:50;padding:10px}
+.ms-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 8px;border-bottom:1px solid var(--line);margin-bottom:6px;font-size:12px}
+.ms-bar label,.ms-item{display:flex;gap:6px;align-items:center;cursor:pointer}
+.ms-reset{background:none;border:0;color:var(--brand);font-weight:600;font-size:12px;cursor:pointer}
+.ms-list{max-height:220px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:2px}
+.ms-item{padding:5px 6px;border-radius:4px;font-size:12px}.ms-item:hover{background:#f1f5f9}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.sm{border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.grp{margin-top:14px}.grp h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#334155}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.opt-box{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px}
+.opt-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.opt-lbl{font-size:12px;font-weight:600;color:#334155}
+.switch{position:relative;width:36px;height:20px;flex:none;cursor:pointer}.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:.2s}
+.slider:before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+.slider{background:var(--brand)}.switch input:checked+.slider:before{transform:translateX(16px)}
+.switch input:focus-visible+.slider,button:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.box{background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px 14px;text-align:left;cursor:pointer}
+.box span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute)}.box b{font-size:24px}
+.box.on{border-color:var(--brand)}.box.g b{color:var(--ok)}.box.y b{color:var(--warn)}.box.r b{color:var(--bad)}
+.find{display:flex;gap:10px;align-items:center;margin-bottom:10px}.find input{margin:0;max-width:340px}
+.tw{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:68vh}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{position:sticky;top:0;background:#eef2f7;color:#475569;text-transform:uppercase;font-size:11px;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}
+td{padding:8px 10px;border-bottom:1px solid #edf1f6;vertical-align:middle}
+.thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.bd{padding:3px 9px;border-radius:99px;font-weight:700;font-size:11px;white-space:nowrap}
+.b-VALID{background:#d1fae5;color:#065f46}.b-TIDAKVALID{background:#ffe4e6;color:#9f1239}.b-PERLUCEK,.b-GAGALDOWNLOAD{background:#fef3c7;color:#92400e}
+.mono{font-family:ui-monospace,Consolas,monospace}.ocr{max-width:260px;word-break:break-word;color:var(--mute)}
+.bar{position:sticky;bottom:0;margin:14px -24px 0;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(15,23,42,.08);padding:12px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;z-index:40}
+.bar .info{flex:1 1 320px;min-width:240px}
+#ready{font-size:13px}#st{font-size:12px;color:var(--mute);margin-top:2px;min-height:16px}
+.prog{height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
+button.b{border:0;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
+button.b:disabled{opacity:.5;cursor:not-allowed}.p{background:var(--brand)}.s{background:var(--ok)}.d{background:#64748b}
 .hidden{display:none!important}
-#st{font-size:13px;color:#475569}
-.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
-.box{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:12px}
-.box b{display:block;font-size:22px;margin-top:2px}
-.box span{font-size:11px;font-weight:600;text-transform:uppercase}
-.box.g{background:#ecfdf5;color:#065f46}.box.r{background:#fff1f2;color:#9f1239}.box.y{background:#fffbeb;color:#92400e}
-.tw{background:#fff;border:1px solid #cbd5e1;border-radius:8px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}
-th{background:#f1f5f9;color:#475569;text-transform:uppercase;padding:10px;border-bottom:1px solid #cbd5e1}
-td{padding:8px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
-.thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1}
-.bd{padding:3px 8px;border-radius:4px;font-weight:700;font-size:11px;white-space:nowrap}
-.b-VALID{background:#d1fae5;color:#065f46}.b-TIDAKVALID{background:#ffe4e6;color:#9f1239}
-.b-PERLUCEK,.b-GAGALDOWNLOAD{background:#fef3c7;color:#92400e}
-.mono{font-family:monospace}.ocr{max-width:280px;word-break:break-word;color:#64748b}
+.n.ok{background:var(--ok)}
+.help summary{font-size:15px;color:var(--ink)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.cols>div{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px}
+.cols h4{margin:0 0 6px;font-size:13px}.cols p,.cols li{font-size:12.5px;color:#334155;margin:0 0 4px;line-height:1.5}
+.cols ol,.cols ul{margin:0;padding-left:18px}
+.lg{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;font-size:12.5px;color:#334155}
+.tip{font-size:12px;color:#475569;background:#f1f5f9;border-left:3px solid var(--brand);padding:6px 10px;border-radius:4px;margin:0 0 8px;line-height:1.5}
+#dataInfo{margin-top:10px;font-size:12.5px;color:#334155;line-height:1.9}
+body{background:#eef2f7;font-size:14px;-webkit-font-smoothing:antialiased}
+.top{background:#0b1f44;border-bottom:3px solid #2563eb;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 28px}
+.hin{display:flex;gap:14px;align-items:center}
+.logo{width:42px;height:42px;border-radius:10px;background:#2563eb;display:grid;place-items:center;font-size:22px;font-weight:700}
+.top h1{font-size:20px;letter-spacing:.01em}.top p{color:#b9cdf2}
+.pill{border:1px solid #3b5a99;color:#cfe0ff;border-radius:99px;padding:4px 12px;font-size:12px}
+.card{border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.ch h2{font-size:16px;letter-spacing:.01em}
+.n{border-radius:8px}
+tbody tr:nth-child(even){background:#fafcff}tbody tr:hover{background:#f1f6ff}
+.bd:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+.box{border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}.box b{font-variant-numeric:tabular-nums}
+.box em{display:block;font-style:normal;font-size:11.5px;color:var(--mute);margin-top:2px;min-height:14px}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 12px}
+.rh h2{margin:0;font-size:18px}.rh p{margin:2px 0 0;color:var(--mute);font-size:13px}
+.dist{display:flex;height:10px;border-radius:99px;overflow:hidden;background:#e2e8f0;margin:0 0 12px}
+.dist i{display:block;height:100%}.dist .g{background:#10b981}.dist .y{background:#f59e0b}.dist .r{background:#e11d48}.dist .f{background:#94a3b8}
+.tw{border-radius:12px}th{letter-spacing:.04em}
+.foot{text-align:center;color:var(--mute);font-size:12px;padding:20px}
+#extra{margin-top:4px}#extra>summary{display:inline-block;padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;font-size:13px}#extra>summary:hover{background:#eef4ff}
 </style>
 </head>
 <body>
-<div class="wrap">
-<h1>Bulk Photo Authenticity Checker</h1>
-<p class="sub">Upload file <code>Monitoring LKP *.xlsx</code> (bisa banyak file) atau tempel URL <code>getImage</code>. Semua pemeriksaan (OCR stamp, AI konten, kualitas gambar, duplikat) berjalan di browser.</p>
-
-<div class="card">
-  <span class="label">1. Import Excel (sheet MONITORING + FOTO KUNJUNGAN)</span>
-  <input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple>
-  <p class="hint">Filter wilayah &amp; pasangan (TGL LKP, ID PIC) sama seperti script Colab.</p>
+<header class="top"><div class="hin"><div class="logo" aria-hidden="true">✓</div><div><h1>Bulk Photo Authenticity Checker</h1><p>Pemeriksaan keaslian foto kunjungan LKP · AI isi foto · kualitas gambar · OCR stamp · deteksi duplikat</p></div></div><span class="pill">Diproses di browser Anda</span></header>
+<main class="wrap">
+<section class="card help"><details><summary>📘 Panduan singkat &amp; arti status</summary>
+<div class="cols">
+ <div><h4>Cara memakai</h4><ol>
+  <li><b>Unggah</b> file Excel Monitoring LKP (atau tempel URL foto).</li>
+  <li><b>Pilih wilayah</b> yang ingin diperiksa. Foto langsung dimuat.</li>
+  <li><b>Atur aturan tambahan</b> bila perlu (stamp, GPS, duplikat). Boleh dibiarkan OFF.</li>
+  <li>Klik <b>Mulai Periksa</b> di bar bawah, tunggu progres selesai.</li>
+  <li>Filter hasil lewat kartu ringkasan, lalu <b>Download Excel</b>.</li></ol></div>
+ <div><h4>Apa yang diperiksa</h4><ul>
+  <li><b>Isi foto (AI)</b> — apakah foto PIC/rumah/warung (sesuai) atau foto uang, foto layar, jalan/lantai, dokumen. Foto diputar 90°/270° bila perlu. <i>Selalu aktif.</i></li>
+  <li><b>Kualitas gambar</b> — kosong/satu warna, terlalu gelap, blur, terlalu terang. <i>Selalu aktif.</i></li>
+  <li><b>Stamp tanggal &amp; GPS (OCR)</b> — membaca teks stamp pada foto. <i>Opsional.</i></li>
+  <li><b>Duplikat</b> — foto mirip dengan kontrak lain. <i>Opsional.</i></li></ul></div>
+ <div><h4>Arti status</h4><div class="lg">
+  <span class="bd b-VALID">VALID</span><span>Tidak ada temuan.</span>
+  <span class="bd b-PERLUCEK">PERLU CEK</span><span>Temuan ringan: stamp tidak terbaca, GPS di luar area, tanggal stamp beda dari TGL LKP, atau AI kurang yakin. Lihat manual.</span>
+  <span class="bd b-TIDAKVALID">TIDAK VALID</span><span>Temuan kuat: foto uang/kosong/blur/gelap, tanggal stamp beda dari tanggal URL, atau duplikat.</span>
+  <span class="bd b-GAGALDOWNLOAD">GAGAL DOWNLOAD</span><span>Foto tidak bisa dimuat setelah 3 ronde cek ulang (404, CORS, atau proxy gagal).</span></div></div>
 </div>
+<p class="tip" style="margin-top:12px"><b>Catatan:</b> hasil adalah alat bantu penyaringan, bukan keputusan akhir; tinjau manual yang bertanda. Model AI (±90 MB) diunduh saat pertama dijalankan lalu disimpan browser, jadi proses pertama lebih lama. Data Excel diproses di browser Anda. Bila server foto tidak mengizinkan akses langsung, URL foto dilewatkan lewat proxy CORS publik (wsrv.nl, corsproxy.io, allorigins) atau proxy milik Anda.</p>
+</details></section>
 
-<label class="label" for="urls">2. Atau tempel URL (satu per baris)</label>
-<textarea id="urls" rows="4" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
+<section class="card">
+  <div class="ch"><span class="n" id="n1">1</span><div><h2>Sumber foto</h2><p>Unggah file <code>Monitoring LKP *.xlsx</code> (boleh banyak file), atau tempel URL foto secara manual.</p></div></div>
+  <label class="drop" id="drop"><input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple class="hidden"><b>Tarik file Excel ke sini, atau klik untuk memilih</b><span>Sheet MONITORING + FOTO KUNJUNGAN · filter TGL LKP &amp; ID PIC otomatis</span></label>
+  <div class="chips" id="files"></div>
+  <div id="dataInfo"></div>
+  <details><summary>Atau tempel URL foto (satu per baris)</summary>
+    <textarea id="urls" rows="4" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea></details>
+</section>
 
-<div class="card" style="margin-top:14px">
-  <details open>
-    <summary>Pengaturan</summary>
-
-    <div class="setting-block">
-      <label class="field-lbl" for="proxy">Proxy URL (opsional — kosongkan untuk auto-fallback CORS proxy)</label>
-      <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=">
+<section class="card">
+  <div class="ch"><span class="n" id="n2">2</span><div><h2>Wilayah</h2><p>Pilih satu atau beberapa wilayah, atau centang Select All. Foto dimuat otomatis setelah dipilih.</p></div></div>
+  <div class="ms-wrap" id="wilWrap">
+    <button type="button" class="ms-btn" id="wilBtn"><span class="ms-placeholder" id="wilBtnText">-- Pilih Wilayah --</span><span>▼</span></button>
+    <div class="ms-menu hidden" id="wilMenu">
+      <input type="text" id="wilSearch" placeholder="Cari wilayah..." style="margin:0 0 8px">
+      <div class="ms-bar"><label><input type="checkbox" id="wilAll"> Select All (Semua Wilayah)</label><button type="button" class="ms-reset" id="wilClear">Hapus Pilihan</button></div>
+      <div class="ms-list" id="wilList"></div>
     </div>
+  </div>
+</section>
 
-    <hr class="sep">
-
-    <div class="setting-block">
-      <label class="field-lbl">Wilayah (pilih satu, beberapa, atau Select All untuk semua wilayah)</label>
-      <div class="ms-wrap" id="wilWrap">
-        <button type="button" class="ms-btn" id="wilBtn">
-          <span class="ms-btn-text ms-placeholder" id="wilBtnText">-- Pilih Wilayah --</span>
-          <span class="ms-caret">▼</span>
-        </button>
-        <div class="ms-menu hidden" id="wilMenu">
-          <div class="ms-top">
-            <input type="text" id="wilSearch" placeholder="Cari wilayah...">
-          </div>
-          <div class="ms-bar">
-            <label><input type="checkbox" id="wilAll"> Select All (Semua Wilayah)</label>
-            <button type="button" class="ms-reset" id="wilClear">Hapus Pilihan</button>
-          </div>
-          <div class="ms-list" id="wilList"></div>
-        </div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <p class="hint" style="margin-bottom:8px">Toggle di bawah default <b>OFF</b>. Jika tidak diaktifkan, aturan tersebut tidak akan memengaruhi <b>Status</b> maupun <b>Alasan</b>.</p>
-    <div class="grid">
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="sx">Crop stamp X mulai (0-1)</label>
-          <label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="sx" value="0.35" step="0.05" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="sy">Crop stamp Y mulai (0-1)</label>
-          <label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="sy" value="0.80" step="0.05" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="lat0">Lat min</label>
-          <label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="lat0" value="-9.3" step="0.1" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="lat1">Lat max</label>
-          <label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="lat1" value="-8.0" step="0.1" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="lon0">Lon min</label>
-          <label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="lon0" value="115.7" step="0.1" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="lon1">Lon max</label>
-          <label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="lon1" value="116.9" step="0.1" disabled>
-      </div>
-
-      <div class="opt-box">
-        <div class="opt-head">
-          <label class="opt-lbl" for="ham">Batas beda bit duplikat</label>
-          <label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label>
-        </div>
-        <input type="number" id="ham" value="5" min="0" max="20" disabled>
-      </div>
-    </div>
+<section class="card">
+  <div class="ch"><span class="n" id="n3">3</span><div><h2>Aturan pemeriksaan tambahan</h2><p>Semua aturan default <b>OFF</b>. Yang OFF tidak memengaruhi Status maupun Alasan. Pengecekan AI dan kualitas gambar selalu berjalan.</p></div></div>
+  <details id="extra"><summary id="extraSum">Aturan tambahan (0 aktif) — klik untuk membuka</summary>
+  <div class="tools" style="margin-top:10px"><button class="sm" id="allOn" type="button">Aktifkan semua</button><button class="sm" id="allOff" type="button">Matikan semua</button></div>
+  <div id="rules">
+    <div class="grp"><h3>Stamp tanggal (OCR)</h3><p class="tip">Menyalakan salah satu nilai mengaktifkan pembacaan stamp (OCR). X dan Y menentukan bagian foto yang dibaca (0–1 dari kiri/atas); bawaan 0.35 &amp; 0.80 membaca pojok kanan bawah. Tanggal stamp ≠ tanggal URL → <b>TIDAK VALID</b>; tidak terbaca atau ≠ TGL LKP → <b>PERLU CEK</b>.</p><div class="grid">
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="sx">Area stamp mulai X (0–1)</label><label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label></div><input type="number" id="sx" value="0.35" step="0.05" disabled></div>
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="sy">Area stamp mulai Y (0–1)</label><label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label></div><input type="number" id="sy" value="0.80" step="0.05" disabled></div>
+    </div></div>
+    <div class="grp"><h3>Batas area GPS</h3><p class="tip">Koordinat pada stamp dibandingkan dengan batas yang Anda aktifkan. Di luar batas atau koordinat tidak terbaca → <b>PERLU CEK</b>. Nilai bawaan hanya contoh; sesuaikan dengan wilayah Anda. Perlu OCR, jadi mengaktifkannya ikut membaca stamp.</p><div class="grid">
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lat0">Latitude min</label><label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label></div><input type="number" id="lat0" value="-9.3" step="0.1" disabled></div>
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lat1">Latitude max</label><label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label></div><input type="number" id="lat1" value="-8.0" step="0.1" disabled></div>
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lon0">Longitude min</label><label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label></div><input type="number" id="lon0" value="115.7" step="0.1" disabled></div>
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lon1">Longitude max</label><label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label></div><input type="number" id="lon1" value="116.9" step="0.1" disabled></div>
+    </div></div>
+    <div class="grp"><h3>Deteksi duplikat</h3><p class="tip">Membandingkan sidik visual antar foto dari kontrak berbeda. Angka lebih kecil = lebih ketat (0 = hampir identik; bawaan 5, maks 20). Foto yang mirip → <b>TIDAK VALID</b> dan kontrak pembandingnya ditampilkan di kolom Deteksi AI.</p><div class="grid">
+      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="ham">Batas beda bit duplikat</label><label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label></div><input type="number" id="ham" value="5" min="0" max="20" disabled></div>
+    </div></div>
+  </div>
+  <details><summary>Pengaturan lanjutan (Proxy)</summary>
+    <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=">
+    <p class="hint">Opsional. Kosongkan untuk auto-fallback CORS proxy. Pengaturan Anda tersimpan otomatis di browser ini.</p></details>
   </details>
-</div>
+</section>
 
-<div class="actions">
-  <button id="go" class="p">Check All Photos</button>
-  <button id="stop" class="d hidden">Stop</button>
-  <button id="exp" class="s hidden">Download Excel (.xlsx)</button>
-  <span id="st"></span>
-</div>
+<div class="card" id="emptyRes"><b>Belum ada hasil.</b> <span class="hint">Selesaikan langkah 1–2 lalu klik <b>Mulai Periksa</b>. Tabel, ringkasan temuan, dan rekap per wilayah akan muncul di sini.</span></div>
+<section id="res" class="hidden">
+  <div class="rh"><div><h2>Hasil pemeriksaan</h2><p id="rsub">Menunggu proses…</p></div><button id="exp2" class="b s" disabled>⬇ Download Excel (.xlsx)</button></div>
+  <div class="dist" id="dist" aria-hidden="true"></div>
+  <div class="sum">
+    <button class="box on" data-f=""><span>Total</span><b id="nT">0</b></button>
+    <button class="box g" data-f="VALID"><span>Valid</span><b id="nV">0</b><em id="pV"></em></button>
+    <button class="box y" data-f="PERLU CEK"><span>Perlu cek</span><b id="nC">0</b><em id="pC"></em></button>
+    <button class="box r" data-f="TIDAK VALID"><span>Tidak valid</span><b id="nX">0</b><em id="pX"></em></button>
+    <button class="box y" data-f="GAGAL DOWNLOAD"><span>Gagal download</span><b id="nF">0</b><em id="pF"></em></button>
+  </div>
+  <div class="card"><b>Temuan terbanyak</b><div id="why" class="chips"></div>
+    <details><summary>Rekap per wilayah</summary><div class="tw" style="max-height:260px;margin-top:8px"><table id="wtab"></table></div></details></div>
+  <div class="find"><input type="text" id="q" placeholder="Cari nama PIC, kontrak, ID, alasan…" aria-label="Cari hasil"><span class="hint" id="shown"></span></div>
+  <div class="tw"><table>
+    <thead><tr><th>Preview</th><th>Status</th><th>Alasan</th><th>Deteksi AI</th><th>PIC / Kontrak</th><th>Tgl URL</th><th>Tgl Stamp</th><th>GPS</th><th>OCR Stamp</th></tr></thead>
+    <tbody id="body"></tbody></table></div>
+</section>
 
-<div id="sum" class="sum hidden">
-  <div class="box"><span>Total</span><b id="nT">0</b></div>
-  <div class="box g"><span>Valid</span><b id="nV">0</b></div>
-  <div class="box y"><span>Perlu cek</span><b id="nC">0</b></div>
-  <div class="box r"><span>Tidak valid</span><b id="nX">0</b></div>
-  <div class="box y"><span>Gagal download</span><b id="nF">0</b></div>
+<div class="bar">
+  <div class="info"><div id="ready"></div><div class="prog"><i id="pb"></i></div><div id="st"></div></div>
+  <button id="go" class="b p">▶ Mulai Periksa</button>
+  <button id="stop" class="b d hidden">■ Stop</button>
+  <button id="exp" class="b s hidden">⬇ Download Excel</button>
 </div>
-
-<div class="tw"><table>
-<thead><tr><th>Preview</th><th>Status</th><th>Alasan</th><th>PIC / Kontrak</th><th>Tgl URL</th><th>Tgl Stamp</th><th>GPS</th><th>OCR Stamp</th></tr></thead>
-<tbody id="body"></tbody></table></div>
-</div>
+</main>
+<footer class="foot">Bulk Photo Authenticity Checker · Hasil bersifat penyaringan awal; tinjau manual sebelum keputusan akhir.</footer>
 
 <script type="module">
-import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";
+import * as T from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";
+const $=id=>document.getElementById(id), isOn=id=>$(id).checked;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const WILAYAH_LIST=["BANTEN-1","BANTEN-2","BEM-1","BEM-2","BEM-3","BEM-4","JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6","JAMBI-1","JAMBI-2","JAMBI-3","JATENG","KALIMANTAN","LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5","LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4","SUMBAWA-1","SUMBAWA-2","SUMBAWA-3","SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"];
+const MONTHS={januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"};
+const LABELS=[
+["a selfie of a person wearing a helmet or standing outdoors in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
+["an indoor selfie of two people sitting or talking inside a house or living room","Sesuai","Selfie PIC bersama anggota di dalam rumah"],
+["a selfie of a person at a small shop, warung, or market stall with people or goods","Sesuai","Selfie PIC di warung/toko"],
+["a photo of two or more people together","Sesuai","Foto bersama orang lain"],
+["a photo of a person standing in front of a house or yard","Sesuai","Foto orang di depan rumah"],
+["a photo of a house, building, or front porch exterior","Sesuai","Hanya foto rumah"],
+["a photo of paper money, banknotes, cash, or currency bills on a table or in hand","Tidak Sesuai","FOTO UANG"],
+["a photo taken of a smartphone screen or computer monitor displaying an image","Tidak Sesuai","Foto dari foto"],
+["an extreme close-up portrait of only a face filling the entire frame indoors","Tidak Sesuai","Foto hanya selfie saja"],
+["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle","Tidak Sesuai","Foto jalan/lantai/motor tanpa orang"],
+["a completely dark, black, white, red, blurry, or blank photo","Tidak Sesuai","Foto tidak jelas"],
+["a close-up photo of a paper document, receipt, or form","Tidak Sesuai","Foto dokumen atau kertas"]];
+const URL_RE=/https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
+let loadedFiles=[],rows=[],rowMap=new Map(),results=[],stopFlag=false,TOTAL=0,FILT="",QRY="",preferred=null;
 
-const $ = id => document.getElementById(id);
-const isOn = id => $(id).checked;
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* ---------- pengaturan tersimpan ---------- */
+const SK="bpac_settings_v1";
+function saveS(){try{const s={proxy:$("proxy").value};document.querySelectorAll("input[data-target]").forEach(c=>{s[c.id]=c.checked;s[c.dataset.target]=$(c.dataset.target).value});localStorage.setItem(SK,JSON.stringify(s))}catch{}}
+function loadS(){try{const s=JSON.parse(localStorage.getItem(SK)||"{}");for(const k in s){const e=$(k);if(!e)continue;if(e.type==="checkbox")e.checked=!!s[k];else e.value=s[k]}}catch{}}
+loadS();
+if(["localhost","127.0.0.1"].includes(location.hostname))$("proxy").value="/proxy?url=";
 
-const WILAYAH_LIST = [
-  "BANTEN-1","BANTEN-2",
-  "BEM-1","BEM-2","BEM-3","BEM-4",
-  "JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6",
-  "JAMBI-1","JAMBI-2","JAMBI-3",
-  "JATENG","KALIMANTAN",
-  "LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5",
-  "LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4",
-  "SUMBAWA-1","SUMBAWA-2","SUMBAWA-3",
-  "SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"
-];
-
-const MONTHS = {
-  januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",
-  january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",
-  jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"
-};
-const LABELS = [
-  ["a selfie of a person wearing a helmet or standing outdoors in front of a house or building", "Sesuai", "Selfie PIC di depan rumah/bangunan"],
-  ["an indoor selfie of two people sitting or talking inside a house or living room", "Sesuai", "Selfie PIC bersama anggota di dalam rumah"],
-  ["a selfie of a person at a small shop, warung, or market stall with people or goods", "Sesuai", "Selfie PIC di warung/toko"],
-  ["a photo of two or more people together", "Sesuai", "Foto bersama orang lain"],
-  ["a photo of a person standing in front of a house or yard", "Sesuai", "Foto orang di depan rumah"],
-  ["a photo of a house, building, or front porch exterior", "Sesuai", "Hanya foto rumah"],
-  ["a photo of paper money, banknotes, cash, or currency bills on a table or in hand", "Tidak Sesuai", "FOTO UANG"],
-  ["a photo taken of a smartphone screen or computer monitor displaying an image", "Tidak Sesuai", "Foto dari foto"],
-  ["an extreme close-up portrait of only a face filling the entire frame indoors", "Tidak Sesuai", "Foto hanya selfie saja"],
-  ["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle", "Tidak Sesuai", "Foto jalan/lantai/motor tanpa orang"],
-  ["a completely dark, black, white, red, blurry, or blank photo", "Tidak Sesuai", "Foto tidak jelas"],
-  ["a close-up photo of a paper document, receipt, or form", "Tidak Sesuai", "Foto dokumen atau kertas"]
-];
-const URL_RE = /https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
-
-let loadedFiles = [];
-let rows = [];
-let rowMap = new Map();
-let results = [];
-let stopFlag = false;
-
-if (["localhost", "127.0.0.1"].includes(location.hostname)) $("proxy").value = "/proxy?url=";
-
-// ---------- Multi-select Dropdown Wilayah (default kosong) ----------
-const wilCheckboxes = [];
-function getSelectedWilayah() {
-  return wilCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
-}
-function updateWilayahUI() {
-  const sel = getSelectedWilayah();
-  const allChecked = sel.length === WILAYAH_LIST.length;
-  $("wilAll").checked = allChecked;
-  $("wilAll").indeterminate = sel.length > 0 && !allChecked;
-
-  const txt = $("wilBtnText");
-  if (sel.length === 0) {
-    txt.textContent = "-- Pilih Wilayah --";
-    txt.classList.add("ms-placeholder");
-  } else if (allChecked) {
-    txt.textContent = `Select All (Semua Wilayah - ${WILAYAH_LIST.length})`;
-    txt.classList.remove("ms-placeholder");
-  } else if (sel.length <= 5) {
-    txt.textContent = sel.join(", ");
-    txt.classList.remove("ms-placeholder");
-  } else {
-    txt.textContent = `${sel.length} wilayah dipilih (${sel.slice(0, 3).join(", ")}, ...)`;
-    txt.classList.remove("ms-placeholder");
-  }
+/* ---------- ringkasan kesiapan ---------- */
+function refreshReady(){
+  const n=($("urls").value.match(new RegExp(URL_RE.source,"g"))||[]).length,r=document.querySelectorAll("input[data-target]:checked").length;
+  const w=getSelectedWilayah().length,all=$("wilAll").checked,hasX=loadedFiles.length>0,s2=n>0&&(!hasX||all||w>0);
+  $("n1").classList.toggle("ok",n>0);$("n1").textContent=n>0?"✓":"1";
+  $("n2").classList.toggle("ok",s2);$("n2").textContent=s2?"✓":"2";
+  $("extraSum").textContent=`Aturan tambahan (${r} aktif) — klik untuk membuka/menutup`;
+  const next=n>0?"Siap — klik <b>Mulai Periksa</b>":hasX?((all||w)?"Tidak ada foto yang cocok dengan filter ini; periksa wilayah dan tanggal di Excel":"Langkah berikutnya: pilih Wilayah (langkah 2)"):"Langkah berikutnya: unggah Excel atau tempel URL (langkah 1)";
+  $("ready").innerHTML=`<b>${n}</b> foto siap · Wilayah: <b>${all?"Semua":(w||"belum dipilih")}</b> · Aturan tambahan aktif: <b>${r}</b><br><span class="hint">${next}</span>`;
 }
 
-for (const w of WILAYAH_LIST) {
-  const lbl = document.createElement("label");
-  lbl.className = "ms-item";
-  lbl.dataset.wil = w;
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.value = w;
-  cb.checked = false;
-  cb.addEventListener("change", () => {
-    updateWilayahUI();
-    refreshFromFiles();
-  });
-  lbl.append(cb, document.createTextNode(w));
-  $("wilList").appendChild(lbl);
-  wilCheckboxes.push(cb);
+/* ---------- Wilayah ---------- */
+const wilCheckboxes=[];
+const getSelectedWilayah=()=>wilCheckboxes.filter(c=>c.checked).map(c=>c.value);
+function updateWilayahUI(){
+  const sel=getSelectedWilayah(),all=sel.length===WILAYAH_LIST.length,t=$("wilBtnText");
+  $("wilAll").checked=all;$("wilAll").indeterminate=sel.length>0&&!all;
+  t.classList.toggle("ms-placeholder",!sel.length);
+  t.textContent=!sel.length?"-- Pilih Wilayah --":all?`Select All (Semua Wilayah - ${WILAYAH_LIST.length})`:sel.length<=5?sel.join(", "):`${sel.length} wilayah dipilih (${sel.slice(0,3).join(", ")}, ...)`;
+  refreshReady();
 }
-updateWilayahUI();
+for(const w of WILAYAH_LIST){
+  const l=document.createElement("label");l.className="ms-item";l.dataset.wil=w;
+  const c=document.createElement("input");c.type="checkbox";c.value=w;
+  c.addEventListener("change",()=>{updateWilayahUI();refreshFromFiles()});
+  l.append(c,document.createTextNode(w));$("wilList").appendChild(l);wilCheckboxes.push(c);
+}
+$("wilBtn").onclick=()=>{$("wilMenu").classList.toggle("hidden");if(!$("wilMenu").classList.contains("hidden"))$("wilSearch").focus()};
+document.addEventListener("click",e=>{if(!$("wilWrap").contains(e.target))$("wilMenu").classList.add("hidden")});
+$("wilSearch").oninput=e=>{const q=e.target.value.trim().toUpperCase();$("wilList").querySelectorAll(".ms-item").forEach(el=>el.classList.toggle("hidden",q&&!el.dataset.wil.includes(q)))};
+$("wilAll").onchange=e=>{wilCheckboxes.forEach(c=>c.checked=e.target.checked);updateWilayahUI();refreshFromFiles()};
+$("wilClear").onclick=()=>{wilCheckboxes.forEach(c=>c.checked=false);updateWilayahUI();refreshFromFiles()};
 
-$("wilBtn").addEventListener("click", () => {
-  $("wilMenu").classList.toggle("hidden");
-  if (!$("wilMenu").classList.contains("hidden")) $("wilSearch").focus();
-});
-document.addEventListener("click", e => {
-  if (!$("wilWrap").contains(e.target)) $("wilMenu").classList.add("hidden");
-});
-$("wilSearch").addEventListener("input", e => {
-  const q = e.target.value.trim().toUpperCase();
-  $("wilList").querySelectorAll(".ms-item").forEach(el => {
-    el.classList.toggle("hidden", q && !el.dataset.wil.includes(q));
-  });
-});
-$("wilAll").addEventListener("change", e => {
-  const on = e.target.checked;
-  wilCheckboxes.forEach(cb => { cb.checked = on; });
-  updateWilayahUI();
-  refreshFromFiles();
-});
-$("wilClear").addEventListener("click", () => {
-  wilCheckboxes.forEach(cb => { cb.checked = false; });
-  updateWilayahUI();
-  refreshFromFiles();
-});
+/* ---------- Aturan (toggle + preset) ---------- */
+const toggles=[...document.querySelectorAll("input[data-target]")];
+toggles.forEach(c=>{const t=$(c.dataset.target);const sync=()=>{t.disabled=!c.checked};c.addEventListener("change",()=>{sync();saveS();refreshReady()});sync()});
+$("rules").addEventListener("input",saveS);$("proxy").addEventListener("input",saveS);
+const setAll=v=>toggles.forEach(c=>{c.checked=v;c.dispatchEvent(new Event("change"))});
+$("allOn").onclick=()=>setAll(true);$("allOff").onclick=()=>setAll(false);
+$("urls").addEventListener("input",refreshReady);
 
-// Bind setiap toggle ke input angkanya (default OFF / disabled)
-document.querySelectorAll('input[type="checkbox"][data-target]').forEach(cb => {
-  const target = $(cb.dataset.target);
-  const sync = () => { target.disabled = !cb.checked; };
-  cb.addEventListener("change", sync);
-  sync();
-});
-
-// ---------- Excel import ----------
-function normDate(v) {
-  if (v == null || v === "") return "";
-  if (v instanceof Date && !isNaN(v)) {
-    return `${v.getFullYear()}${String(v.getMonth() + 1).padStart(2, "0")}${String(v.getDate()).padStart(2, "0")}`;
-  }
-  if (typeof v === "number") {
-    const d = XLSX.SSF.parse_date_code(v);
-    return d ? `${d.y}${String(d.m).padStart(2,"0")}${String(d.d).padStart(2,"0")}` : "";
-  }
-  const s = String(v).trim();
-  let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-  if (m) return m[1] + m[2].padStart(2,"0") + m[3].padStart(2,"0");
-  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
-  if (m) {
-    const yr = m[3].length === 2 ? "20" + m[3] : m[3];
-    return yr + m[2].padStart(2,"0") + m[1].padStart(2,"0");
-  }
-  m = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})/);
-  if (m) {
-    const mon = MONTHS[m[2].toLowerCase()];
-    if (mon) {
-      const yr = m[3].length === 2 ? "20" + m[3] : m[3];
-      return yr + mon + m[1].padStart(2,"0");
-    }
-  }
+/* ---------- Excel ---------- */
+function normDate(v){
+  if(v==null||v==="")return "";
+  if(v instanceof Date&&!isNaN(v))return `${v.getFullYear()}${String(v.getMonth()+1).padStart(2,"0")}${String(v.getDate()).padStart(2,"0")}`;
+  if(typeof v==="number"){const d=XLSX.SSF.parse_date_code(v);return d?`${d.y}${String(d.m).padStart(2,"0")}${String(d.d).padStart(2,"0")}`:""}
+  const s=String(v).trim();let m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if(m)return m[1]+m[2].padStart(2,"0")+m[3].padStart(2,"0");
+  m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+  if(m)return (m[3].length===2?"20"+m[3]:m[3])+m[2].padStart(2,"0")+m[1].padStart(2,"0");
+  m=s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})/);
+  if(m){const mon=MONTHS[m[2].toLowerCase()];if(mon)return (m[3].length===2?"20"+m[3]:m[3])+mon+m[1].padStart(2,"0")}
   return "";
 }
-const normId = v => String(v ?? "").trim().replace(/\.0$/, "");
-const findSheet = (wb, kws) => wb.SheetNames.find(n => kws.some(k => n.trim().toUpperCase().includes(k)));
-const pick = (r, ...keys) => {
-  for (const k of keys) {
-    const val = r[k];
-    if (val !== undefined && val !== null && String(val).trim() !== "") return val;
-  }
-  return "";
-};
-
-function readSheet(wb, name) {
-  const ws = wb.Sheets[name];
-  const grid = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ""});
-  if (!grid.length) return [];
-
-  let h = 0;
-  for (let i = 0; i < Math.min(grid.length, 30); i++) {
-    const v = grid[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
-    if (
-      v.includes("NAMA WILAYAH") ||
-      v.includes("ID PIC") ||
-      v.includes("NO KONTRAK") ||
-      v.includes("LINK FOTO KUNJUNGAN")
-    ) {
-      h = i;
-      break;
-    }
-  }
-
-  const headers = grid[h].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
-  const out = [];
-  for (let i = h + 1; i < grid.length; i++) {
-    const rowArr = grid[i];
-    if (!rowArr || rowArr.every(c => String(c).trim() === "")) continue;
-    const obj = {};
-    for (let j = 0; j < headers.length; j++) {
-      if (headers[j]) obj[headers[j]] = rowArr[j] ?? "";
-    }
-    out.push(obj);
-  }
+const normId=v=>String(v??"").trim().replace(/\.0$/,"");
+const findSheet=(wb,kws)=>wb.SheetNames.find(n=>kws.some(k=>n.trim().toUpperCase().includes(k)));
+const pick=(r,...keys)=>{for(const k of keys){const v=r[k];if(v!==undefined&&v!==null&&String(v).trim()!=="")return v}return ""};
+function readSheet(wb,name){
+  const grid=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:""});if(!grid.length)return [];
+  let h=0;
+  for(let i=0;i<Math.min(grid.length,30);i++){const v=grid[i].map(x=>String(x).trim().replace(/\s+/g," ").toUpperCase());
+    if(v.includes("NAMA WILAYAH")||v.includes("ID PIC")||v.includes("NO KONTRAK")||v.includes("LINK FOTO KUNJUNGAN")){h=i;break}}
+  const headers=grid[h].map(x=>String(x).trim().replace(/\s+/g," ").toUpperCase()),out=[];
+  for(let i=h+1;i<grid.length;i++){const a=grid[i];if(!a||a.every(c=>String(c).trim()===""))continue;
+    const o={};for(let j=0;j<headers.length;j++)if(headers[j])o[headers[j]]=a[j]??"";out.push(o)}
   return out;
 }
-
-async function loadFiles(files) {
-  const out = [], notes = [];
-  const selectAll = $("wilAll").checked;
-  const wil = getSelectedWilayah();
-  if (!selectAll && wil.length === 0) return {out, notes};
-
-  for (const f of files) {
-    const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), {type:"array"});
-    const mon = findSheet(wb, ["MONITORING"]);
-    const fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
-    if (!fs) { notes.push(`${f.name}: sheet FOTO tidak ada`); continue; }
-
-    let valid = null;
-    if (mon) {
-      valid = new Set(
-        readSheet(wb, mon).map(mr => normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")) + "|" + normId(pick(mr, "ID PIC")))
-      );
-    } else {
-      notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
-    }
-
-    for (const r of readSheet(wb, fs)) {
-      const wilayah = String(pick(r, "NAMA WILAYAH", "CLUSTER")).trim().toUpperCase();
-      if (!selectAll && !wil.includes(wilayah)) continue;
-
-      const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN"));
-      const idpic = normId(pick(r, "ID PIC"));
-      if (valid && !valid.has(tgl + "|" + idpic)) continue;
-
-      let url = String(pick(r, "LINK FOTO KUNJUNGAN", "FOTO KUNJUNGAN")).trim();
-      if (!/^https?:/i.test(url)) {
-        const m = Object.values(r).map(String).join(" ").match(URL_RE);
-        url = m ? m[0] : "";
-      }
-      if (!url) continue;
-
-      const kontrak = normId(pick(r, "NO KONTRAK"));
-      const nama = String(pick(r, "NAMA PIC")).trim();
-      out.push({file: f.name, tgl, wilayah, kontrak, idpic, nama, url});
+async function loadFiles(files){
+  const out=[],notes=[],selectAll=$("wilAll").checked,wil=getSelectedWilayah();
+  if(!selectAll&&!wil.length)return {out,notes};
+  for(const f of files){
+    const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:"array"});
+    const mon=findSheet(wb,["MONITORING"]),fs=findSheet(wb,["FOTO KUNJUNGAN","FOTO"]);
+    if(!fs){notes.push(`${f.name}: sheet FOTO tidak ada`);continue}
+    let valid=null;
+    if(mon)valid=new Set(readSheet(wb,mon).map(mr=>normDate(pick(mr,"TGL LKP","TGL PENUGASAN"))+"|"+normId(pick(mr,"ID PIC"))));
+    else notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
+    for(const r of readSheet(wb,fs)){
+      const wilayah=String(pick(r,"NAMA WILAYAH","CLUSTER")).trim().toUpperCase();
+      if(!selectAll&&!wil.includes(wilayah))continue;
+      const tgl=normDate(pick(r,"TGL LKP","TGL PENUGASAN")),idpic=normId(pick(r,"ID PIC"));
+      if(valid&&!valid.has(tgl+"|"+idpic))continue;
+      let url=String(pick(r,"LINK FOTO KUNJUNGAN","FOTO KUNJUNGAN")).trim();
+      if(!/^https?:/i.test(url)){const m=Object.values(r).map(String).join(" ").match(URL_RE);url=m?m[0]:""}
+      if(!url)continue;
+      out.push({file:f.name,tgl,wilayah,kontrak:normId(pick(r,"NO KONTRAK")),idpic,nama:String(pick(r,"NAMA PIC")).trim(),url});
     }
   }
-  return {out, notes};
+  return {out,notes};
 }
-
-async function refreshFromFiles() {
-  if (!loadedFiles.length) return;
-  const selectAll = $("wilAll").checked;
-  const wil = getSelectedWilayah();
-  if (!selectAll && wil.length === 0) {
-    rows = [];
-    rowMap = new Map();
-    $("urls").value = "";
-    $("st").textContent = `${loadedFiles.length} file Excel siap. Pilih Wilayah di dropdown atau centang Select All.`;
-    return;
-  }
-
-  $("st").textContent = "Membaca Excel...";
-  try {
-    const {out, notes} = await loadFiles(loadedFiles);
-    rows = out;
-    rowMap = new Map();
-    for (const r of out) rowMap.set(r.url.trim(), r);
-    $("urls").value = out.map(r => r.url).join("\n");
-    const withMeta = out.filter(r => r.wilayah || r.idpic || r.nama || r.kontrak).length;
-    $("st").textContent = `${out.length} foto dimuat (${withMeta} dengan data Wilayah/PIC/Kontrak).` + (notes.length ? " " + notes.join("; ") : "");
-    if (!out.length) alert("Tidak ada foto yang cocok untuk wilayah yang dipilih.");
-  } catch (err) {
-    $("st").textContent = "";
-    alert("Gagal membaca file: " + err.message);
-  }
+function showDataInfo(out){
+  const el=$("dataInfo");if(!out.length){el.innerHTML="";return}
+  const f=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"-",ds=out.map(r=>r.tgl).filter(Boolean).sort();
+  const pic=new Set(out.map(r=>r.idpic).filter(Boolean)).size,wc={};
+  out.forEach(r=>{const w=r.wilayah||"(kosong)";wc[w]=(wc[w]||0)+1});
+  const top=Object.entries(wc).sort((a,b)=>b[1]-a[1]);
+  el.innerHTML=`<b>${out.length}</b> foto dari <b>${loadedFiles.length}</b> file · <b>${pic}</b> PIC unik · TGL LKP ${f(ds[0])} – ${f(ds[ds.length-1])}<br>`+top.slice(0,12).map(([w,c])=>`<span class="chip">${esc(w)}: ${c}</span>`).join(" ")+(top.length>12?` <span class="hint">+${top.length-12} wilayah lain</span>`:"");
 }
+async function refreshFromFiles(){
+  if(!loadedFiles.length)return;
+  if(!$("wilAll").checked&&!getSelectedWilayah().length){
+    rows=[];rowMap=new Map();$("urls").value="";showDataInfo([]);refreshReady();
+    $("st").textContent=`${loadedFiles.length} file Excel siap. Langkah 2: pilih Wilayah atau centang Select All.`;return}
+  $("st").textContent="Membaca Excel...";
+  try{
+    const {out,notes}=await loadFiles(loadedFiles);
+    rows=out;rowMap=new Map();for(const r of out)rowMap.set(r.url.trim(),r);showDataInfo(out);
+    $("urls").value=out.map(r=>r.url).join("\n");refreshReady();
+    const meta=out.filter(r=>r.wilayah||r.idpic||r.nama||r.kontrak).length;
+    $("st").textContent=`${out.length} foto dimuat (${meta} dengan data Wilayah/PIC/Kontrak).`+(notes.length?" "+notes.join("; "):"");
+    if(!out.length)alert("Tidak ada foto yang cocok untuk wilayah yang dipilih.");
+  }catch(err){$("st").textContent="";alert("Gagal membaca file: "+err.message)}
+}
+function renderFiles(){
+  $("files").innerHTML=loadedFiles.map(f=>`<span class="chip">📄 ${esc(f.name)}</span>`).join("")+(loadedFiles.length?'<button class="lnk" id="clr" type="button">Hapus semua</button>':"");
+  const c=$("clr");if(c)c.onclick=()=>{loadedFiles=[];rows=[];rowMap=new Map();$("urls").value="";$("xl").value="";showDataInfo([]);renderFiles();refreshReady();$("st").textContent=""};
+}
+async function setFiles(list){loadedFiles=list;renderFiles();await refreshFromFiles()}
+$("xl").onchange=async e=>{if(e.target.files.length)await setFiles([...e.target.files])};
+const dz=$("drop");
+["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("on")}));
+["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("on")}));
+dz.addEventListener("drop",e=>{const f=[...e.dataTransfer.files].filter(x=>/\.(xlsx|xls|csv)$/i.test(x.name));if(f.length)setFiles(f);else $("st").textContent="Hanya file .xlsx, .xls, atau .csv."});
 
-$("xl").addEventListener("change", async e => {
-  if (!e.target.files.length) return;
-  loadedFiles = [...e.target.files];
-  await refreshFromFiles();
-});
-
-// ---------- Image helpers ----------
-let preferred = null;
-function candidates(u) {
-  const p = $("proxy").value.trim();
-  if (p) return [{kind:"proxy", via:"fetch", src:p + encodeURIComponent(u)}];
-
-  const httpsUrl = u.startsWith("http:") ? u.replace(/^http:/, "https:") : u;
-  const c = [
-    {kind:"direct", via:"img", src:u},
-    ...(u.startsWith("http:") ? [{kind:"https", via:"img", src:httpsUrl}] : []),
-    {kind:"wsrv", via:"fetch", src:"https://wsrv.nl/?url=" + encodeURIComponent(httpsUrl)},
-    {kind:"corsproxy", via:"fetch", src:"https://corsproxy.io/?url=" + encodeURIComponent(httpsUrl)},
-    {kind:"allorigins", via:"fetch", src:"https://api.allorigins.win/raw?url=" + encodeURIComponent(httpsUrl)}
-  ];
-  if (preferred) c.sort((x, y) => (y.kind === preferred) - (x.kind === preferred));
+/* ---------- Gambar ---------- */
+function candidates(u){
+  const p=$("proxy").value.trim();if(p)return [{kind:"proxy",via:"fetch",src:p+encodeURIComponent(u)}];
+  const h=u.startsWith("http:")?u.replace(/^http:/,"https:"):u;
+  const c=[{kind:"direct",via:"img",src:u},...(u.startsWith("http:")?[{kind:"https",via:"img",src:h}]:[]),
+    {kind:"wsrv",via:"fetch",src:"https://wsrv.nl/?url="+encodeURIComponent(h)},
+    {kind:"corsproxy",via:"fetch",src:"https://corsproxy.io/?url="+encodeURIComponent(h)},
+    {kind:"allorigins",via:"fetch",src:"https://api.allorigins.win/raw?url="+encodeURIComponent(h)}];
+  if(preferred)c.sort((x,y)=>(y.kind===preferred)-(x.kind===preferred));
   return c;
 }
-
-async function viaImg(src) {
-  const img = await new Promise((ok, no) => {
-    const i = new Image(); i.crossOrigin = "Anonymous";
-    const t = setTimeout(() => no(new Error("timeout")), 12000);
-    i.onload = () => { clearTimeout(t); ok(i); };
-    i.onerror = () => { clearTimeout(t); no(new Error("img")); };
-    i.src = src;
-  });
-  const bmp = await createImageBitmap(img);
-  const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
-  c.getContext("2d").drawImage(bmp, 0, 0);
-  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
-  return {bmp, blob};
+async function viaImg(src){
+  const img=await new Promise((ok,no)=>{const i=new Image();i.crossOrigin="Anonymous";const t=setTimeout(()=>no(new Error("timeout")),12000);
+    i.onload=()=>{clearTimeout(t);ok(i)};i.onerror=()=>{clearTimeout(t);no(new Error("img"))};i.src=src});
+  const bmp=await createImageBitmap(img),c=document.createElement("canvas");c.width=bmp.width;c.height=bmp.height;
+  c.getContext("2d").drawImage(bmp,0,0);
+  return {bmp,blob:await new Promise(r=>c.toBlob(r,"image/jpeg",0.92))};
 }
-
-async function fetchPhoto(c) {
-  if (c.via === "fetch") {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 15000);
-    try {
-      const resp = await fetch(c.src, {signal: ctrl.signal});
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const blob = await resp.blob();
-      if (!blob.type.startsWith("image/") && blob.size < 1000) throw new Error("Bukan gambar");
-      return {bmp: await createImageBitmap(blob), blob};
-    } finally {
-      clearTimeout(t);
-    }
+async function fetchPhoto(c){
+  if(c.via==="fetch"){
+    const ctrl=new AbortController(),t=setTimeout(()=>ctrl.abort(),15000);
+    try{const resp=await fetch(c.src,{signal:ctrl.signal});if(!resp.ok)throw new Error("HTTP "+resp.status);
+      const blob=await resp.blob();if(!blob.type.startsWith("image/")&&blob.size<1000)throw new Error("Bukan gambar");
+      return {bmp:await createImageBitmap(blob),blob}}finally{clearTimeout(t)}
   }
   return viaImg(c.src);
 }
-
-const testImg = (src, cors) => new Promise(ok => {
-  const i = new Image(); if (cors) i.crossOrigin = "Anonymous";
-  const t = setTimeout(() => ok(false), 10000);
-  i.onload = () => { clearTimeout(t); ok(true); };
-  i.onerror = () => { clearTimeout(t); ok(false); };
-  i.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now();
-});
-
-async function diagnose(u) {
-  if ($("proxy").value.trim()) return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
-  const h = u.replace(/^http:/, "https:");
-  const [a, b, c, d] = await Promise.all([testImg(u, false), testImg(h, false), testImg(u, true), testImg(h, true)]);
-  const y = v => v ? "BISA" : "GAGAL";
-  const why = (c || d) ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)."
-    : (a || b) ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto."
-    : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
+const testImg=(src,cors)=>new Promise(ok=>{const i=new Image();if(cors)i.crossOrigin="Anonymous";const t=setTimeout(()=>ok(false),10000);
+  i.onload=()=>{clearTimeout(t);ok(true)};i.onerror=()=>{clearTimeout(t);ok(false)};i.src=src+(src.includes("?")?"&":"?")+"_t="+Date.now()});
+async function diagnose(u){
+  if($("proxy").value.trim())return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
+  const h=u.replace(/^http:/,"https:");
+  const [a,b,c,d]=await Promise.all([testImg(u,false),testImg(h,false),testImg(u,true),testImg(h,true)]),y=v=>v?"BISA":"GAGAL";
+  const why=(c||d)?"Pembacaan piksel bisa (seharusnya berhasil, coba lagi).":(a||b)?"Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto.":"Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
   return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
 }
-
-async function canFetchAny(urls) {
-  for (const u of urls) for (const c of candidates(u)) {
-    try {
-      (await fetchPhoto(c)).bmp.close();
-      preferred = c.kind;
-      return true;
-    } catch {}
-  }
+async function canFetchAny(urls){
+  for(const u of urls)for(const c of candidates(u)){try{(await fetchPhoto(c)).bmp.close();preferred=c.kind;return true}catch{}}
   return false;
 }
+function cropCanvas(bmp){
+  const sx=isOn("t_sx")?Math.floor(bmp.width*+$("sx").value):0,sy=isOn("t_sy")?Math.floor(bmp.height*+$("sy").value):0;
+  const sw=Math.max(1,bmp.width-sx),sh=Math.max(1,bmp.height-sy),sc=sw>1000?1000/sw:1,c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(sw*sc));c.height=Math.max(1,Math.round(sh*sc));
+  c.getContext("2d").drawImage(bmp,sx,sy,sw,sh,0,0,c.width,c.height);return c;
+}
+function thumb(bmp){
+  const c=document.createElement("canvas");c.width=c.height=48;const s=Math.max(48/bmp.width,48/bmp.height);
+  c.getContext("2d").drawImage(bmp,(48-bmp.width*s)/2,(48-bmp.height*s)/2,bmp.width*s,bmp.height*s);return c.toDataURL("image/jpeg",0.6);
+}
+function dhash(bmp){
+  const c=document.createElement("canvas");c.width=9;c.height=8;const x=c.getContext("2d");x.drawImage(bmp,0,0,9,8);
+  const d=x.getImageData(0,0,9,8).data,g=i=>d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114;let hi=0,lo=0,n=0;
+  for(let y=0;y<8;y++)for(let xx=0;xx<8;xx++){const bit=g(y*9+xx+1)>g(y*9+xx)?1:0;if(n<32)hi=(hi*2+bit)>>>0;else lo=(lo*2+bit)>>>0;n++}
+  return [hi,lo];
+}
+function pop(x){x=x>>>0;x=x-((x>>>1)&0x55555555);x=(x&0x33333333)+((x>>>2)&0x33333333);return Math.imul((x+(x>>>4))&0x0f0f0f0f,0x01010101)>>>24}
 
-function cropCanvas(bmp) {
-  const sx = isOn("t_sx") ? Math.floor(bmp.width * +$("sx").value) : 0;
-  const sy = isOn("t_sy") ? Math.floor(bmp.height * +$("sy").value) : 0;
-  const sw = Math.max(1, bmp.width - sx), sh = Math.max(1, bmp.height - sy);
-  const sc = sw > 1000 ? 1000 / sw : 1;
-  const c = document.createElement("canvas");
-  c.width = Math.max(1, Math.round(sw * sc)); c.height = Math.max(1, Math.round(sh * sc));
-  c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
-  return c;
-}
-function thumb(bmp) {
-  const c = document.createElement("canvas"); c.width = c.height = 48;
-  const s = Math.max(48 / bmp.width, 48 / bmp.height);
-  c.getContext("2d").drawImage(bmp, (48 - bmp.width * s) / 2, (48 - bmp.height * s) / 2, bmp.width * s, bmp.height * s);
-  return c.toDataURL("image/jpeg", 0.6);
-}
-function dhash(bmp) {
-  const c = document.createElement("canvas"); c.width = 9; c.height = 8;
-  const x = c.getContext("2d"); x.drawImage(bmp, 0, 0, 9, 8);
-  const d = x.getImageData(0, 0, 9, 8).data;
-  const g = i => d[i*4]*0.299 + d[i*4+1]*0.587 + d[i*4+2]*0.114;
-  let hi = 0, lo = 0, n = 0;
-  for (let y = 0; y < 8; y++) for (let xx = 0; xx < 8; xx++) {
-    const bit = g(y*9 + xx + 1) > g(y*9 + xx) ? 1 : 0;
-    if (n < 32) hi = (hi * 2 + bit) >>> 0; else lo = (lo * 2 + bit) >>> 0;
-    n++;
-  }
-  return [hi, lo];
-}
-function pop(x) {
-  x = x >>> 0; x = x - ((x >>> 1) & 0x55555555); x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
-  return Math.imul((x + (x >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24;
-}
-
-// ---------- Stamp parsing ----------
-function lev(a, b) {
-  const m = Array.from({length:a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
-  for (let j = 1; j <= b.length; j++) m[0][j] = j;
-  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
-    m[i][j] = Math.min(m[i-1][j] + 1, m[i][j-1] + 1, m[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+/* ---------- Stamp ---------- */
+function lev(a,b){
+  const m=Array.from({length:a.length+1},(_,i)=>[i,...Array(b.length).fill(0)]);for(let j=1;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
   return m[a.length][b.length];
 }
-function stampDate(t) {
-  let m = t.match(/(\d{1,2})\s*([A-Za-z]{3,9})\s*(\d{4})/);
-  if (m) {
-    const w = m[2].toLowerCase(); let best = null, bd = 99;
-    for (const k in MONTHS) { const d = lev(w, k); if (d < bd) { bd = d; best = k; } }
-    if (best && bd <= 2) return m[3] + MONTHS[best] + m[1].padStart(2, "0");
-  }
-  m = t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-  return m ? m[3] + m[2].padStart(2, "0") + m[1].padStart(2, "0") : "";
+function stampDate(t){
+  let m=t.match(/(\d{1,2})\s*([A-Za-z]{3,9})\s*(\d{4})/);
+  if(m){const w=m[2].toLowerCase();let best=null,bd=99;for(const k in MONTHS){const d=lev(w,k);if(d<bd){bd=d;best=k}}
+    if(best&&bd<=2)return m[3]+MONTHS[best]+m[1].padStart(2,"0")}
+  m=t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);return m?m[3]+m[2].padStart(2,"0")+m[1].padStart(2,"0"):"";
 }
-function stampCoords(t) {
-  const m = t.match(/(-?\d{1,3}\.\d{3,})\s*[,;]?\s*(-?\d{1,3}\.\d{3,})/);
-  if (!m) return null;
-  let a = +m[1], b = +m[2];
-  const lat0 = +$("lat0").value, lat1 = +$("lat1").value;
-  const lon0 = +$("lon0").value, lon1 = +$("lon1").value;
-  let lat = a, lon = b;
-  if (Math.abs(a) > 90 || (a >= lon0 && a <= lon1 && Math.abs(b) <= 90)) {
-    lon = a; lat = b;
-  }
-  if (lat > 0 && -lat >= lat0 && -lat <= lat1) lat = -lat;
-  return [lat, lon];
+function stampCoords(t){
+  const m=t.match(/(-?\d{1,3}\.\d{3,})\s*[,;]?\s*(-?\d{1,3}\.\d{3,})/);if(!m)return null;
+  const a=+m[1],b=+m[2],lat0=+$("lat0").value,lat1=+$("lat1").value,lon0=+$("lon0").value,lon1=+$("lon1").value;
+  let lat=a,lon=b;
+  if(Math.abs(a)>90||(a>=lon0&&a<=lon1&&Math.abs(b)<=90)){lon=a;lat=b}
+  if(lat>0&&-lat>=lat0&&-lat<=lat1)lat=-lat;
+  return [lat,lon];
 }
 
-// ---------- Deteksi kualitas gambar & AI dengan rotasi ----------
-function checkImageQuality(bmp) {
-  const w = 120, h = 90;
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  const ctx = c.getContext("2d");
-
-  // Ambil area tengah (buang 10% kiri/kanan/atas dari border hitam, dan 25% bawah dari watermark)
-  const sx = Math.floor(bmp.width * 0.10);
-  const sy = Math.floor(bmp.height * 0.10);
-  const sw = Math.max(1, Math.floor(bmp.width * 0.80));
-  const sh = Math.max(1, Math.floor(bmp.height * 0.65));
-  ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
-
-  const d = ctx.getImageData(0, 0, w, h).data;
-  const n = w * h;
-  const gray = new Float32Array(n);
-
-  let rSum = 0, gSum = 0, bSum = 0, bright = 0, dark = 0;
-  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
-    const r = d[i], g = d[i + 1], b = d[i + 2];
-    rSum += r; gSum += g; bSum += b;
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    gray[p] = lum;
-    if (r > 240 && g > 240 && b > 240) bright++;
-    if (lum < 22) dark++;
-  }
-
-  // 1. Cek satu warna / polos (putih, merah, hitam)
-  const rM = rSum / n, gM = gSum / n, bM = bSum / n;
-  let rVar = 0, gVar = 0, bVar = 0;
-  for (let i = 0; i < d.length; i += 4) {
-    rVar += (d[i] - rM) ** 2;
-    gVar += (d[i + 1] - gM) ** 2;
-    bVar += (d[i + 2] - bM) ** 2;
-  }
-  const maxStd = Math.max(Math.sqrt(rVar / n), Math.sqrt(gVar / n), Math.sqrt(bVar / n));
-  if (maxStd < 14) return "FOTO KOSONG / SATU WARNA";
-
-  // 2. Cek terlalu gelap (>80% area hitam/gelap)
-  if (dark / n > 0.80) return "FOTO TERLALU GELAP / TIDAK JELAS";
-
-  // 3. Cek sangat blur / berkabut / tidak ada objek (Laplacian variance + Edge density)
-  let lapSum = 0, lapSq = 0, strongEdges = 0, cnt = 0;
-  for (let y = 1; y < h - 1; y++) {
-    for (let x = 1; x < w - 1; x++) {
-      const idx = y * w + x;
-      const lap = 4 * gray[idx] - gray[idx - 1] - gray[idx + 1] - gray[idx - w] - gray[idx + w];
-      lapSum += lap;
-      lapSq += lap * lap;
-      const gx = Math.abs(gray[idx + 1] - gray[idx - 1]);
-      const gy = Math.abs(gray[idx + w] - gray[idx - w]);
-      if (gx + gy > 22) strongEdges++;
-      cnt++;
-    }
-  }
-  const lapMean = lapSum / cnt;
-  const lapVar = lapSq / cnt - lapMean * lapMean;
-  const edgeRatio = strongEdges / cnt;
-  if (lapVar < 40 || edgeRatio < 0.015) return "FOTO BLUR / TIDAK JELAS";
-
-  // 4. Cek overexposed / silau putih dominan (>55% area putih terang)
-  // Catatan: akan tetap dicek AI dulu — jika wajah/orang terdeteksi Sesuai, tetap dianggap VALID
-  if (bright / n > 0.55) return "FOTO TERLALU TERANG / TIDAK JELAS";
-
+/* ---------- Kualitas gambar & AI ---------- */
+function checkImageQuality(bmp){
+  const w=120,h=90,c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");
+  const sx=Math.floor(bmp.width*0.10),sy=Math.floor(bmp.height*0.10),sw=Math.max(1,Math.floor(bmp.width*0.80)),sh=Math.max(1,Math.floor(bmp.height*0.65));
+  ctx.drawImage(bmp,sx,sy,sw,sh,0,0,w,h);
+  const d=ctx.getImageData(0,0,w,h).data,n=w*h,gray=new Float32Array(n);let rS=0,gS=0,bS=0,bright=0,dark=0;
+  for(let i=0,p=0;i<d.length;i+=4,p++){const r=d[i],g=d[i+1],b=d[i+2];rS+=r;gS+=g;bS+=b;const lum=0.299*r+0.587*g+0.114*b;gray[p]=lum;if(r>240&&g>240&&b>240)bright++;if(lum<22)dark++}
+  const rM=rS/n,gM=gS/n,bM=bS/n;let rV=0,gV=0,bV=0;
+  for(let i=0;i<d.length;i+=4){rV+=(d[i]-rM)**2;gV+=(d[i+1]-gM)**2;bV+=(d[i+2]-bM)**2}
+  if(Math.max(Math.sqrt(rV/n),Math.sqrt(gV/n),Math.sqrt(bV/n))<14)return "FOTO KOSONG / SATU WARNA";
+  if(dark/n>0.80)return "FOTO TERLALU GELAP / TIDAK JELAS";
+  let lapSum=0,lapSq=0,strong=0,cnt=0;
+  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,lap=4*gray[i]-gray[i-1]-gray[i+1]-gray[i-w]-gray[i+w];lapSum+=lap;lapSq+=lap*lap;
+    if(Math.abs(gray[i+1]-gray[i-1])+Math.abs(gray[i+w]-gray[i-w])>22)strong++;cnt++}
+  const lm=lapSum/cnt;
+  if(lapSq/cnt-lm*lm<40||strong/cnt<0.015)return "FOTO BLUR / TIDAK JELAS";
+  if(bright/n>0.55)return "FOTO TERLALU TERANG / TIDAK JELAS";
   return "";
 }
-
-async function rotatedBlob(bmp, deg) {
-  const c = document.createElement("canvas");
-  const swap = deg === 90 || deg === 270;
-  c.width = swap ? bmp.height : bmp.width;
-  c.height = swap ? bmp.width : bmp.height;
-  const ctx = c.getContext("2d");
-  ctx.translate(c.width / 2, c.height / 2);
-  ctx.rotate((deg * Math.PI) / 180);
-  ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
-  return new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
+async function rotatedBlob(bmp,deg){
+  const c=document.createElement("canvas"),swap=deg===90||deg===270;c.width=swap?bmp.height:bmp.width;c.height=swap?bmp.width:bmp.height;
+  const ctx=c.getContext("2d");ctx.translate(c.width/2,c.height/2);ctx.rotate(deg*Math.PI/180);ctx.drawImage(bmp,-bmp.width/2,-bmp.height/2);
+  return new Promise(r=>c.toBlob(r,"image/jpeg",0.9));
 }
-
-async function classifyWithRotation(clip, bmp, blob) {
-  const texts = LABELS.map(l => l[0]);
-  const run = async b => {
-    const u = URL.createObjectURL(b);
-    try {
-      const out = await clip(u, texts, {hypothesis_template: "{}"});
-      let okSum = 0, badSum = 0, topOk = null;
-      for (const item of out) {
-        const L = LABELS.find(l => l[0] === item.label);
-        if (!L) continue;
-        if (L[1] === "Sesuai") {
-          okSum += item.score;
-          if (!topOk) topOk = {label: L[2], score: item.score};
-        } else {
-          badSum += item.score;
-        }
-      }
-      const top = out[0], L = LABELS.find(l => l[0] === top.label);
-      if (!L) return null;
-      if (okSum >= 0.50 && topOk) {
-        return {status: "Sesuai", label: topOk.label, score: okSum, okSum, badSum};
-      }
-      return {status: L[1], label: L[2], score: top.score, okSum, badSum};
-    } finally {
-      URL.revokeObjectURL(u);
-    }
+async function classifyWithRotation(clip,bmp,blob){
+  const texts=LABELS.map(l=>l[0]);
+  const run=async b=>{
+    const u=URL.createObjectURL(b);
+    try{
+      const out=await clip(u,texts,{hypothesis_template:"{}"});let okSum=0,badSum=0,topOk=null;
+      for(const it of out){const L=LABELS.find(l=>l[0]===it.label);if(!L)continue;
+        if(L[1]==="Sesuai"){okSum+=it.score;if(!topOk)topOk={label:L[2],score:it.score}}else badSum+=it.score}
+      const top=out[0],L=LABELS.find(l=>l[0]===top.label);if(!L)return null;
+      if(okSum>=0.50&&topOk)return {status:"Sesuai",label:topOk.label,score:okSum,okSum,badSum};
+      return {status:L[1],label:L[2],score:top.score,okSum,badSum};
+    }finally{URL.revokeObjectURL(u)}
   };
-
-  let best = await run(blob);
-  // Cek rotasi 90° & 270° untuk semua hasil Tidak Sesuai (kecuali FOTO UANG yang sangat yakin)
-  if (best && best.status === "Tidak Sesuai" && !(best.label === "FOTO UANG" && best.score >= 0.55)) {
-    for (const deg of [90, 270]) {
-      const alt = await run(await rotatedBlob(bmp, deg));
-      if (alt && (alt.status === "Sesuai" || alt.okSum > best.okSum)) {
-        best = alt;
-        if (alt.status === "Sesuai") break;
-      }
-    }
+  let best=await run(blob);
+  if(best&&best.status==="Tidak Sesuai"&&!(best.label==="FOTO UANG"&&best.score>=0.55)){
+    for(const deg of [90,270]){const alt=await run(await rotatedBlob(bmp,deg));
+      if(alt&&(alt.status==="Sesuai"||alt.okSum>best.okSum)){best=alt;if(alt.status==="Sesuai")break}}
   }
   return best;
 }
 
-// ---------- Verdict (hanya cek aturan yang toggle-nya ON) ----------
-function verdict(r) {
-  if (r.failed) return;
-  const hard = [], warn = [];
-  const checkStamp = isOn("t_sx") || isOn("t_sy");
-  const checkLat0 = isOn("t_lat0"), checkLat1 = isOn("t_lat1");
-  const checkLon0 = isOn("t_lon0"), checkLon1 = isOn("t_lon1");
-  const checkGps = checkLat0 || checkLat1 || checkLon0 || checkLon1;
-  const checkDup = isOn("t_ham");
+/* ---------- Verdict ---------- */
+function verdict(r){
+  if(r.failed)return;
+  const hard=[],warn=[],cs=isOn("t_sx")||isOn("t_sy"),c0=isOn("t_lat0"),c1=isOn("t_lat1"),c2=isOn("t_lon0"),c3=isOn("t_lon1");
+  const conf=parseFloat(r.aiScore)||0;
+  if(r.aiErr)warn.push("AI gagal memeriksa foto ini");
+  if(["FOTO KOSONG / SATU WARNA","FOTO TERLALU TERANG / TIDAK JELAS","FOTO TERLALU GELAP / TIDAK JELAS","FOTO BLUR / TIDAK JELAS"].includes(r.ai))hard.push(r.ai);
+  else if(r.aiStatus==="Tidak Sesuai"){
+    if(["FOTO UANG","Foto jalan/lantai/motor tanpa orang","Foto tidak jelas"].includes(r.ai)&&conf>=40)hard.push(r.ai);
+    else if(r.ai==="Foto dari foto"&&conf>=55)hard.push(r.ai);
+    else if(conf>=45)warn.push(r.ai);
+  }
+  if(cs){
+    if(!r.stampDate)warn.push("Stamp tanggal tidak terbaca/tidak ada");
+    else if(r.urlDate&&r.stampDate!==r.urlDate)hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
+    else if(r.tgl&&r.stampDate!==r.tgl)warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
+  }
+  if(c0||c1||c2||c3){
+    if(!r.gps)warn.push("GPS tidak terbaca di stamp");
+    else{const [la,lo]=r.gps.split(",").map(Number);
+      if((c0&&la<+$("lat0").value)||(c1&&la>+$("lat1").value)||(c2&&lo<+$("lon0").value)||(c3&&lo>+$("lon1").value))warn.push("GPS di luar area")}
+  }
+  if(isOn("t_ham")&&r.dup)hard.push("Foto sama dengan kontrak "+r.dup);
+  r.status=hard.length?"TIDAK VALID":warn.length?"PERLU CEK":"VALID";r.reason=[...hard,...warn].join(" | ");
+}
+function findDups(list){
+  if(!isOn("t_ham")){for(const a of list)a.dup="";return}
+  const th=+$("ham").value,idx=list.filter(r=>r.hash);
+  for(const a of idx){const refs=[];
+    for(const b of idx){if(a===b||a.key===b.key)continue;if(pop(a.hash[0]^b.hash[0])+pop(a.hash[1]^b.hash[1])<=th)refs.push(b.kontrak||b.url.slice(-12))}
+    a.dup=refs.slice(0,3).join(", ")+(refs.length>3?` (+${refs.length-3})`:"");}
+}
 
-  const aiConf = parseFloat(r.aiScore) || 0;
-  const qualityFlags = [
-    "FOTO KOSONG / SATU WARNA",
-    "FOTO TERLALU TERANG / TIDAK JELAS",
-    "FOTO TERLALU GELAP / TIDAK JELAS",
-    "FOTO BLUR / TIDAK JELAS"
-  ];
-  if (qualityFlags.includes(r.ai)) {
-    hard.push(r.ai);
-  } else if (r.aiStatus === "Tidak Sesuai") {
-    if (["FOTO UANG", "Foto jalan/lantai/motor tanpa orang", "Foto tidak jelas"].includes(r.ai) && aiConf >= 40) {
-      hard.push(r.ai);
-    } else if (r.ai === "Foto dari foto" && aiConf >= 55) {
-      hard.push(r.ai);
-    } else if (aiConf >= 45) {
-      warn.push(r.ai);
+/* ---------- Model AI: teks dihitung sekali, foto diunduh paralel ---------- */
+async function loadClip(){
+  const id="Xenova/clip-vit-base-patch32";
+  try{
+    const tok=await T.AutoTokenizer.from_pretrained(id),tm=await T.CLIPTextModelWithProjection.from_pretrained(id),
+      proc=await T.AutoProcessor.from_pretrained(id),vm=await T.CLIPVisionModelWithProjection.from_pretrained(id);
+    const {text_embeds}=await tm(tok(LABELS.map(l=>l[0]),{padding:true,truncation:true}));
+    const D=text_embeds.dims[1],raw=Array.from(text_embeds.data),tv=[];
+    for(let i=0;i<LABELS.length;i++){const v=raw.slice(i*D,(i+1)*D),n=Math.hypot(...v);tv.push(v.map(x=>x/n))}
+    const fast=async u=>{
+      const {image_embeds}=await vm(await proc(await T.RawImage.read(u)));
+      const e=Array.from(image_embeds.data),n=Math.hypot(...e),lg=tv.map(t=>100*t.reduce((a,x,i)=>a+x*e[i]/n,0));
+      const m=Math.max(...lg),ex=lg.map(x=>Math.exp(x-m)),sum=ex.reduce((a,b)=>a+b,0);
+      return LABELS.map((l,i)=>({label:l[0],score:ex[i]/sum})).sort((a,b)=>b.score-a.score);
+    };
+    const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.fillStyle="#888";x.fillRect(0,0,64,64);
+    const tu=URL.createObjectURL(await new Promise(r=>c.toBlob(r)));
+    try{const o=await fast(tu);if(!Array.isArray(o)||o.length!==LABELS.length||!isFinite(o[0].score))throw new Error("hasil uji tidak valid")}finally{URL.revokeObjectURL(tu)}
+    return {fn:u=>fast(u),mode:"cepat"};
+  }catch(e){console.warn("Mode cepat gagal, memakai pipeline standar:",e)}
+  const pl=await T.pipeline("zero-shot-image-classification",id);
+  return {fn:(u,t,o)=>pl(u,t,o),mode:"standar"};
+}
+async function getPhoto(url){for(const c of candidates(url)){try{const g=await fetchPhoto(c);preferred=c.kind;return g}catch{}}return null}
+
+/* ---------- Proses satu foto ---------- */
+async function processRow(r,ocr,clip,pre){
+  const res={...r,status:"",reason:"",urlDate:"",stampDate:"",gps:"",ai:"",aiStatus:"",aiScore:"",ocr:"",hash:null,thumb:"",dup:"",failed:false};
+  const fail=m=>{res.failed=true;res.status="GAGAL DOWNLOAD";res.reason=m;return res};
+  try{res.urlDate=new URL(r.url).searchParams.get("date")||""}catch{return fail("URL tidak valid")}
+  if(!res.tgl&&res.urlDate)res.tgl=res.urlDate;
+  const got=pre?await pre:await getPhoto(r.url);
+  if(!got)return fail("Foto tidak bisa dimuat (404 / CORS / proxy gagal).");
+  const {bmp,blob}=got;
+  res.thumb=thumb(bmp);if(isOn("t_ham"))res.hash=dhash(bmp);
+  if(ocr){
+    try{const {data:{text}}=await ocr.recognize(cropCanvas(bmp));res.ocr=text.replace(/\n+/g," ").trim()}catch{}
+    res.stampDate=stampDate(res.ocr);const g=stampCoords(res.ocr);res.gps=g?g[0].toFixed(6)+", "+g[1].toFixed(6):"";
+  }
+  const bad=checkImageQuality(bmp),setBad=()=>{res.aiStatus="Tidak Sesuai";res.ai=bad;res.aiScore="100.0%"},setBest=b=>{res.aiStatus=b.status;res.ai=b.label;res.aiScore=(b.score*100).toFixed(1)+"%"};
+  if(bad&&bad!=="FOTO TERLALU TERANG / TIDAK JELAS")setBad();
+  else if(clip){
+    let best=null;try{best=await classifyWithRotation(clip,bmp,blob)}catch(e){console.warn("AI error:",e)}
+    if(best&&best.status==="Sesuai")setBest(best);else if(bad)setBad();else if(best)setBest(best);else res.aiErr=true;
+  }else if(bad)setBad();
+  bmp.close();return res;
+}
+
+/* ---------- Tampilan hasil ---------- */
+const STDESC={"VALID":"Tidak ada temuan.","PERLU CEK":"Ada temuan ringan, perlu dilihat manual.","TIDAK VALID":"Ada temuan kuat bahwa foto tidak sesuai.","GAGAL DOWNLOAD":"Foto tidak dapat dimuat."};
+const rowHtml=r=>`<td>${r.thumb?`<img class="thumb" src="${r.thumb}" alt="">`:""}</td>
+  <td><span class="bd b-${r.status.replace(/ /g,"")}" title="${esc(STDESC[r.status]||"")}">${esc(r.status)}</span></td>
+  <td>${esc(r.reason)}</td><td>${esc(r.ai)}${r.aiScore?`<br><small>skor ${esc(r.aiScore)}</small>`:""}${r.dup?`<br><small>Duplikat: ${esc(r.dup)}</small>`:""}</td><td>${esc(r.nama)}<br><small>${esc(r.kontrak)}</small><br><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"><small>Buka foto ↗</small></a></td>
+  <td class="mono">${esc(r.urlDate)}</td><td class="mono">${esc(r.stampDate)}</td><td class="mono">${esc(r.gps)}</td><td class="ocr">${esc(r.ocr)}</td>`;
+function vis(tr){tr.classList.toggle("hidden",!!((FILT&&tr.dataset.s!==FILT)||(QRY&&!tr.dataset.q.includes(QRY))))}
+function fill(tr,r){tr.innerHTML=rowHtml(r);tr.dataset.s=r.status;tr.dataset.q=[r.nama,r.kontrak,r.idpic,r.wilayah,r.reason,r.ai].join(" ").toLowerCase();vis(tr)}
+function shown(){const n=[...$("body").children].filter(t=>!t.classList.contains("hidden")).length;$("shown").textContent=`Menampilkan ${n} dari ${results.length}`}
+function addRow(r){const tr=document.createElement("tr");fill(tr,r);$("body").appendChild(tr)}
+function updateRow(i,r){const tr=$("body").children[i];if(tr)fill(tr,r)}
+function reasonKey(s){return s.replace(/^Tanggal stamp \d+ != tanggal URL .*/,"Tanggal stamp ≠ tanggal URL").replace(/^Tanggal stamp \d+ != TGL LKP/,"Tanggal stamp ≠ TGL LKP").replace(/^Foto sama dengan kontrak .*/,"Duplikat dengan kontrak lain")}
+function renderBreak(){
+  const rc={},wc={};
+  for(const r of results){
+    (r.reason?r.reason.split(" | "):[]).forEach(x=>{const k=reasonKey(x);rc[k]=(rc[k]||0)+1});
+    const w=r.wilayah||"(tanpa wilayah)",o=wc[w]||(wc[w]={t:0,v:0,c:0,x:0,f:0});o.t++;
+    if(r.status==="VALID")o.v++;else if(r.status==="PERLU CEK")o.c++;else if(r.status==="TIDAK VALID")o.x++;else o.f++;
+  }
+  const rs=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
+  $("why").innerHTML=rs.length?rs.map(([k,n])=>`<span class="chip">${esc(k)}: <b>${n}</b></span>`).join(" "):'<span class="hint">Belum ada temuan.</span>';
+  $("wtab").innerHTML="<tr><th>Wilayah</th><th>Total</th><th>Valid</th><th>Perlu cek</th><th>Tidak valid</th><th>Gagal</th></tr>"+Object.entries(wc).sort().map(([w,o])=>`<tr><td>${esc(w)}</td><td>${o.t}</td><td>${o.v}</td><td>${o.c}</td><td>${o.x}</td><td>${o.f}</td></tr>`).join("");
+}
+function summary(){
+  const c=s=>results.filter(r=>r.status===s).length;
+  $("nT").textContent=results.length;$("nV").textContent=c("VALID");$("nC").textContent=c("PERLU CEK");$("nX").textContent=c("TIDAK VALID");$("nF").textContent=c("GAGAL DOWNLOAD");
+  const cv=c("VALID"),cc=c("PERLU CEK"),cx=c("TIDAK VALID"),cf=c("GAGAL DOWNLOAD"),tt=results.length||1,pc=n=>(n/tt*100).toFixed(1)+"%";
+  $("pV").textContent=pc(cv);$("pC").textContent=pc(cc);$("pX").textContent=pc(cx);$("pF").textContent=pc(cf);
+  $("dist").innerHTML=[["g",cv,"Valid"],["y",cc,"Perlu cek"],["r",cx,"Tidak valid"],["f",cf,"Gagal download"]].map(([k,n,l])=>n?`<i class="${k}" style="width:${n/tt*100}%" title="${l}: ${n} (${pc(n)})"></i>`:"").join("");
+  $("rsub").textContent=`${results.length}${TOTAL?" dari "+TOTAL:""} foto diperiksa`;$("exp2").disabled=!results.length;
+  $("pb").style.width=(TOTAL?Math.min(100,results.length/TOTAL*100):0)+"%";shown();if(results.length%10===0||(TOTAL&&results.length>=TOTAL))renderBreak();
+}
+document.querySelectorAll(".box").forEach(b=>b.onclick=()=>{FILT=b.dataset.f;document.querySelectorAll(".box").forEach(x=>x.classList.toggle("on",x===b));[...$("body").children].forEach(vis);shown()});
+$("q").oninput=e=>{QRY=e.target.value.trim().toLowerCase();[...$("body").children].forEach(vis);shown()};
+$("exp2").onclick=()=>$("exp").onclick();
+$("stop").onclick=()=>{stopFlag=true;$("st").textContent="Menghentikan..."};
+
+$("go").onclick=async()=>{
+  const pasted=$("urls").value.match(new RegExp(URL_RE.source,"g"))||[];let list=[];
+  if(pasted.length)list=pasted.map(u=>rowMap.has(u)?{...rowMap.get(u)}:{file:"",tgl:"",wilayah:"",kontrak:"",idpic:"",nama:"",url:u});
+  else if(rows.length)list=rows.map(r=>({...r}));
+  if(!list.length){alert(loadedFiles.length?"Langkah 2: pilih Wilayah atau centang Select All terlebih dahulu.":"Langkah 1: upload Excel atau tempel URL getImage dulu.");return}
+  list=list.map((r,i)=>({...r,key:r.kontrak?`${r.tgl}|${r.kontrak}|${r.idpic}`:"u"+i}));
+  results=[];stopFlag=false;TOTAL=list.length;FILT="";QRY="";$("q").value="";$("body").innerHTML="";
+  document.querySelectorAll(".box").forEach((x,i)=>x.classList.toggle("on",i===0));
+  $("res").classList.remove("hidden");$("emptyRes").classList.add("hidden");$("exp").classList.add("hidden");$("go").disabled=true;$("stop").classList.remove("hidden");summary();
+  preferred=null;$("st").textContent="Mengetes koneksi ke server foto...";
+  if(!(await canFetchAny(list.slice(0,3).map(r=>r.url)))){
+    const diag=await diagnose(list[0].url);
+    alert("Diagnosa: "+diag+"\n\nSolusi: isi Proxy URL (Pengaturan lanjutan) dengan Cloudflare Worker pribadi, atau jalankan local_server.py di komputer Anda.");
+    $("go").disabled=false;$("stop").classList.add("hidden");$("st").textContent="Koneksi ke server foto gagal.";return}
+  const needOcr=["t_sx","t_sy","t_lat0","t_lat1","t_lon0","t_lon1"].some(isOn);let ocr=null;
+  if(needOcr){$("st").textContent=`Terhubung via [${preferred}]. Memuat OCR...`;ocr=await Tesseract.createWorker("eng")}
+  $("st").textContent=`Terhubung via [${preferred}]. Memuat model AI (pertama kali ±90 MB)...`;
+  let clip=null,clipMode="";
+  try{const L=await loadClip();clip=L.fn;clipMode=L.mode;$("st").textContent=`Model AI siap (mode ${clipMode}).`}catch(e){alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: "+e.message)}
+  const pre=new Map(),t0=Date.now();
+  for(let i=0;i<list.length&&!stopFlag;i++){
+    const done=i,eta=done?Math.round((Date.now()-t0)/done*(list.length-done)/1000):0;
+    $("st").textContent=`Memeriksa ${i+1} / ${list.length}`+(eta?` · sisa ±${eta>=60?Math.round(eta/60)+" menit":eta+" dtk"}`:"");
+    for(let k=i;k<Math.min(i+6,list.length);k++)if(!pre.has(k))pre.set(k,getPhoto(list[k].url));
+    const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);addRow(r);summary();
+  }
+  for(let round=1;round<=3&&!stopFlag;round++){
+    const idxs=[];results.forEach((r,i)=>{if(r.status==="GAGAL DOWNLOAD"&&r.reason!=="URL tidak valid")idxs.push(i)});
+    if(!idxs.length)break;
+    for(let k=0;k<idxs.length&&!stopFlag;k++){
+      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1} / ${idxs.length})`;
+      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;updateRow(idxs[k],r);summary();
     }
   }
-
-  if (checkStamp) {
-    if (!r.stampDate) warn.push("Stamp tanggal tidak terbaca/tidak ada");
-    else if (r.urlDate && r.stampDate !== r.urlDate) hard.push(`Tanggal stamp ${r.stampDate} != tanggal URL ${r.urlDate}`);
-    else if (r.tgl && r.stampDate !== r.tgl) warn.push(`Tanggal stamp ${r.stampDate} != TGL LKP`);
-  }
-
-  if (checkGps) {
-    if (!r.gps) warn.push("GPS tidak terbaca di stamp");
-    else {
-      const [la, lo] = r.gps.split(",").map(Number);
-      const out = (checkLat0 && la < +$("lat0").value)
-        || (checkLat1 && la > +$("lat1").value)
-        || (checkLon0 && lo < +$("lon0").value)
-        || (checkLon1 && lo > +$("lon1").value);
-      if (out) warn.push("GPS di luar area");
-    }
-  }
-
-  if (checkDup && r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
-
-  r.status = hard.length ? "TIDAK VALID" : warn.length ? "PERLU CEK" : "VALID";
-  r.reason = [...hard, ...warn].join(" | ");
-}
-
-function findDups(list) {
-  if (!isOn("t_ham")) {
-    for (const a of list) a.dup = "";
-    return;
-  }
-  const th = +$("ham").value, idx = list.filter(r => r.hash);
-  for (const a of idx) {
-    const refs = [];
-    for (const b of idx) {
-      if (a === b || a.key === b.key) continue;
-      if (pop(a.hash[0] ^ b.hash[0]) + pop(a.hash[1] ^ b.hash[1]) <= th) refs.push(b.kontrak || b.url.slice(-12));
-    }
-    a.dup = refs.slice(0, 3).join(", ") + (refs.length > 3 ? ` (+${refs.length - 3})` : "");
-  }
-}
-
-// ---------- Process one photo ----------
-async function processRow(r, ocr, clip) {
-  const res = {...r, status:"", reason:"", urlDate:"", stampDate:"", gps:"", ai:"", aiStatus:"", aiScore:"", ocr:"", hash:null, thumb:"", dup:"", failed:false};
-  const fail = msg => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = msg; return res; };
-  try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
-  if (!res.tgl && res.urlDate) res.tgl = res.urlDate;
-
-  let bmp, blob;
-  for (const c of candidates(r.url)) {
-    try { ({bmp, blob} = await fetchPhoto(c)); preferred = c.kind; break; } catch {}
-  }
-  if (!bmp) return fail("Foto tidak bisa dimuat (404 / CORS / proxy gagal).");
-
-  res.thumb = thumb(bmp);
-  if (isOn("t_ham")) res.hash = dhash(bmp);
-
-  if (ocr) {
-    try { const {data:{text}} = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
-    res.stampDate = stampDate(res.ocr);
-    const g = stampCoords(res.ocr);
-    res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
-  }
-
-  const badQuality = checkImageQuality(bmp);
-  if (badQuality && badQuality !== "FOTO TERLALU TERANG / TIDAK JELAS") {
-    // Polos, terlalu gelap, atau sangat blur langsung TIDAK VALID
-    res.aiStatus = "Tidak Sesuai";
-    res.ai = badQuality;
-    res.aiScore = "100.0%";
-  } else if (clip) {
-    let best = null;
-    try { best = await classifyWithRotation(clip, bmp, blob); } catch {}
-    if (best && best.status === "Sesuai") {
-      // Meskipun latar terang/silau, wajah/orang masih terdeteksi -> tetap VALID
-      res.aiStatus = best.status;
-      res.ai = best.label;
-      res.aiScore = (best.score * 100).toFixed(1) + "%";
-    } else if (badQuality) {
-      // Terlalu terang & tidak ada wajah/kunjungan terdeteksi -> TIDAK VALID
-      res.aiStatus = "Tidak Sesuai";
-      res.ai = badQuality;
-      res.aiScore = "100.0%";
-    } else if (best) {
-      res.aiStatus = best.status;
-      res.ai = best.label;
-      res.aiScore = (best.score * 100).toFixed(1) + "%";
-    }
-  } else if (badQuality) {
-    res.aiStatus = "Tidak Sesuai";
-    res.ai = badQuality;
-    res.aiScore = "100.0%";
-  }
-  bmp.close();
-  return res;
-}
-
-// ---------- UI ----------
-function rowHtml(r) {
-  return `<td>${r.thumb ? `<img class="thumb" src="${r.thumb}">` : ""}</td>
-    <td><span class="bd b-${r.status.replace(/ /g, "")}">${esc(r.status)}</span></td>
-    <td>${esc(r.reason)}</td><td>${esc(r.nama)}<br><small>${esc(r.kontrak)}</small></td>
-    <td class="mono">${esc(r.urlDate)}</td><td class="mono">${esc(r.stampDate)}</td>
-    <td class="mono">${esc(r.gps)}</td><td class="ocr">${esc(r.ocr)}</td>`;
-}
-function addRow(r) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = rowHtml(r);
-  $("body").appendChild(tr);
-}
-function updateRow(idx, r) {
-  const tr = $("body").children[idx];
-  if (tr) tr.innerHTML = rowHtml(r);
-}
-function summary() {
-  const c = s => results.filter(r => r.status === s).length;
-  $("nT").textContent = results.length; $("nV").textContent = c("VALID"); $("nC").textContent = c("PERLU CEK");
-  $("nX").textContent = c("TIDAK VALID"); $("nF").textContent = c("GAGAL DOWNLOAD");
-}
-
-$("stop").onclick = () => { stopFlag = true; $("st").textContent = "Menghentikan..."; };
-
-$("go").onclick = async () => {
-  const pastedUrls = $("urls").value.match(new RegExp(URL_RE.source, "g")) || [];
-  let list = [];
-  if (pastedUrls.length) {
-    list = pastedUrls.map(u => rowMap.has(u) ? {...rowMap.get(u)} : {file:"", tgl:"", wilayah:"", kontrak:"", idpic:"", nama:"", url:u});
-  } else if (rows.length) {
-    list = rows.map(r => ({...r}));
-  }
-  if (!list.length) {
-    alert(loadedFiles.length ? "Pilih Wilayah di dropdown atau centang Select All terlebih dahulu." : "Upload Excel atau tempel URL getImage dulu.");
-    return;
-  }
-  list = list.map((r, i) => ({...r, key: r.kontrak ? `${r.tgl}|${r.kontrak}|${r.idpic}` : "u" + i}));
-
-  results = []; stopFlag = false; $("body").innerHTML = "";
-  $("sum").classList.remove("hidden"); $("exp").classList.add("hidden");
-  $("go").disabled = true; $("stop").classList.remove("hidden"); summary();
-
-  preferred = null;
-  $("st").textContent = "Mengetes koneksi ke server foto...";
-  if (!(await canFetchAny(list.slice(0, 3).map(r => r.url)))) {
-    const diag = await diagnose(list[0].url);
-    alert("Diagnosa: " + diag + "\n\nSolusi: isi kolom Proxy URL dengan Cloudflare Worker pribadi, atau jalankan local_server.py di komputer Anda.");
-    $("go").disabled = false; $("stop").classList.add("hidden"); $("st").textContent = "Koneksi ke server foto gagal.";
-    return;
-  }
-
-  const needOcr = isOn("t_sx") || isOn("t_sy") || isOn("t_lat0") || isOn("t_lat1") || isOn("t_lon0") || isOn("t_lon1");
-  let ocr = null;
-  if (needOcr) {
-    $("st").textContent = `Terhubung via [${preferred}]. Memuat OCR...`;
-    ocr = await Tesseract.createWorker("eng");
-  }
-
-  $("st").textContent = `Terhubung via [${preferred}]. Memuat model AI (pertama kali ±90 MB)...`;
-  let clip = null;
-  try { clip = await pipeline("zero-shot-image-classification", "Xenova/clip-vit-base-patch32"); }
-  catch (e) { alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message); }
-
-  // Pemeriksaan utama
-  for (let i = 0; i < list.length && !stopFlag; i++) {
-    $("st").textContent = `Memeriksa ${i + 1} / ${list.length} (via ${preferred})...`;
-    const r = await processRow(list[i], ocr, clip);
-    verdict(r); results.push(r); addRow(r); summary();
-  }
-
-  // Cek ulang otomatis sebanyak 3 ronde secara berurutan untuk foto yang GAGAL DOWNLOAD
-  for (let round = 1; round <= 3 && !stopFlag; round++) {
-    const retryIdxs = [];
-    for (let i = 0; i < results.length; i++) {
-      if (results[i].status === "GAGAL DOWNLOAD" && results[i].reason !== "URL tidak valid") {
-        retryIdxs.push(i);
-      }
-    }
-    if (!retryIdxs.length) break;
-
-    for (let k = 0; k < retryIdxs.length && !stopFlag; k++) {
-      const idx = retryIdxs[k];
-      $("st").textContent = `Cek ulang GAGAL DOWNLOAD — Ronde ${round}/3 (${k + 1} / ${retryIdxs.length})...`;
-      const r = await processRow(list[idx], ocr, clip);
-      verdict(r);
-      results[idx] = r;
-      updateRow(idx, r);
-      summary();
-    }
-  }
-
-  if (ocr) await ocr.terminate();
-
-  findDups(results);
-  results.forEach(verdict);
-  $("body").innerHTML = ""; results.forEach(addRow); summary();
-
-  $("st").textContent = stopFlag ? `Dihentikan di ${results.length} foto.` : `Selesai. ${results.length} foto diperiksa.`;
-  $("go").disabled = false; $("stop").classList.add("hidden");
-  if (results.length) $("exp").classList.remove("hidden");
+  if(ocr)await ocr.terminate();
+  findDups(results);results.forEach(verdict);$("body").innerHTML="";results.forEach(addRow);summary();renderBreak();
+  $("pb").style.width=stopFlag?$("pb").style.width:"100%";
+  $("st").textContent=stopFlag?`Dihentikan di ${results.length} foto.`:`Selesai. ${results.length} foto diperiksa. Klik kartu ringkasan untuk memfilter hasil.`;
+  $("go").disabled=false;$("stop").classList.add("hidden");$("rsub").textContent=$("st").textContent;if(results.length)$("exp").classList.remove("hidden");
 };
 
-$("exp").onclick = () => {
-  const fmt = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "";
-  const all = results.map(r => ({
-    "TGL LKP": fmt(r.tgl),
-    CLUSTER: r.wilayah,
-    "NO KONTRAK": r.kontrak,
-    "ID PIC": r.idpic,
-    "NAMA PIC": r.nama,
-    "FOTO KUNJUNGAN": r.url,
-    "STATUS KEASLIAN": r.status,
-    ALASAN: r.reason.toUpperCase(),
-    "TGL URL": r.urlDate,
-    "TGL STAMP": r.stampDate,
-    "GPS STAMP": r.gps,
-    "DETEKSI AI": r.ai,
-    "SKOR AI": r.aiScore,
-    "DUPLIKAT DENGAN": r.dup,
-    "OCR STAMP": r.ocr,
-    "SUMBER FILE": r.file
-  }));
-  const flagged = all.filter(r => r["STATUS KEASLIAN"] !== "VALID");
-  const wb = XLSX.utils.book_new();
-  const add = (data, name) => {
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [12,12,18,10,24,70,16,60,10,10,22,28,8,16,50,24].map(w => ({wch:w}));
-    XLSX.utils.book_append_sheet(wb, ws, name);
-  };
-  add(flagged, "KUALITAS LKP FOTO");
-  add(all, "AUDIT KEASLIAN FOTO");
-  XLSX.writeFile(wb, "Hasil_Keaslian_Foto_LKP.xlsx");
+$("exp").onclick=()=>{
+  const fmt=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"";
+  const all=results.map(r=>({"TGL LKP":fmt(r.tgl),CLUSTER:r.wilayah,"NO KONTRAK":r.kontrak,"ID PIC":r.idpic,"NAMA PIC":r.nama,"FOTO KUNJUNGAN":r.url,"STATUS KEASLIAN":r.status,ALASAN:r.reason.toUpperCase(),"TGL URL":r.urlDate,"TGL STAMP":r.stampDate,"GPS STAMP":r.gps,"DETEKSI AI":r.ai,"SKOR AI":r.aiScore,"DUPLIKAT DENGAN":r.dup,"OCR STAMP":r.ocr,"SUMBER FILE":r.file}));
+  const flagged=all.filter(r=>r["STATUS KEASLIAN"]!=="VALID"),wb=XLSX.utils.book_new();
+  const add=(data,name)=>{const ws=XLSX.utils.json_to_sheet(data);ws["!cols"]=[12,12,18,10,24,70,16,60,10,10,22,28,8,16,50,24].map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,name)};
+  add(flagged,"KUALITAS LKP FOTO");add(all,"AUDIT KEASLIAN FOTO");
+  XLSX.writeFile(wb,"Hasil_Keaslian_Foto_LKP.xlsx");
 };
+updateWilayahUI();
 </script>
 </body>
 </html>

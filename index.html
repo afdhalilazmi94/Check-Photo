@@ -1,245 +1,690 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bulk Photo Authenticity Checker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-<style>
-:root{--ink:#0f172a;--mute:#64748b;--line:#dbe2ea;--bg:#f1f5f9;--brand:#1d4ed8;--ok:#047857;--warn:#b45309;--bad:#be123c}
-*{box-sizing:border-box;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}
-.top{background:linear-gradient(135deg,#0f2a5c,#1d4ed8);color:#fff;padding:22px 24px}
-.top h1{margin:0;font-size:22px}.top p{margin:4px 0 0;color:#cfe0ff;font-size:13px}
-.wrap{max-width:1240px;margin:0 auto;padding:18px 24px 0}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
-.ch{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
-.ch h2{margin:0;font-size:16px}.ch p{margin:2px 0 0;color:var(--mute);font-size:12.5px}
-.n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;display:grid;place-items:center}
-.drop{display:grid;gap:4px;text-align:center;padding:26px 14px;border:2px dashed #9db4d8;border-radius:10px;background:#f8fbff;cursor:pointer}
-.drop.on{background:#e6efff;border-color:var(--brand)}.drop b{color:var(--brand);font-size:15px}.drop span{color:var(--mute);font-size:12px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-.chip{background:#eaf1ff;color:#1e3a8a;border-radius:99px;padding:3px 10px;font-size:12px}
-.lnk{background:none;border:0;color:var(--bad);font-size:12px;font-weight:600;cursor:pointer;padding:0}
-details{margin-top:12px}summary{cursor:pointer;font-weight:600;font-size:13px;color:#334155}
-textarea,input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid #c5d0de;border-radius:6px;font-size:13px;margin-top:6px}
-textarea{font-family:ui-monospace,Consolas,monospace;resize:vertical}
-input[type=number]:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
-.hint{font-size:12px;color:var(--mute);margin:6px 0 0}
-.ms-wrap{position:relative}
-.ms-btn{width:100%;display:flex;justify-content:space-between;gap:8px;padding:10px 12px;background:#fff;border:1px solid #c5d0de;border-radius:6px;font-size:13px;cursor:pointer;text-align:left;color:var(--ink)}
-.ms-placeholder{color:#94a3b8}
-.ms-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,.15);z-index:50;padding:10px}
-.ms-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 8px;border-bottom:1px solid var(--line);margin-bottom:6px;font-size:12px}
-.ms-bar label,.ms-item{display:flex;gap:6px;align-items:center;cursor:pointer}
-.ms-reset{background:none;border:0;color:var(--brand);font-weight:600;font-size:12px;cursor:pointer}
-.ms-list{max-height:220px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:2px}
-.ms-item{padding:5px 6px;border-radius:4px;font-size:12px}.ms-item:hover{background:#f1f5f9}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.sm{border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
-.grp{margin-top:14px}.grp h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#334155}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
-.opt-box{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10px}
-.opt-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.opt-lbl{font-size:12px;font-weight:600;color:#334155}
-.switch{position:relative;width:36px;height:20px;flex:none;cursor:pointer}.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:.2s}
-.slider:before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
-.switch input:checked+.slider{background:var(--brand)}.switch input:checked+.slider:before{transform:translateX(16px)}
-.switch input:focus-visible+.slider,button:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
-.box{background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px 14px;text-align:left;cursor:pointer}
-.box span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute)}.box b{font-size:24px}
-.box.on{border-color:var(--brand)}.box.g b{color:var(--ok)}.box.y b{color:var(--warn)}.box.r b{color:var(--bad)}
-.find{display:flex;gap:10px;align-items:center;margin-bottom:10px}.find input{margin:0;max-width:340px}
-.tw{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:68vh}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{position:sticky;top:0;background:#eef2f7;color:#475569;text-transform:uppercase;font-size:11px;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}
-td{padding:8px 10px;border-bottom:1px solid #edf1f6;vertical-align:middle}
-.thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
-.bd{padding:3px 9px;border-radius:99px;font-weight:700;font-size:11px;white-space:nowrap}
-.b-VALID{background:#d1fae5;color:#065f46}.b-TIDAKVALID{background:#ffe4e6;color:#9f1239}.b-PERLUCEK,.b-GAGALDOWNLOAD{background:#fef3c7;color:#92400e}
-.mono{font-family:ui-monospace,Consolas,monospace}.ocr{max-width:260px;word-break:break-word;color:var(--mute)}
-.bar{position:sticky;bottom:0;margin:14px -24px 0;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(15,23,42,.08);padding:12px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;z-index:40}
-.bar .info{flex:1 1 320px;min-width:240px}
-#ready{font-size:13px}#st{font-size:12px;color:var(--mute);margin-top:2px;min-height:16px}
-.prog{height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;width:0;background:var(--brand);transition:width .3s}
-button.b{border:0;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;color:#fff;cursor:pointer}
-button.b:disabled{opacity:.5;cursor:not-allowed}.p{background:var(--brand)}.s{background:var(--ok)}.d{background:#64748b}
-.hidden{display:none!important}
-.n.ok{background:var(--ok)}
-.help summary{font-size:15px;color:var(--ink)}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
-.cols>div{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px}
-.cols h4{margin:0 0 6px;font-size:13px}.cols p,.cols li{font-size:12.5px;color:#334155;margin:0 0 4px;line-height:1.5}
-.cols ol,.cols ul{margin:0;padding-left:18px}
-.lg{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;font-size:12.5px;color:#334155}
-.tip{font-size:12px;color:#475569;background:#f1f5f9;border-left:3px solid var(--brand);padding:6px 10px;border-radius:4px;margin:0 0 8px;line-height:1.5}
-#dataInfo{margin-top:10px;font-size:12.5px;color:#334155;line-height:1.9}
-body{background:#eef2f7;font-size:14px;-webkit-font-smoothing:antialiased}
-.top{background:#0b1f44;border-bottom:3px solid #2563eb;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 28px}
-.hin{display:flex;gap:14px;align-items:center}
-.logo{width:42px;height:42px;border-radius:10px;background:#2563eb;display:grid;place-items:center;font-size:22px;font-weight:700}
-.top h1{font-size:20px;letter-spacing:.01em}.top p{color:#b9cdf2}
-.pill{border:1px solid #3b5a99;color:#cfe0ff;border-radius:99px;padding:4px 12px;font-size:12px}
-.card{border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.ch h2{font-size:16px;letter-spacing:.01em}
-.n{border-radius:8px}
-tbody tr:nth-child(even){background:#fafcff}tbody tr:hover{background:#f1f6ff}
-.bd:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
-.box{border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}.box b{font-variant-numeric:tabular-nums}
-.box em{display:block;font-style:normal;font-size:11.5px;color:var(--mute);margin-top:2px;min-height:14px}
-.rh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 12px}
-.rh h2{margin:0;font-size:18px}.rh p{margin:2px 0 0;color:var(--mute);font-size:13px}
-.dist{display:flex;height:10px;border-radius:99px;overflow:hidden;background:#e2e8f0;margin:0 0 12px}
-.dist i{display:block;height:100%}.dist .g{background:#10b981}.dist .y{background:#f59e0b}.dist .r{background:#e11d48}.dist .f{background:#94a3b8}
-.tw{border-radius:12px}th{letter-spacing:.04em}
-.foot{text-align:center;color:var(--mute);font-size:12px;padding:20px}
-#extra{margin-top:4px}#extra>summary{display:inline-block;padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;font-size:13px}#extra>summary:hover{background:#eef4ff}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Photo Authenticity Checker — Audit LKP & Smart Logic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'] },
+          colors: {
+            navy: { 900: '#0b1f44', 800: '#132d63', 700: '#1d4ed8' }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <style>
+    /* Sunrise Light & Starry Night Dark Backgrounds */
+    body {
+      background-color: #f1f5f9;
+      background-image: radial-gradient(at 0% 0%, rgba(254, 243, 199, 0.35) 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.45) 0px, transparent 50%);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    html.dark body {
+      background-color: #0f172a;
+      background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    /* Custom Toggle Switch */
+    .switch { position: relative; width: 40px; height: 22px; flex: none; cursor: pointer; display: inline-block; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 999px; transition: .2s; }
+    html.dark .slider { background: #334155; }
+    .slider:before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+    .switch input:checked + .slider { background: #2563eb; }
+    .switch input:checked + .slider:before { transform: translateX(18px); }
+    /* Scrollbar polish */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+    .tabular { font-variant-numeric: tabular-nums; }
+  </style>
 </head>
-<body>
-<header class="top"><div class="hin"><div class="logo" aria-hidden="true">✓</div><div><h1>Bulk Photo Authenticity Checker</h1><p>Pemeriksaan keaslian foto kunjungan LKP · AI isi foto · kualitas gambar · OCR stamp · deteksi duplikat</p></div></div><span class="pill">Diproses di browser Anda</span></header>
-<main class="wrap">
-<section class="card help"><details><summary>📘 Panduan singkat &amp; arti status</summary>
-<div class="cols">
- <div><h4>Cara memakai</h4><ol>
-  <li><b>Unggah</b> file Excel Monitoring LKP (atau tempel URL foto).</li>
-  <li><b>Pilih wilayah</b> yang ingin diperiksa. Foto langsung dimuat.</li>
-  <li><b>Atur aturan tambahan</b> bila perlu (stamp, GPS, duplikat). Boleh dibiarkan OFF.</li>
-  <li>Klik <b>Mulai Periksa</b> di bar bawah, tunggu progres selesai.</li>
-  <li>Filter hasil lewat kartu ringkasan, lalu <b>Download Excel</b>.</li></ol></div>
- <div><h4>Apa yang diperiksa</h4><ul>
-  <li><b>Isi foto (AI)</b> — apakah foto PIC/rumah/warung (sesuai) atau foto uang, foto layar, jalan/lantai, dokumen. Foto diputar 90°/270° bila perlu. <i>Selalu aktif.</i></li>
-  <li><b>Kualitas gambar</b> — kosong/satu warna, terlalu gelap, blur, terlalu terang. <i>Selalu aktif.</i></li>
-  <li><b>Stamp tanggal &amp; GPS (OCR)</b> — membaca teks stamp pada foto. <i>Opsional.</i></li>
-  <li><b>Duplikat</b> — foto mirip dengan kontrak lain. <i>Opsional.</i></li>
-  <li><b>Kualitas LKP History (Smart Logic)</b> — mengevaluasi kolom KETERANGAN non-bayar per PIC per TGL LKP: hanya Auto Update, Copy Paste Identik (1 keterangan untuk ≥3 LKP), Kurang Informatif (&lt;60 kar), Extreme Template (kemiripan ≥80%), Templated (kemiripan ≥60% &amp; panjang &lt;150 kar), atau Valid, Bervariasi &amp; Informatif. <i>Otomatis bila sheet HISTORY LKP ada.</i></li></ul></div>
- <div><h4>Arti status</h4><div class="lg">
-  <span class="bd b-VALID">VALID</span><span>Tidak ada temuan.</span>
-  <span class="bd b-PERLUCEK">PERLU CEK</span><span>Temuan ringan: stamp tidak terbaca, GPS di luar area, tanggal stamp beda dari TGL LKP, atau AI kurang yakin. Lihat manual.</span>
-  <span class="bd b-TIDAKVALID">TIDAK VALID</span><span>Temuan kuat: foto uang/kosong/blur/gelap, tanggal stamp beda dari tanggal URL, atau duplikat.</span>
-  <span class="bd b-GAGALDOWNLOAD">GAGAL DOWNLOAD</span><span>Foto tidak bisa dimuat setelah 3 ronde cek ulang (404, CORS, atau proxy gagal).</span></div></div>
-</div>
-<p class="tip" style="margin-top:12px"><b>Catatan:</b> hasil adalah alat bantu penyaringan, bukan keputusan akhir; tinjau manual yang bertanda. Model AI (±90 MB) diunduh saat pertama dijalankan lalu disimpan browser, jadi proses pertama lebih lama. Data Excel diproses di browser Anda. Bila server foto tidak mengizinkan akses langsung, URL foto dilewatkan lewat proxy CORS publik (wsrv.nl, corsproxy.io, allorigins) atau proxy milik Anda.</p>
-</details></section>
+<body class="text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
 
-<section class="card">
-  <div class="ch"><span class="n" id="n1">1</span><div><h2>Sumber foto</h2><p>Unggah file <code>Monitoring LKP *.xlsx</code> (boleh banyak file), atau tempel URL foto secara manual.</p></div></div>
-  <label class="drop" id="drop"><input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple class="hidden"><b>Tarik file Excel ke sini, atau klik untuk memilih</b><span>Sheet MONITORING + FOTO KUNJUNGAN · filter TGL LKP &amp; ID PIC otomatis</span></label>
-  <div class="chips" id="files"></div>
-  <div id="dataInfo"></div>
-  <details><summary>Atau tempel URL foto (satu per baris)</summary>
-    <textarea id="urls" rows="4" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea></details>
-</section>
+  <!-- Toast Container (replaces alert()) -->
+  <div id="toastBox" class="fixed top-20 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-<section class="card">
-  <div class="ch"><span class="n" id="n2">2</span><div><h2>Wilayah</h2><p>Pilih satu atau beberapa wilayah, atau centang Select All. Foto dimuat otomatis setelah dipilih.</p></div></div>
-  <div class="ms-wrap" id="wilWrap">
-    <button type="button" class="ms-btn" id="wilBtn"><span class="ms-placeholder" id="wilBtnText">-- Pilih Wilayah --</span><span>▼</span></button>
-    <div class="ms-menu hidden" id="wilMenu">
-      <input type="text" id="wilSearch" placeholder="Cari wilayah..." style="margin:0 0 8px">
-      <div class="ms-bar"><label><input type="checkbox" id="wilAll"> Select All (Semua Wilayah)</label><button type="button" class="ms-reset" id="wilClear">Hapus Pilihan</button></div>
-      <div class="ms-list" id="wilList"></div>
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-[#0b1f44] dark:bg-slate-950/95 backdrop-blur border-b-2 border-blue-600 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-extrabold text-xl shadow-inner shrink-0" aria-hidden="true">✓</div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight leading-tight">Bulk Photo Authenticity Checker</h1>
+          <p class="text-xs text-blue-200/90 leading-snug">Audit Foto Kunjungan &amp; Kualitas LKP History · Smart Logic</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="btnDemo" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition cursor-pointer">
+          <span>✨</span><span>Muat Data Demo</span>
+        </button>
+        <button id="btnGuide" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition cursor-pointer">
+          <span>📘</span><span>Panduan</span>
+        </button>
+        <button id="btnTheme" type="button" title="Ganti Tema Sunrise / Starry Night" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition cursor-pointer">
+          <span id="themeIcon">🌙</span><span id="themeLabel" class="hidden sm:inline">Starry Night</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="bg-[#0f2754] dark:bg-slate-900/90 border-t border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
+        <button type="button" data-tab="setup" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-blue-400 text-white whitespace-nowrap flex items-center gap-2 transition">
+          <span>1. Setup &amp; Sumber Data</span>
+          <span id="badgeSetup" class="px-2 py-0.5 rounded-full text-[11px] bg-blue-600/80 text-white tabular">0</span>
+        </button>
+        <button type="button" data-tab="foto" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-blue-200 hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+          <span>2. Audit Foto</span>
+          <span id="badgeFoto" class="px-2 py-0.5 rounded-full text-[11px] bg-white/15 text-blue-100 tabular">0</span>
+        </button>
+        <button type="button" data-tab="history" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-blue-200 hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+          <span>3. Kualitas LKP History</span>
+          <span id="badgeHist" class="px-2 py-0.5 rounded-full text-[11px] bg-white/15 text-blue-100 tabular">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 pb-28">
+
+    <!-- ==================== TAB 1: SETUP & SUMBER DATA ==================== -->
+    <section id="tab-setup" class="space-y-5">
+      <!-- Visual 3-Step Indicator -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
+          <div id="step1Dot" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center shrink-0">1</div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 1</div>
+            <div class="text-sm font-semibold truncate">Unggah Excel / URL</div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
+          <div id="step2Dot" class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center shrink-0">2</div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 2</div>
+            <div class="text-sm font-semibold truncate">Pilih Wilayah</div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
+          <div id="step3Dot" class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center shrink-0">3</div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 3 (Opsional)</div>
+            <div class="text-sm font-semibold truncate">Aturan Tambahan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 1: Sumber Foto -->
+      <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <h2 class="text-base font-bold">1. Sumber Data Monitoring LKP</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Unggah file <code>Monitoring LKP *.xlsx</code> (bisa multi-file) yang berisi sheet <b>MONITORING</b>, <b>FOTO KUNJUNGAN</b>, dan <b>HISTORY LKP</b>.</p>
+          </div>
+          <span class="hidden sm:inline-block text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Diproses lokal di browser</span>
+        </div>
+
+        <label id="drop" class="block border-2 border-dashed border-blue-300 dark:border-blue-700/70 rounded-xl p-7 text-center bg-blue-50/50 dark:bg-slate-900/50 hover:bg-blue-50 dark:hover:bg-slate-900/80 cursor-pointer transition">
+          <input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple class="hidden">
+          <div class="text-2xl mb-1">📂</div>
+          <div class="text-sm font-bold text-blue-700 dark:text-blue-400">Tarik &amp; lepas file Excel ke sini, atau klik untuk memilih</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Format didukung: .xlsx, .xls, .csv · Filter TGL LKP &amp; ID PIC otomatis</div>
+        </label>
+
+        <div id="files" class="flex flex-wrap items-center gap-2 mt-3"></div>
+        <div id="dataInfo" class="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></div>
+
+        <details class="mt-4 group">
+          <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 select-none">
+            ▸ Atau tempel URL foto secara manual (satu per baris)
+          </summary>
+          <textarea id="urls" rows="4" class="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
+        </details>
+      </div>
+
+      <!-- Card 2: Wilayah -->
+      <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+        <div class="mb-3">
+          <h2 class="text-base font-bold">2. Filter Wilayah / Cluster</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih satu atau beberapa wilayah (34 cluster tersedia), atau centang <b>Select All</b>. Data dimuat otomatis setelah dipilih.</p>
+        </div>
+
+        <div class="relative" id="wilWrap">
+          <button type="button" id="wilBtn" class="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm text-left hover:border-blue-500 transition cursor-pointer">
+            <span id="wilBtnText" class="text-slate-400">-- Pilih Wilayah --</span>
+            <span class="text-xs text-slate-400">▼</span>
+          </button>
+          <div id="wilMenu" class="hidden absolute left-0 right-0 top-[calc(100%+6px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-3">
+            <input type="text" id="wilSearch" placeholder="Cari wilayah (mis. LOMBOK, JABAR, SUMSEL)..." class="w-full mb-2.5 px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-700 text-xs">
+              <label class="flex items-center gap-2 font-semibold cursor-pointer">
+                <input type="checkbox" id="wilAll" class="rounded text-blue-600 focus:ring-blue-500"> Select All (34 Wilayah)
+              </label>
+              <button type="button" id="wilClear" class="text-rose-600 dark:text-rose-400 font-semibold hover:underline cursor-pointer">Hapus Pilihan</button>
+            </div>
+            <div id="wilList" class="max-h-56 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Aturan Pemeriksaan Tambahan -->
+      <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+        <div class="mb-3">
+          <h2 class="text-base font-bold">3. Aturan Pemeriksaan Tambahan</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Semua aturan di bawah default <b>OFF</b>. Pemeriksaan isi foto (AI CLIP) dan kualitas gambar (gelap/blur/kosong) selalu aktif otomatis.</p>
+        </div>
+
+        <details id="extra">
+          <summary id="extraSum" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-xs font-semibold hover:bg-blue-50 dark:hover:bg-slate-800 transition select-none">
+            Aturan tambahan (0 aktif) — klik untuk membuka
+          </summary>
+
+          <div class="mt-4 space-y-5">
+            <div class="flex flex-wrap gap-2">
+              <button id="allOn" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer">Aktifkan Semua</button>
+              <button id="allOff" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">Matikan Semua</button>
+            </div>
+
+            <div id="rules" class="space-y-5">
+              <!-- OCR Stamp -->
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Stamp Tanggal (OCR)</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 px-3 py-2 rounded-r-lg mb-3">
+                  Menyalakan X atau Y mengaktifkan OCR stamp. Default 0.35 &amp; 0.80 membaca pojok kanan bawah. Tanggal stamp ≠ URL → <b>TIDAK VALID</b>; tidak terbaca / ≠ TGL LKP → <b>PERLU CEK</b>.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="sx" class="text-xs font-semibold">Area stamp mulai X (0–1)</label>
+                      <label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="sx" value="0.35" step="0.05" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="sy" class="text-xs font-semibold">Area stamp mulai Y (0–1)</label>
+                      <label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="sy" value="0.80" step="0.05" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                </div>
+              </div>
+
+              <!-- GPS Bounding Box -->
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Batas Area GPS</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 px-3 py-2 rounded-r-lg mb-3">
+                  Koordinat pada stamp dibandingkan dengan batas yang aktif. Di luar batas atau tidak terbaca → <b>PERLU CEK</b>. Mengaktifkan GPS ikut menjalankan OCR.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="lat0" class="text-xs font-semibold">Latitude min</label>
+                      <label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="lat0" value="-9.3" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="lat1" class="text-xs font-semibold">Latitude max</label>
+                      <label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="lat1" value="-8.0" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="lon0" class="text-xs font-semibold">Longitude min</label>
+                      <label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="lon0" value="115.7" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="lon1" class="text-xs font-semibold">Longitude max</label>
+                      <label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="lon1" value="116.9" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duplicate dHash -->
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Deteksi Duplikat (dHash)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <div class="flex items-center justify-between mb-2">
+                      <label for="ham" class="text-xs font-semibold">Batas beda bit duplikat (0–20)</label>
+                      <label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label>
+                    </div>
+                    <input type="number" id="ham" value="5" min="0" max="20" disabled class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 disabled:opacity-50">
+                  </div>
+                  <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
+                    <label for="proxy" class="block text-xs font-semibold mb-2">Custom Proxy URL (Opsional)</label>
+                    <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=" class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: AUDIT FOTO ==================== -->
+    <section id="tab-foto" class="hidden space-y-4">
+      <div id="emptyFoto" class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-10 text-center shadow-sm">
+        <div class="text-3xl mb-2">📷</div>
+        <h3 class="text-base font-bold">Belum Ada Hasil Audit Foto</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Unggah file Excel di tab <b>Setup &amp; Sumber Data</b> lalu klik <b>Mulai Periksa</b>, atau klik <b>✨ Muat Data Demo</b> di kanan atas untuk melihat pratinjau interaktif.</p>
+      </div>
+
+      <div id="fotoContent" class="hidden space-y-4">
+        <!-- Header & Distribution Bar -->
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h2 class="text-base font-bold">Ringkasan Audit Foto</h2>
+              <p id="rsub" class="text-xs text-slate-500 dark:text-slate-400">Menunggu proses…</p>
+            </div>
+            <button id="exp2" type="button" disabled class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-sm transition cursor-pointer">
+              <span>⬇</span><span>Download Excel (.xlsx)</span>
+            </button>
+          </div>
+          <div id="dist" class="flex h-3 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4" aria-hidden="true"></div>
+
+          <!-- KPI Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+            <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-blue-600 bg-blue-50/40 dark:bg-blue-950/30 transition cursor-pointer" data-f="">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Foto</span>
+              <b id="nT" class="text-2xl font-extrabold tabular">0</b>
+              <em class="block not-italic text-[11px] text-slate-500 dark:text-slate-400">100%</em>
+            </button>
+            <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-slate-900/50 transition cursor-pointer" data-f="VALID">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Valid</span>
+              <b id="nV" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular">0</b>
+              <em id="pV" class="block not-italic text-[11px] text-slate-500 dark:text-slate-400">0%</em>
+            </button>
+            <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-500 bg-white dark:bg-slate-900/50 transition cursor-pointer" data-f="PERLU CEK">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Perlu Cek</span>
+              <b id="nC" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 tabular">0</b>
+              <em id="pC" class="block not-italic text-[11px] text-slate-500 dark:text-slate-400">0%</em>
+            </button>
+            <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-slate-900/50 transition cursor-pointer" data-f="TIDAK VALID">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tidak Valid</span>
+              <b id="nX" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular">0</b>
+              <em id="pX" class="block not-italic text-[11px] text-slate-500 dark:text-slate-400">0%</em>
+            </button>
+            <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-slate-400 bg-white dark:bg-slate-900/50 transition cursor-pointer col-span-2 sm:col-span-1" data-f="GAGAL DOWNLOAD">
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gagal Download</span>
+              <b id="nF" class="text-2xl font-extrabold text-slate-600 dark:text-slate-300 tabular">0</b>
+              <em id="pF" class="block not-italic text-[11px] text-slate-500 dark:text-slate-400">0%</em>
+            </button>
+          </div>
+        </div>
+
+        <!-- Temuan Terbanyak & Rekap per Wilayah -->
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm space-y-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Temuan Terbanyak (Klik chip untuk memfilter)</div>
+            <div id="why" class="flex flex-wrap gap-2"></div>
+          </div>
+          <details class="pt-2 border-t border-slate-200 dark:border-slate-700">
+            <summary class="cursor-pointer text-xs font-bold text-blue-700 dark:text-blue-400 select-none">▸ Lihat Rekap per Wilayah</summary>
+            <div class="mt-2 overflow-x-auto max-h-60 rounded-lg border border-slate-200 dark:border-slate-700">
+              <table id="wtab" class="w-full text-xs text-left border-collapse"></table>
+            </div>
+          </details>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm">
+          <input type="text" id="q" placeholder="Cari PIC, kontrak, ID, alasan, deteksi AI..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select id="wilFilterFoto" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Semua Wilayah</option>
+          </select>
+          <button id="btnResetFoto" type="button" class="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">Reset Filter</button>
+          <span id="shown" class="text-xs text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
+        </div>
+
+        <!-- Photo Audit Table -->
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto max-h-[62vh]">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                  <th class="p-3">Preview</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Alasan</th>
+                  <th class="p-3">Deteksi AI</th>
+                  <th class="p-3">PIC / Kontrak</th>
+                  <th class="p-3">Tgl URL</th>
+                  <th class="p-3">Tgl Stamp</th>
+                  <th class="p-3">GPS</th>
+                  <th class="p-3">OCR Stamp</th>
+                </tr>
+              </thead>
+              <tbody id="body" class="divide-y divide-slate-100 dark:divide-slate-700/70"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: KUALITAS LKP HISTORY (SMART LOGIC) ==================== -->
+    <section id="tab-history" class="hidden space-y-4">
+      <div id="emptyHist" class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-10 text-center shadow-sm">
+        <div class="text-3xl mb-2">📝</div>
+        <h3 class="text-base font-bold">Belum Ada Data Kualitas LKP History</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Analisis Smart Logic berjalan otomatis setelah pemeriksaan selesai bila file Excel memuat sheet <b>HISTORY LKP</b>, atau klik <b>✨ Muat Data Demo</b>.</p>
+      </div>
+
+      <div id="histContent" class="hidden space-y-4">
+        <!-- History KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-blue-600 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total PIC Diperiksa</span>
+            <b id="hTotal" class="text-2xl font-extrabold tabular">0</b>
+          </button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="SESUAI">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status SESUAI</span>
+            <b id="hOk" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular">0</b>
+          </button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="TIDAK SESUAI">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status TIDAK SESUAI</span>
+            <b id="hBad" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular">0</b>
+          </button>
+        </div>
+
+        <!-- Breakdown Chips -->
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Ringkasan Kategori Smart Logic</div>
+          <div id="hsum" class="flex flex-wrap gap-2"></div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3">
+            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code>TIDAK SESUAI</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
+          </p>
+        </div>
+
+        <!-- History Filter Bar -->
+        <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm">
+          <input type="text" id="hq" placeholder="Cari PIC, Wilayah, ID PIC, atau Detail Evaluasi..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select id="hStatusSel" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Semua Status</option>
+            <option value="TIDAK SESUAI">TIDAK SESUAI</option>
+            <option value="SESUAI">SESUAI</option>
+          </select>
+          <span id="hShown" class="text-xs text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
+        </div>
+
+        <!-- History Table -->
+        <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto max-h-[62vh]">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                  <th class="p-3">Nama Wilayah</th>
+                  <th class="p-3">Tgl LKP</th>
+                  <th class="p-3">ID PIC</th>
+                  <th class="p-3">Nama PIC</th>
+                  <th class="p-3 text-center">Jml LKP (Non-Bayar)</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Detail Evaluasi</th>
+                  <th class="p-3 text-right">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="hBody" class="divide-y divide-slate-100 dark:divide-slate-700/70"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky Bottom Action Bar -->
+  <div class="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
+      <div class="flex-1 min-w-[220px]">
+        <div id="ready" class="text-xs sm:text-sm font-medium leading-snug"></div>
+        <div class="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-1.5">
+          <div id="pb" class="h-full w-0 bg-blue-600 transition-all duration-300"></div>
+        </div>
+        <div id="st" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 min-h-[15px]"></div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="go" type="button" class="px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white shadow-sm transition cursor-pointer">▶ Mulai Periksa</button>
+        <button id="stop" type="button" class="hidden px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-slate-600 hover:bg-slate-500 text-white shadow-sm transition cursor-pointer">■ Stop</button>
+        <button id="exp" type="button" class="hidden px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition cursor-pointer">⬇ Download Excel</button>
+      </div>
     </div>
   </div>
-</section>
 
-<section class="card">
-  <div class="ch"><span class="n" id="n3">3</span><div><h2>Aturan pemeriksaan tambahan</h2><p>Semua aturan default <b>OFF</b>. Yang OFF tidak memengaruhi Status maupun Alasan. Pengecekan AI dan kualitas gambar selalu berjalan.</p></div></div>
-  <details id="extra"><summary id="extraSum">Aturan tambahan (0 aktif) — klik untuk membuka</summary>
-  <div class="tools" style="margin-top:10px"><button class="sm" id="allOn" type="button">Aktifkan semua</button><button class="sm" id="allOff" type="button">Matikan semua</button></div>
-  <div id="rules">
-    <div class="grp"><h3>Stamp tanggal (OCR)</h3><p class="tip">Menyalakan salah satu nilai mengaktifkan pembacaan stamp (OCR). X dan Y menentukan bagian foto yang dibaca (0–1 dari kiri/atas); bawaan 0.35 &amp; 0.80 membaca pojok kanan bawah. Tanggal stamp ≠ tanggal URL → <b>TIDAK VALID</b>; tidak terbaca atau ≠ TGL LKP → <b>PERLU CEK</b>.</p><div class="grid">
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="sx">Area stamp mulai X (0–1)</label><label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label></div><input type="number" id="sx" value="0.35" step="0.05" disabled></div>
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="sy">Area stamp mulai Y (0–1)</label><label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label></div><input type="number" id="sy" value="0.80" step="0.05" disabled></div>
-    </div></div>
-    <div class="grp"><h3>Batas area GPS</h3><p class="tip">Koordinat pada stamp dibandingkan dengan batas yang Anda aktifkan. Di luar batas atau koordinat tidak terbaca → <b>PERLU CEK</b>. Nilai bawaan hanya contoh; sesuaikan dengan wilayah Anda. Perlu OCR, jadi mengaktifkannya ikut membaca stamp.</p><div class="grid">
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lat0">Latitude min</label><label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label></div><input type="number" id="lat0" value="-9.3" step="0.1" disabled></div>
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lat1">Latitude max</label><label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label></div><input type="number" id="lat1" value="-8.0" step="0.1" disabled></div>
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lon0">Longitude min</label><label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label></div><input type="number" id="lon0" value="115.7" step="0.1" disabled></div>
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="lon1">Longitude max</label><label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label></div><input type="number" id="lon1" value="116.9" step="0.1" disabled></div>
-    </div></div>
-    <div class="grp"><h3>Deteksi duplikat</h3><p class="tip">Membandingkan sidik visual antar foto dari kontrak berbeda. Angka lebih kecil = lebih ketat (0 = hampir identik; bawaan 5, maks 20). Foto yang mirip → <b>TIDAK VALID</b> dan kontrak pembandingnya ditampilkan di kolom Deteksi AI.</p><div class="grid">
-      <div class="opt-box"><div class="opt-head"><label class="opt-lbl" for="ham">Batas beda bit duplikat</label><label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label></div><input type="number" id="ham" value="5" min="0" max="20" disabled></div>
-    </div></div>
+  <!-- ==================== MODAL: PANDUAN ==================== -->
+  <div id="guideModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl p-6">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold">📘 Panduan Singkat &amp; Aturan Audit</h3>
+        <button type="button" data-close="guideModal" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold cursor-pointer">✕</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs leading-relaxed">
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+          <h4 class="font-bold text-sm mb-2">Cara Memakai</h4>
+          <ol class="list-decimal pl-4 space-y-1 text-slate-600 dark:text-slate-300">
+            <li><b>Unggah</b> file Excel Monitoring LKP (atau tempel URL foto).</li>
+            <li><b>Pilih wilayah</b> yang ingin diperiksa. Foto langsung dimuat.</li>
+            <li><b>Atur aturan tambahan</b> bila perlu (OCR stamp, GPS, duplikat).</li>
+            <li>Klik <b>Mulai Periksa</b> di bar bawah, lalu pantau progres.</li>
+            <li>Tinjau hasil di tab <b>Audit Foto</b> &amp; <b>Kualitas LKP History</b>, lalu <b>Download Excel</b>.</li>
+          </ol>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+          <h4 class="font-bold text-sm mb-2">Arti Status Foto</h4>
+          <ul class="space-y-1.5 text-slate-600 dark:text-slate-300">
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">VALID</span> Tidak ada temuan.</li>
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">PERLU CEK</span> Temuan ringan (stamp tak terbaca, GPS di luar area, AI ragu).</li>
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">TIDAK VALID</span> Temuan kuat (foto uang, kosong/blur/gelap, duplikat, tgl beda).</li>
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">GAGAL DOWNLOAD</span> Foto gagal dimuat setelah 3 ronde cek ulang.</li>
+          </ul>
+        </div>
+        <div class="md:col-span-2 p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+          <h4 class="font-bold text-sm mb-1.5 text-blue-900 dark:text-blue-300">Smart Logic — Kualitas LKP History</h4>
+          <p class="text-slate-600 dark:text-slate-300">
+            Mengevaluasi keterangan non-bayar per <b>(TGL LKP, ID PIC)</b> secara berurutan:
+            (1) Tanpa data history → <b>TIDAK SESUAI</b>,
+            (2) Hanya pesan <code>AUTO UPDATE</code> → <b>TIDAK SESUAI</b>,
+            (3) 1 keterangan unik untuk ≥3 LKP → <b>Copy Paste Identik</b>,
+            (4) Rata-rata panjang &lt; 60 karakter → <b>Kurang Informatif</b>,
+            (5) ≥3 keterangan unik &amp; kemiripan ≥80% → <b>Extreme Template</b>,
+            (6) ≥3 keterangan unik, kemiripan ≥60% &amp; panjang &lt;150 → <b>Templated / Kurang Informatif</b>,
+            selainnya → <b>SESUAI (Valid, Bervariasi &amp; Informatif)</b>.
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
-  <details><summary>Pengaturan lanjutan (Proxy)</summary>
-    <input type="text" id="proxy" placeholder="https://nama-worker.workers.dev/?url=">
-    <p class="hint">Opsional. Kosongkan untuk auto-fallback CORS proxy. Pengaturan Anda tersimpan otomatis di browser ini.</p></details>
-  </details>
-</section>
 
-<div class="card" id="emptyRes"><b>Belum ada hasil.</b> <span class="hint">Selesaikan langkah 1–2 lalu klik <b>Mulai Periksa</b>. Tabel, ringkasan temuan, dan rekap per wilayah akan muncul di sini.</span></div>
-<section id="res" class="hidden">
-  <div class="rh"><div><h2>Hasil pemeriksaan</h2><p id="rsub">Menunggu proses…</p></div><button id="exp2" class="b s" disabled>⬇ Download Excel (.xlsx)</button></div>
-  <div class="dist" id="dist" aria-hidden="true"></div>
-  <div class="sum">
-    <button class="box on" data-f=""><span>Total</span><b id="nT">0</b></button>
-    <button class="box g" data-f="VALID"><span>Valid</span><b id="nV">0</b><em id="pV"></em></button>
-    <button class="box y" data-f="PERLU CEK"><span>Perlu cek</span><b id="nC">0</b><em id="pC"></em></button>
-    <button class="box r" data-f="TIDAK VALID"><span>Tidak valid</span><b id="nX">0</b><em id="pX"></em></button>
-    <button class="box y" data-f="GAGAL DOWNLOAD"><span>Gagal download</span><b id="nF">0</b><em id="pF"></em></button>
+  <!-- ==================== MODAL: PHOTO LIGHTBOX ==================== -->
+  <div id="photoModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span id="pmBadge"></span>
+          <h3 id="pmTitle" class="text-sm font-bold truncate">Detail Foto</h3>
+        </div>
+        <button type="button" data-close="photoModal" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold cursor-pointer">✕</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
+        <div class="bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center p-2 min-h-[260px]">
+          <img id="pmImg" src="" alt="Preview Foto" class="max-h-[420px] w-auto rounded-lg object-contain">
+        </div>
+        <div class="space-y-3 text-xs">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="text-[11px] font-bold uppercase text-slate-400">Alasan / Temuan</div>
+            <div id="pmReason" class="font-semibold mt-0.5 text-sm"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+              <div class="text-[11px] font-bold uppercase text-slate-400">Deteksi AI</div>
+              <div id="pmAi" class="font-semibold mt-0.5"></div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+              <div class="text-[11px] font-bold uppercase text-slate-400">Wilayah / Kontrak</div>
+              <div id="pmMeta" class="font-semibold mt-0.5"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+              <div class="text-[11px] font-bold uppercase text-slate-400">Tgl URL / Stamp</div>
+              <div id="pmDates" class="font-mono mt-0.5"></div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+              <div class="text-[11px] font-bold uppercase text-slate-400">GPS Stamp</div>
+              <div id="pmGps" class="font-mono mt-0.5"></div>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="text-[11px] font-bold uppercase text-slate-400">Teks OCR Stamp</div>
+            <div id="pmOcr" class="font-mono text-[11px] text-slate-600 dark:text-slate-300 mt-1 break-words"></div>
+          </div>
+          <div class="pt-1 flex justify-end">
+            <a id="pmLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition">Buka Foto Asli ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="card"><b>Temuan terbanyak</b><div id="why" class="chips"></div>
-    <details><summary>Rekap per wilayah</summary><div class="tw" style="max-height:260px;margin-top:8px"><table id="wtab"></table></div></details></div>
-  <div class="card hidden" id="hist"><b>Kualitas LKP History (Smart Logic)</b>
-    <div id="hsum" class="chips"></div><p class="tip hidden" id="hwarn" style="margin:10px 0 0;border-color:#e11d48"></p>
-    <p class="hint">PIC berstatus SESUAI tidak dimasukkan ke sheet KUALITAS LKP HISTORY. Semua PIC (SESUAI &amp; TIDAK SESUAI) tersedia di sheet SUMMARY HISTORY LKP, dan rincian per kontrak di sheet AUDIT HISTORY LKP.</p></div>
-  <div class="find"><input type="text" id="q" placeholder="Cari nama PIC, kontrak, ID, alasan…" aria-label="Cari hasil"><span class="hint" id="shown"></span></div>
-  <div class="tw"><table>
-    <thead><tr><th>Preview</th><th>Status</th><th>Alasan</th><th>Deteksi AI</th><th>PIC / Kontrak</th><th>Tgl URL</th><th>Tgl Stamp</th><th>GPS</th><th>OCR Stamp</th></tr></thead>
-    <tbody id="body"></tbody></table></div>
-</section>
 
-<div class="bar">
-  <div class="info"><div id="ready"></div><div class="prog"><i id="pb"></i></div><div id="st"></div></div>
-  <button id="go" class="b p">▶ Mulai Periksa</button>
-  <button id="stop" class="b d hidden">■ Stop</button>
-  <button id="exp" class="b s hidden">⬇ Download Excel</button>
-</div>
-</main>
-<footer class="foot">Bulk Photo Authenticity Checker · Hasil bersifat penyaringan awal; tinjau manual sebelum keputusan akhir.</footer>
+  <!-- ==================== MODAL: KETERANGAN LKP HISTORY ==================== -->
+  <div id="histModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
+        <div>
+          <h3 id="hmTitle" class="text-sm font-bold">Kesimpulan Keterangan LKP</h3>
+          <p id="hmSub" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        </div>
+        <button type="button" data-close="histModal" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold cursor-pointer">✕</button>
+      </div>
+      <div class="p-5 overflow-y-auto space-y-3">
+        <div id="hmEval" class="p-3 rounded-xl text-xs font-semibold border"></div>
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Daftar Keterangan Unik (Non-Bayar)</div>
+        <pre id="hmBody" class="whitespace-pre-wrap font-sans text-xs leading-relaxed p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"></pre>
+      </div>
+    </div>
+  </div>
 
 <script type="module">
 import * as T from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";
+
 const $=id=>document.getElementById(id), isOn=id=>$(id).checked;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
 const WILAYAH_LIST=["BANTEN-1","BANTEN-2","BEM-1","BEM-2","BEM-3","BEM-4","JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6","JAMBI-1","JAMBI-2","JAMBI-3","JATENG","KALIMANTAN","LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5","LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4","SUMBAWA-1","SUMBAWA-2","SUMBAWA-3","SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"];
 const MONTHS={januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"};
 const LABELS=[
-["a selfie of a person wearing a helmet or standing outdoors in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
-["an indoor selfie of two people sitting or talking inside a house or living room","Sesuai","Selfie PIC bersama anggota di dalam rumah"],
-["a selfie of a person at a small shop, warung, or market stall with people or goods","Sesuai","Selfie PIC di warung/toko"],
-["a photo of two or more people together","Sesuai","Foto bersama orang lain"],
-["a photo of a person standing in front of a house or yard","Sesuai","Foto orang di depan rumah"],
-["a photo of a house, building, or front porch exterior","Sesuai","Hanya foto rumah"],
-["a photo of paper money, banknotes, cash, or currency bills on a table or in hand","Tidak Sesuai","FOTO UANG"],
-["a photo taken of a smartphone screen or computer monitor displaying an image","Tidak Sesuai","Foto dari foto"],
-["an extreme close-up portrait of only a face filling the entire frame indoors","Tidak Sesuai","Foto hanya selfie saja"],
-["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle","Tidak Sesuai","Foto jalan/lantai/motor tanpa orang"],
-["a completely dark, black, white, red, blurry, or blank photo","Tidak Sesuai","Foto tidak jelas"],
-["a close-up photo of a paper document, receipt, or form","Tidak Sesuai","Foto dokumen atau kertas"]];
+  ["a selfie of a person wearing a helmet or standing outdoors in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
+  ["an indoor selfie of two people sitting or talking inside a house or living room","Sesuai","Selfie PIC bersama anggota di dalam rumah"],
+  ["a selfie of a person at a small shop, warung, or market stall with people or goods","Sesuai","Selfie PIC di warung/toko"],
+  ["a photo of two or more people together","Sesuai","Foto bersama orang lain"],
+  ["a photo of a person standing in front of a house or yard","Sesuai","Foto orang di depan rumah"],
+  ["a photo of a house, building, or front porch exterior","Sesuai","Hanya foto rumah"],
+  ["a photo of paper money, banknotes, cash, or currency bills on a table or in hand","Tidak Sesuai","FOTO UANG"],
+  ["a photo taken of a smartphone screen or computer monitor displaying an image","Tidak Sesuai","Foto dari foto"],
+  ["an extreme close-up portrait of only a face filling the entire frame indoors","Tidak Sesuai","Foto hanya selfie saja"],
+  ["a photo of an empty road, asphalt street, paving blocks, ground, floor, or parked motorcycle","Tidak Sesuai","Foto jalan/lantai/motor tanpa orang"],
+  ["a completely dark, black, white, red, blurry, or blank photo","Tidak Sesuai","Foto tidak jelas"],
+  ["a close-up photo of a paper document, receipt, or form","Tidak Sesuai","Foto dokumen atau kertas"]
+];
 const URL_RE=/https?:\/\/[^\s"'<>)]*getImage[^\s"'<>)]*/;
-let monRows=[],histRows=[],HIST=null,loadedFiles=[],rows=[],rowMap=new Map(),results=[],stopFlag=false,TOTAL=0,FILT="",QRY="",preferred=null;
 
-/* ---------- pengaturan tersimpan ---------- */
+let monRows=[],histRows=[],HIST=null,loadedFiles=[],rows=[],rowMap=new Map(),results=[],stopFlag=false,TOTAL=0,FILT="",QRY="",WIL_FILT="",H_FILT="",H_QRY="",preferred=null;
+
+/* ---------- Toast Notification (No alert()) ---------- */
+function notify(msg,type="info"){
+  const colors={
+    info:"bg-slate-900 dark:bg-slate-800 text-white border-slate-700",
+    ok:"bg-emerald-600 text-white border-emerald-500",
+    warn:"bg-amber-500 text-slate-950 border-amber-400",
+    bad:"bg-rose-600 text-white border-rose-500"
+  };
+  const el=document.createElement("div");
+  el.className=`pointer-events-auto px-4 py-3 rounded-xl border shadow-lg text-xs font-semibold flex items-start justify-between gap-2 transition ${colors[type]||colors.info}`;
+  el.innerHTML=`<span class="whitespace-pre-line">${esc(msg)}</span><button type="button" class="opacity-75 hover:opacity-100 font-bold ml-2">✕</button>`;
+  el.querySelector("button").onclick=()=>el.remove();
+  $("toastBox").appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.remove()},5500);
+}
+
+/* ---------- Theme Toggle (Sunrise Light / Starry Night Dark) ---------- */
+const THEME_KEY="bpac_theme_v2";
+function applyTheme(mode){
+  const dark=mode==="dark";
+  document.documentElement.classList.toggle("dark",dark);
+  $("themeIcon").textContent=dark?"☀️":"🌙";
+  $("themeLabel").textContent=dark?"Sunrise":"Starry Night";
+  try{localStorage.setItem(THEME_KEY,mode)}catch{}
+}
+applyTheme(localStorage.getItem(THEME_KEY)||"light");
+$("btnTheme").onclick=()=>applyTheme(document.documentElement.classList.contains("dark")?"light":"dark");
+
+/* ---------- Tabs ---------- */
+function switchTab(name){
+  ["setup","foto","history"].forEach(t=>{
+    $("tab-"+t).classList.toggle("hidden",t!==name);
+  });
+  document.querySelectorAll(".tab-btn").forEach(b=>{
+    const on=b.dataset.tab===name;
+    b.classList.toggle("border-blue-400",on);
+    b.classList.toggle("text-white",on);
+    b.classList.toggle("border-transparent",!on);
+    b.classList.toggle("text-blue-200",!on);
+  });
+}
+document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+/* ---------- Modals ---------- */
+$("btnGuide").onclick=()=>$("guideModal").classList.remove("hidden");
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add("hidden"));
+["guideModal","photoModal","histModal"].forEach(id=>{
+  $(id).addEventListener("click",e=>{if(e.target===$(id))$(id).classList.add("hidden")});
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")["guideModal","photoModal","histModal"].forEach(id=>$(id).classList.add("hidden"));
+});
+
+/* ---------- Pengaturan Tersimpan ---------- */
 const SK="bpac_settings_v1";
 function saveS(){try{const s={proxy:$("proxy").value};document.querySelectorAll("input[data-target]").forEach(c=>{s[c.id]=c.checked;s[c.dataset.target]=$(c.dataset.target).value});localStorage.setItem(SK,JSON.stringify(s))}catch{}}
 function loadS(){try{const s=JSON.parse(localStorage.getItem(SK)||"{}");for(const k in s){const e=$(k);if(!e)continue;if(e.type==="checkbox")e.checked=!!s[k];else e.value=s[k]}}catch{}}
 loadS();
 if(["localhost","127.0.0.1"].includes(location.hostname))$("proxy").value="/proxy?url=";
 
-/* ---------- ringkasan kesiapan ---------- */
+/* ---------- Ringkasan Kesiapan ---------- */
 function refreshReady(){
   const n=($("urls").value.match(new RegExp(URL_RE.source,"g"))||[]).length,r=document.querySelectorAll("input[data-target]:checked").length;
   const w=getSelectedWilayah().length,all=$("wilAll").checked,hasX=loadedFiles.length>0,s2=n>0&&(!hasX||all||w>0);
-  $("n1").classList.toggle("ok",n>0);$("n1").textContent=n>0?"✓":"1";
-  $("n2").classList.toggle("ok",s2);$("n2").textContent=s2?"✓":"2";
+  $("badgeSetup").textContent=n;
+  $("step1Dot").className=`w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${n>0?"bg-emerald-600 text-white":"bg-blue-600 text-white"}`;
+  $("step1Dot").textContent=n>0?"✓":"1";
+  $("step2Dot").className=`w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${s2?"bg-emerald-600 text-white":"bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
+  $("step2Dot").textContent=s2?"✓":"2";
+  $("step3Dot").className=`w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${r>0?"bg-blue-600 text-white":"bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
   $("extraSum").textContent=`Aturan tambahan (${r} aktif) — klik untuk membuka/menutup`;
-  const next=n>0?"Siap — klik <b>Mulai Periksa</b>":hasX?((all||w)?"Tidak ada foto yang cocok dengan filter ini; periksa wilayah dan tanggal di Excel":"Langkah berikutnya: pilih Wilayah (langkah 2)"):"Langkah berikutnya: unggah Excel atau tempel URL (langkah 1)";
-  $("ready").innerHTML=`<b>${n}</b> foto siap · Wilayah: <b>${all?"Semua":(w||"belum dipilih")}</b> · Aturan tambahan aktif: <b>${r}</b><br><span class="hint">${next}</span>`;
+  const next=n>0?"Siap — klik <b>Mulai Periksa</b>":hasX?((all||w)?"Tidak ada foto yang cocok dengan filter ini":"Pilih Wilayah di Langkah 2"):"Unggah Excel, tempel URL, atau klik <b>✨ Muat Data Demo</b>";
+  $("ready").innerHTML=`<b>${n}</b> foto siap · Wilayah: <b>${all?"Semua":(w||"belum dipilih")}</b> · Aturan aktif: <b>${r}</b> · <span class="text-slate-500 dark:text-slate-400">${next}</span>`;
 }
 
 /* ---------- Wilayah ---------- */
@@ -248,19 +693,21 @@ const getSelectedWilayah=()=>wilCheckboxes.filter(c=>c.checked).map(c=>c.value);
 function updateWilayahUI(){
   const sel=getSelectedWilayah(),all=sel.length===WILAYAH_LIST.length,t=$("wilBtnText");
   $("wilAll").checked=all;$("wilAll").indeterminate=sel.length>0&&!all;
-  t.classList.toggle("ms-placeholder",!sel.length);
+  t.classList.toggle("text-slate-400",!sel.length);
   t.textContent=!sel.length?"-- Pilih Wilayah --":all?`Select All (Semua Wilayah - ${WILAYAH_LIST.length})`:sel.length<=5?sel.join(", "):`${sel.length} wilayah dipilih (${sel.slice(0,3).join(", ")}, ...)`;
   refreshReady();
 }
 for(const w of WILAYAH_LIST){
-  const l=document.createElement("label");l.className="ms-item";l.dataset.wil=w;
-  const c=document.createElement("input");c.type="checkbox";c.value=w;
+  const l=document.createElement("label");
+  l.className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer";
+  l.dataset.wil=w;
+  const c=document.createElement("input");c.type="checkbox";c.value=w;c.className="rounded text-blue-600 focus:ring-blue-500";
   c.addEventListener("change",()=>{updateWilayahUI();refreshFromFiles()});
   l.append(c,document.createTextNode(w));$("wilList").appendChild(l);wilCheckboxes.push(c);
 }
 $("wilBtn").onclick=()=>{$("wilMenu").classList.toggle("hidden");if(!$("wilMenu").classList.contains("hidden"))$("wilSearch").focus()};
 document.addEventListener("click",e=>{if(!$("wilWrap").contains(e.target))$("wilMenu").classList.add("hidden")});
-$("wilSearch").oninput=e=>{const q=e.target.value.trim().toUpperCase();$("wilList").querySelectorAll(".ms-item").forEach(el=>el.classList.toggle("hidden",q&&!el.dataset.wil.includes(q)))};
+$("wilSearch").oninput=e=>{const q=e.target.value.trim().toUpperCase();$("wilList").querySelectorAll("label").forEach(el=>el.classList.toggle("hidden",q&&!el.dataset.wil.includes(q)))};
 $("wilAll").onchange=e=>{wilCheckboxes.forEach(c=>c.checked=e.target.checked);updateWilayahUI();refreshFromFiles()};
 $("wilClear").onclick=()=>{wilCheckboxes.forEach(c=>c.checked=false);updateWilayahUI();refreshFromFiles()};
 
@@ -314,18 +761,11 @@ async function loadFiles(files){
     if(hs)for(const hr of readSheet(wb,hs)){
       const idpic=normId(pick(hr,"ID PIC"));
       if(idpic)histAcc.push({
-        tgl:normDate(pick(hr,"TGL LKP","TGL PENUGASAN")),
-        idpic,
-        nama:str(pick(hr,"NAMA PIC")),
-        kontrak:normId(pick(hr,"NO KONTRAK")),
-        ket:str(pick(hr,"KETERANGAN")),
-        stBayar:str(pick(hr,"STATUS BAYAR","HASIL KUNJUNGAN","STATUS KUNJUNGAN","STATUS LKP","HASIL","STATUS")).toUpperCase(),
-        cluster:str(pick(hr,"NAMA WILAYAH","CLUSTER")).toUpperCase(),
-        idcab:normId(pick(hr,"ID CABANG","KODE OUTLET","KODE CABANG")),
-        nmcab:str(pick(hr,"NAMA CABANG","NAMA OUTLET"))
+        tgl:normDate(pick(hr,"TGL LKP","TGL PENUGASAN")),idpic,nama:str(pick(hr,"NAMA PIC")),kontrak:normId(pick(hr,"NO KONTRAK")),
+        ket:str(pick(hr,"KETERANGAN")),stBayar:str(pick(hr,"STATUS BAYAR","HASIL KUNJUNGAN","STATUS KUNJUNGAN","STATUS LKP","HASIL","STATUS")).toUpperCase(),
+        cluster:str(pick(hr,"NAMA WILAYAH","CLUSTER")).toUpperCase(),idcab:normId(pick(hr,"ID CABANG","KODE OUTLET","KODE CABANG")),nmcab:str(pick(hr,"NAMA CABANG","NAMA OUTLET"))
       });
-    }
-    else notes.push(`${f.name}: sheet HISTORY LKP tidak ada (analisis keterangan dilewati)`);
+    }else notes.push(`${f.name}: sheet HISTORY LKP tidak ada`);
     for(const r of readSheet(wb,fs)){
       const wilayah=String(pick(r,"NAMA WILAYAH","CLUSTER")).trim().toUpperCase();
       if(!selectAll&&!wil.includes(wilayah))continue;
@@ -345,35 +785,37 @@ function showDataInfo(out){
   const pic=new Set(out.map(r=>r.idpic).filter(Boolean)).size,wc={};
   out.forEach(r=>{const w=r.wilayah||"(kosong)";wc[w]=(wc[w]||0)+1});
   const top=Object.entries(wc).sort((a,b)=>b[1]-a[1]);
-  el.innerHTML=`<b>${out.length}</b> foto dari <b>${loadedFiles.length}</b> file · <b>${pic}</b> PIC unik · TGL LKP ${f(ds[0])} – ${f(ds[ds.length-1])}<br>`+top.slice(0,12).map(([w,c])=>`<span class="chip">${esc(w)}: ${c}</span>`).join(" ")+(top.length>12?` <span class="hint">+${top.length-12} wilayah lain</span>`:"");
+  el.innerHTML=`<div class="mb-2"><b>${out.length}</b> foto dari <b>${loadedFiles.length}</b> file · <b>${pic}</b> PIC unik · TGL LKP <b>${f(ds[0])} – ${f(ds[ds.length-1])}</b></div><div class="flex flex-wrap gap-1.5">`+
+    top.slice(0,12).map(([w,c])=>`<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">${esc(w)}: ${c}</span>`).join("")+
+    (top.length>12?`<span class="text-slate-400 text-[11px] self-center">+${top.length-12} wilayah lain</span>`:"")+"</div>";
 }
 async function refreshFromFiles(){
   if(!loadedFiles.length)return;
   if(!$("wilAll").checked&&!getSelectedWilayah().length){
     rows=[];rowMap=new Map();$("urls").value="";showDataInfo([]);refreshReady();
-    $("st").textContent=`${loadedFiles.length} file Excel siap. Langkah 2: pilih Wilayah atau centang Select All.`;return}
+    $("st").textContent=`${loadedFiles.length} file Excel siap. Pilih Wilayah di Langkah 2.`;return}
   $("st").textContent="Membaca Excel...";
   try{
     const {out,notes,mon,hist}=await loadFiles(loadedFiles);monRows=mon||[];histRows=hist||[];
     rows=out;rowMap=new Map();for(const r of out)rowMap.set(r.url.trim(),r);showDataInfo(out);
     $("urls").value=out.map(r=>r.url).join("\n");refreshReady();
-    const meta=out.filter(r=>r.wilayah||r.idpic||r.nama||r.kontrak).length;
-    $("st").textContent=`${out.length} foto dimuat (${meta} dengan data Wilayah/PIC/Kontrak).`+(notes.length?" "+notes.join("; "):"");
-    if(!out.length)alert("Tidak ada foto yang cocok untuk wilayah yang dipilih.");
-  }catch(err){$("st").textContent="";alert("Gagal membaca file: "+err.message)}
+    $("st").textContent=`${out.length} foto dimuat.`+(notes.length?" "+notes.join("; "):"");
+    if(!out.length)notify("Tidak ada foto yang cocok untuk wilayah yang dipilih.","warn");
+  }catch(err){$("st").textContent="";notify("Gagal membaca file: "+err.message,"bad")}
 }
 function renderFiles(){
-  $("files").innerHTML=loadedFiles.map(f=>`<span class="chip">📄 ${esc(f.name)}</span>`).join("")+(loadedFiles.length?'<button class="lnk" id="clr" type="button">Hapus semua</button>':"");
+  $("files").innerHTML=loadedFiles.map(f=>`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">📄 ${esc(f.name)}</span>`).join("")+
+    (loadedFiles.length?'<button class="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer ml-1" id="clr" type="button">Hapus semua</button>':"");
   const c=$("clr");if(c)c.onclick=()=>{loadedFiles=[];rows=[];rowMap=new Map();$("urls").value="";$("xl").value="";showDataInfo([]);renderFiles();refreshReady();$("st").textContent=""};
 }
 async function setFiles(list){loadedFiles=list;renderFiles();await refreshFromFiles()}
 $("xl").onchange=async e=>{if(e.target.files.length)await setFiles([...e.target.files])};
 const dz=$("drop");
-["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("on")}));
-["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("on")}));
-dz.addEventListener("drop",e=>{const f=[...e.dataTransfer.files].filter(x=>/\.(xlsx|xls|csv)$/i.test(x.name));if(f.length)setFiles(f);else $("st").textContent="Hanya file .xlsx, .xls, atau .csv."});
+["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("ring-2","ring-blue-500")}));
+["dragleave","drop"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove("ring-2","ring-blue-500")}));
+dz.addEventListener("drop",e=>{const f=[...e.dataTransfer.files].filter(x=>/\.(xlsx|xls|csv)$/i.test(x.name));if(f.length)setFiles(f);else notify("Hanya file .xlsx, .xls, atau .csv yang didukung.","warn")});
 
-/* ---------- Gambar ---------- */
+/* ---------- Gambar & CORS Fallback ---------- */
 function candidates(u){
   const p=$("proxy").value.trim();if(p)return [{kind:"proxy",via:"fetch",src:p+encodeURIComponent(u)}];
   const h=u.startsWith("http:")?u.replace(/^http:/,"https:"):u;
@@ -400,15 +842,6 @@ async function fetchPhoto(c){
   }
   return viaImg(c.src);
 }
-const testImg=(src,cors)=>new Promise(ok=>{const i=new Image();if(cors)i.crossOrigin="Anonymous";const t=setTimeout(()=>ok(false),10000);
-  i.onload=()=>{clearTimeout(t);ok(true)};i.onerror=()=>{clearTimeout(t);ok(false)};i.src=src+(src.includes("?")?"&":"?")+"_t="+Date.now()});
-async function diagnose(u){
-  if($("proxy").value.trim())return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
-  const h=u.replace(/^http:/,"https:");
-  const [a,b,c,d]=await Promise.all([testImg(u,false),testImg(h,false),testImg(u,true),testImg(h,true)]),y=v=>v?"BISA":"GAGAL";
-  const why=(c||d)?"Pembacaan piksel bisa (seharusnya berhasil, coba lagi).":(a||b)?"Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto.":"Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
-  return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
-}
 async function canFetchAny(urls){
   for(const u of urls)for(const c of candidates(u)){try{(await fetchPhoto(c)).bmp.close();preferred=c.kind;return true}catch{}}
   return false;
@@ -420,8 +853,8 @@ function cropCanvas(bmp){
   c.getContext("2d").drawImage(bmp,sx,sy,sw,sh,0,0,c.width,c.height);return c;
 }
 function thumb(bmp){
-  const c=document.createElement("canvas");c.width=c.height=48;const s=Math.max(48/bmp.width,48/bmp.height);
-  c.getContext("2d").drawImage(bmp,(48-bmp.width*s)/2,(48-bmp.height*s)/2,bmp.width*s,bmp.height*s);return c.toDataURL("image/jpeg",0.6);
+  const c=document.createElement("canvas");c.width=c.height=64;const s=Math.max(64/bmp.width,64/bmp.height);
+  c.getContext("2d").drawImage(bmp,(64-bmp.width*s)/2,(64-bmp.height*s)/2,bmp.width*s,bmp.height*s);return c.toDataURL("image/jpeg",0.7);
 }
 function dhash(bmp){
   const c=document.createElement("canvas");c.width=9;c.height=8;const x=c.getContext("2d");x.drawImage(bmp,0,0,9,8);
@@ -431,7 +864,7 @@ function dhash(bmp){
 }
 function pop(x){x=x>>>0;x=x-((x>>>1)&0x55555555);x=(x&0x33333333)+((x>>>2)&0x33333333);return Math.imul((x+(x>>>4))&0x0f0f0f0f,0x01010101)>>>24}
 
-/* ---------- Stamp ---------- */
+/* ---------- Stamp OCR Parsing ---------- */
 function lev(a,b){
   const m=Array.from({length:a.length+1},(_,i)=>[i,...Array(b.length).fill(0)]);for(let j=1;j<=b.length;j++)m[0][j]=j;
   for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
@@ -452,7 +885,7 @@ function stampCoords(t){
   return [lat,lon];
 }
 
-/* ---------- Kualitas gambar & AI ---------- */
+/* ---------- Kualitas Gambar & AI CLIP ---------- */
 function checkImageQuality(bmp){
   const w=120,h=90,c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");
   const sx=Math.floor(bmp.width*0.10),sy=Math.floor(bmp.height*0.10),sw=Math.max(1,Math.floor(bmp.width*0.80)),sh=Math.max(1,Math.floor(bmp.height*0.65));
@@ -496,8 +929,6 @@ async function classifyWithRotation(clip,bmp,blob){
   }
   return best;
 }
-
-/* ---------- Verdict ---------- */
 function verdict(r){
   if(r.failed)return;
   const hard=[],warn=[],cs=isOn("t_sx")||isOn("t_sy"),c0=isOn("t_lat0"),c1=isOn("t_lat1"),c2=isOn("t_lon0"),c3=isOn("t_lon1");
@@ -529,8 +960,6 @@ function findDups(list){
     for(const b of idx){if(a===b||a.key===b.key)continue;if(pop(a.hash[0]^b.hash[0])+pop(a.hash[1]^b.hash[1])<=th)refs.push(b.kontrak||b.url.slice(-12))}
     a.dup=refs.slice(0,3).join(", ")+(refs.length>3?` (+${refs.length-3})`:"");}
 }
-
-/* ---------- Model AI: teks dihitung sekali, foto diunduh paralel ---------- */
 async function loadClip(){
   const id="Xenova/clip-vit-base-patch32";
   try{
@@ -547,15 +976,13 @@ async function loadClip(){
     };
     const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.fillStyle="#888";x.fillRect(0,0,64,64);
     const tu=URL.createObjectURL(await new Promise(r=>c.toBlob(r)));
-    try{const o=await fast(tu);if(!Array.isArray(o)||o.length!==LABELS.length||!isFinite(o[0].score))throw new Error("hasil uji tidak valid")}finally{URL.revokeObjectURL(tu)}
+    try{const o=await fast(tu);if(!Array.isArray(o)||o.length!==LABELS.length||!isFinite(o[0].score))throw new Error("uji gagal")}finally{URL.revokeObjectURL(tu)}
     return {fn:u=>fast(u),mode:"cepat"};
-  }catch(e){console.warn("Mode cepat gagal, memakai pipeline standar:",e)}
+  }catch(e){console.warn("Fallback ke pipeline standar:",e)}
   const pl=await T.pipeline("zero-shot-image-classification",id);
   return {fn:(u,t,o)=>pl(u,t,o),mode:"standar"};
 }
 async function getPhoto(url){for(const c of candidates(url)){try{const g=await fetchPhoto(c);preferred=c.kind;return g}catch{}}return null}
-
-/* ---------- Proses satu foto ---------- */
 async function processRow(r,ocr,clip,pre){
   const res={...r,status:"",reason:"",urlDate:"",stampDate:"",gps:"",ai:"",aiStatus:"",aiScore:"",ocr:"",hash:null,thumb:"",dup:"",failed:false};
   const fail=m=>{res.failed=true;res.status="GAGAL DOWNLOAD";res.reason=m;return res};
@@ -578,7 +1005,7 @@ async function processRow(r,ocr,clip,pre){
   bmp.close();return res;
 }
 
-/* ---------- Kualitas LKP History (Smart Logic) ---------- */
+/* ---------- Kualitas LKP History (Smart Logic — Exact Port) ---------- */
 function isBayarStatus(st){
   if(!st)return false;
   if(/(BELUM|BLM|TIDAK|TDK|JANJI|NON|GAGAL|BATAL)/.test(st))return false;
@@ -586,35 +1013,20 @@ function isBayarStatus(st){
 }
 function isAutoUpdate(s){return /AUTO\s*UPDATE/i.test(String(s||""))}
 
-/* Port persis Python difflib.SequenceMatcher (dengan autojunk) */
 function seqRatio(a,b){
   const la=a.length,lb=b.length;
-  if(!la&&!lb)return 1;
-  if(!la||!lb)return 0;
+  if(!la&&!lb)return 1;if(!la||!lb)return 0;
   const b2j=new Map();
-  for(let i=0;i<lb;i++){
-    const ch=b[i];
-    let arr=b2j.get(ch);
-    if(!arr){arr=[];b2j.set(ch,arr)}
-    arr.push(i);
-  }
-  if(lb>=200){
-    const ntest=Math.floor(lb/100)+1;
-    for(const [ch,idxs] of b2j)if(idxs.length>ntest)b2j.delete(ch);
-  }
+  for(let i=0;i<lb;i++){const ch=b[i];let arr=b2j.get(ch);if(!arr){arr=[];b2j.set(ch,arr)}arr.push(i)}
+  if(lb>=200){const ntest=Math.floor(lb/100)+1;for(const [ch,idxs] of b2j)if(idxs.length>ntest)b2j.delete(ch)}
   function findLongest(alo,ahi,blo,bhi){
-    let besti=alo,bestj=blo,bestsize=0;
-    let j2len=new Map();
+    let besti=alo,bestj=blo,bestsize=0,j2len=new Map();
     for(let i=alo;i<ahi;i++){
-      const newj2len=new Map();
-      const idxs=b2j.get(a[i]);
+      const newj2len=new Map(),idxs=b2j.get(a[i]);
       if(idxs){
         for(let t=0;t<idxs.length;t++){
-          const j=idxs[t];
-          if(j<blo)continue;
-          if(j>=bhi)break;
-          const k=(j2len.get(j-1)||0)+1;
-          newj2len.set(j,k);
+          const j=idxs[t];if(j<blo)continue;if(j>=bhi)break;
+          const k=(j2len.get(j-1)||0)+1;newj2len.set(j,k);
           if(k>bestsize){besti=i-k+1;bestj=j-k+1;bestsize=k}
         }
       }
@@ -624,26 +1036,17 @@ function seqRatio(a,b){
     while(besti+bestsize<ahi&&bestj+bestsize<bhi&&a[besti+bestsize]===b[bestj+bestsize])bestsize++;
     return [besti,bestj,bestsize];
   }
-  const queue=[[0,la,0,lb]];
-  let matches=0;
+  const queue=[[0,la,0,lb]];let matches=0;
   while(queue.length){
-    const [alo,ahi,blo,bhi]=queue.pop();
-    const [i,j,k]=findLongest(alo,ahi,blo,bhi);
-    if(k){
-      matches+=k;
-      if(alo<i&&blo<j)queue.push([alo,i,blo,j]);
-      if(i+k<ahi&&j+k<bhi)queue.push([i+k,ahi,j+k,bhi]);
-    }
+    const [alo,ahi,blo,bhi]=queue.pop(),[i,j,k]=findLongest(alo,ahi,blo,bhi);
+    if(k){matches+=k;if(alo<i&&blo<j)queue.push([alo,i,blo,j]);if(i+k<ahi&&j+k<bhi)queue.push([i+k,ahi,j+k,bhi])}
   }
   return (2*matches)/(la+lb);
 }
 function avgSeqSim(items){
   if(items.length<2)return 0;
-  const low=items.map(s=>s.toLowerCase());
-  let tot=0,cnt=0;
-  for(let i=0;i<low.length;i++){
-    for(let j=i+1;j<low.length;j++){tot+=seqRatio(low[i],low[j]);cnt++}
-  }
+  const low=items.map(s=>s.toLowerCase());let tot=0,cnt=0;
+  for(let i=0;i<low.length;i++)for(let j=i+1;j<low.length;j++){tot+=seqRatio(low[i],low[j]);cnt++}
   return cnt?(tot/cnt)*100:0;
 }
 function evalSmartLogic(jml,uniqueKets){
@@ -659,90 +1062,144 @@ function evalSmartLogic(jml,uniqueKets){
   return {ok:true,status:"SESUAI",tag:"ok",detail:"Valid, Bervariasi & Informatif",avgLen,sim};
 }
 
+function renderHistoryUI(){
+  if(!HIST||!HIST.pics.length){
+    $("emptyHist").classList.remove("hidden");$("histContent").classList.add("hidden");$("badgeHist").textContent="0";return;
+  }
+  $("emptyHist").classList.add("hidden");$("histContent").classList.remove("hidden");
+  const pics=HIST.pics,cnt=t=>pics.filter(x=>x.tag===t).length,okN=cnt("ok"),badN=pics.length-okN;
+  $("badgeHist").textContent=pics.length;
+  $("hTotal").textContent=pics.length;$("hOk").textContent=okN;$("hBad").textContent=badN;
+  const breakdown=[["auto","Auto Update"],["copypaste","Copy Paste Identik"],["short","Kurang Informatif"],["templated","Templated"],["extreme","Extreme Template"],["no_data","Tanpa Data"]];
+  const chips=[`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Valid &amp; Informatif: ${okN}</span>`];
+  for(const [t,lbl] of breakdown){const n=cnt(t);if(n)chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">${lbl}: ${n}</span>`)}
+  $("hsum").innerHTML=chips.join("");
+  renderHistoryTable();
+}
+function renderHistoryTable(){
+  if(!HIST)return;
+  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"-";
+  const list=HIST.pics.filter(x=>{
+    if(H_FILT&&x.status!==H_FILT)return false;
+    if(H_QRY){
+      const hay=[x.m.cluster,x.m.idpic,x.m.nama,x.detail,x.status].join(" ").toLowerCase();
+      if(!hay.includes(H_QRY))return false;
+    }
+    return true;
+  });
+  $("hShown").textContent=`Menampilkan ${list.length} dari ${HIST.pics.length} PIC`;
+  $("hBody").innerHTML=list.map(x=>{
+    const idx=HIST.pics.indexOf(x);
+    const bCls=x.ok?"bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300":"bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300";
+    return `<tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">
+      <td class="p-3 font-semibold">${esc(x.m.cluster||x.f.cluster||"-")}</td>
+      <td class="p-3 font-mono">${esc(fmtDash(x.m.tgl))}</td>
+      <td class="p-3 font-mono">${esc(x.m.idpic)}</td>
+      <td class="p-3 font-medium">${esc(x.m.nama||x.f.nama||"-")}</td>
+      <td class="p-3 text-center font-bold tabular">${x.jml}</td>
+      <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${bCls}">${esc(x.status)}</span></td>
+      <td class="p-3">${esc(x.detail)}</td>
+      <td class="p-3 text-right"><button type="button" data-hidx="${idx}" class="btn-hist-view px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer">Lihat Keterangan</button></td>
+    </tr>`;
+  }).join("");
+  $("hBody").querySelectorAll(".btn-hist-view").forEach(b=>b.onclick=()=>openHistModal(HIST.pics[+b.dataset.hidx]));
+}
+function openHistModal(x){
+  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"-";
+  $("hmTitle").textContent=`${x.m.nama||x.m.idpic} (${x.m.idpic})`;
+  $("hmSub").textContent=`Wilayah: ${x.m.cluster||"-"} · TGL LKP: ${fmtDash(x.m.tgl)} · ${x.jml} LKP Non-Bayar`;
+  $("hmEval").className=`p-3 rounded-xl text-xs font-semibold border ${x.ok?"bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300":"bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"}`;
+  $("hmEval").textContent=`${x.status} — ${x.detail}`;
+  $("hmBody").textContent=x.kesimpulan||"(Tidak ada keterangan)";
+  $("histModal").classList.remove("hidden");
+}
 function buildHistory(){
-  HIST=null;$("hist").classList.add("hidden");
-  if(!histRows.length||!monRows.length)return;
+  HIST=null;
+  if(!histRows.length||!monRows.length){renderHistoryUI();return}
   const selAll=$("wilAll").checked,wil=getSelectedWilayah();
-  if(!selAll&&!wil.length)return;
+  if(!selAll&&!wil.length){renderHistoryUI();return}
   const base=new Map(),byPT=new Map(),ph=new Map();
-  for(const m of monRows){
-    const k=m.tgl+"|"+m.idpic;
-    if(base.has(k))continue;
-    if(!selAll&&m.cluster&&!wil.includes(m.cluster))continue;
-    base.set(k,m);
-  }
-  for(const h of histRows){
-    if(isBayarStatus(h.stBayar))continue;
-    const k=h.idpic+"|"+h.tgl;
-    if(!byPT.has(k))byPT.set(k,[]);
-    byPT.get(k).push(h);
-  }
+  for(const m of monRows){const k=m.tgl+"|"+m.idpic;if(base.has(k))continue;if(!selAll&&m.cluster&&!wil.includes(m.cluster))continue;base.set(k,m)}
+  for(const h of histRows){if(isBayarStatus(h.stBayar))continue;const k=h.idpic+"|"+h.tgl;if(!byPT.has(k))byPT.set(k,[]);byPT.get(k).push(h)}
   for(const r of results)if(r.kontrak)ph.set(r.kontrak,r);
 
   const pics=[],det=[];
   for(const [k,m] of base){
     const rs=byPT.get(m.idpic+"|"+m.tgl)||[],f=rs[0]||{};
     const seen=new Set(),uniqueKets=[];
-    for(const h of rs){
-      const raw=String(h.ket||"").trim();
-      if(!raw)continue;
-      const key=raw.toUpperCase();
-      if(!seen.has(key)){seen.add(key);uniqueKets.push(raw)}
-    }
+    for(const h of rs){const raw=String(h.ket||"").trim();if(!raw)continue;const key=raw.toUpperCase();if(!seen.has(key)){seen.add(key);uniqueKets.push(raw)}}
     const kesimpulan=uniqueKets.map(x=>"• "+x).join("\n");
     const ev=evalSmartLogic(rs.length,uniqueKets);
     pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim});
     for(const h of rs){
       const p=ph.get(h.kontrak);
       det.push({
-        "TGL LKP":m.tgl,
-        "CLUSTER":m.cluster||f.cluster||"",
-        "ID PIC":m.idpic,
-        "NAMA PIC":m.nama||h.nama,
-        "NO KONTRAK":h.kontrak,
-        "KETERANGAN":h.ket,
-        "PANJANG KARAKTER":String(h.ket||"").trim().length,
-        "AUTO UPDATE":isAutoUpdate(h.ket)?"YA":"TIDAK",
-        "STATUS PIC":ev.status,
-        "DETAIL EVALUASI":ev.detail,
-        "DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
+        "TGL LKP":m.tgl,"CLUSTER":m.cluster||f.cluster||"","ID PIC":m.idpic,"NAMA PIC":m.nama||h.nama,"NO KONTRAK":h.kontrak,
+        "KETERANGAN":h.ket,"PANJANG KARAKTER":String(h.ket||"").trim().length,"AUTO UPDATE":isAutoUpdate(h.ket)?"YA":"TIDAK",
+        "STATUS PIC":ev.status,"DETAIL EVALUASI":ev.detail,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
       });
     }
   }
-  HIST={pics,det};
-  const cnt=t=>pics.filter(x=>x.tag===t).length;
-  const okN=cnt("ok"),badN=pics.length-okN;
-  const chips=[
-    `${histRows.length} baris history dibaca`,
-    `${pics.length} PIC diperiksa`,
-    `${okN} SESUAI`,
-    `${badN} TIDAK SESUAI`
-  ];
-  const breakdown=[
-    ["auto","Auto Update"],["copypaste","Copy Paste Identik"],
-    ["short","Kurang Informatif"],["templated","Templated"],
-    ["extreme","Extreme Template"],["no_data","Tanpa Data"]
-  ];
-  for(const [t,lbl] of breakdown){const n=cnt(t);if(n)chips.push(`${lbl}: ${n}`)}
-  $("hsum").innerHTML=chips.map(t=>`<span class="chip">${esc(t)}</span>`).join(" ");
-  const w=$("hwarn");
-  const badList=pics.filter(x=>!x.ok);
-  w.classList.toggle("hidden",!badList.length);
-  w.innerHTML=badList.length?`⚠ <b>Perlu Perhatian (${badList.length} PIC):</b> `+badList.slice(0,8).map(x=>`${esc(x.m.nama||x.m.idpic)} (${esc(x.detail)})`).join(", ")+(badList.length>8?` +${badList.length-8} PIC lain`:""):"";
-  $("hist").classList.remove("hidden");
+  HIST={pics,det};renderHistoryUI();
 }
+document.querySelectorAll(".kpi-hist").forEach(b=>b.onclick=()=>{
+  H_FILT=b.dataset.hf;$("hStatusSel").value=H_FILT;
+  document.querySelectorAll(".kpi-hist").forEach(x=>{x.classList.toggle("border-blue-600",x===b);x.classList.toggle("border-slate-200",x!==b);x.classList.toggle("dark:border-slate-700",x!==b)});
+  renderHistoryTable();
+});
+$("hStatusSel").onchange=e=>{H_FILT=e.target.value;renderHistoryTable()};
+$("hq").oninput=e=>{H_QRY=e.target.value.trim().toLowerCase();renderHistoryTable()};
 
-/* ---------- Tampilan hasil ---------- */
-const STDESC={"VALID":"Tidak ada temuan.","PERLU CEK":"Ada temuan ringan, perlu dilihat manual.","TIDAK VALID":"Ada temuan kuat bahwa foto tidak sesuai.","GAGAL DOWNLOAD":"Foto tidak dapat dimuat."};
-const rowHtml=r=>`<td>${r.thumb?`<img class="thumb" src="${r.thumb}" alt="">`:""}</td>
-  <td><span class="bd b-${r.status.replace(/ /g,"")}" title="${esc(STDESC[r.status]||"")}">${esc(r.status)}</span></td>
-  <td>${esc(r.reason)}</td><td>${esc(r.ai)}${r.aiScore?`<br><small>skor ${esc(r.aiScore)}</small>`:""}${r.dup?`<br><small>Duplikat: ${esc(r.dup)}</small>`:""}</td><td>${esc(r.nama)}<br><small>${esc(r.kontrak)}</small><br><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"><small>Buka foto ↗</small></a></td>
-  <td class="mono">${esc(r.urlDate)}</td><td class="mono">${esc(r.stampDate)}</td><td class="mono">${esc(r.gps)}</td><td class="ocr">${esc(r.ocr)}</td>`;
-function vis(tr){tr.classList.toggle("hidden",!!((FILT&&tr.dataset.s!==FILT)||(QRY&&!tr.dataset.q.includes(QRY))))}
-function fill(tr,r){tr.innerHTML=rowHtml(r);tr.dataset.s=r.status;tr.dataset.q=[r.nama,r.kontrak,r.idpic,r.wilayah,r.reason,r.ai].join(" ").toLowerCase();vis(tr)}
-function shown(){const n=[...$("body").children].filter(t=>!t.classList.contains("hidden")).length;$("shown").textContent=`Menampilkan ${n} dari ${results.length}`}
-function addRow(r){const tr=document.createElement("tr");fill(tr,r);$("body").appendChild(tr)}
-function updateRow(i,r){const tr=$("body").children[i];if(tr)fill(tr,r)}
+/* ---------- Tampilan Audit Foto & Lightbox ---------- */
+function badgeHtml(status){
+  const map={
+    "VALID":"bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300",
+    "PERLU CEK":"bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300",
+    "TIDAK VALID":"bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300",
+    "GAGAL DOWNLOAD":"bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+  };
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${map[status]||""}"><span class="w-1.5 h-1.5 rounded-full bg-current"></span>${esc(status)}</span>`;
+}
+function openPhotoModal(r){
+  $("pmBadge").innerHTML=badgeHtml(r.status);
+  $("pmTitle").textContent=`${r.nama||"PIC"} — ${r.kontrak||"Tanpa Kontrak"}`;
+  $("pmImg").src=r.thumb||"";
+  $("pmReason").textContent=r.reason||"Tidak ada temuan (Valid).";
+  $("pmAi").textContent=`${r.ai||"-"} ${r.aiScore?`(${r.aiScore})`:""}`;
+  $("pmMeta").textContent=`${r.wilayah||"-"} · ${r.kontrak||"-"}`;
+  $("pmDates").textContent=`URL: ${r.urlDate||"-"} | Stamp: ${r.stampDate||"-"}`;
+  $("pmGps").innerHTML=r.gps?`<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">${esc(r.gps)} ↗</a>`:"-";
+  $("pmOcr").textContent=r.ocr||"(OCR tidak aktif / tidak terbaca)";
+  $("pmLink").href=r.url||"#";
+  $("photoModal").classList.remove("hidden");
+}
+function rowHtml(r,idx){
+  const gpsCell=r.gps?`<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline font-mono">${esc(r.gps)} ↗</a>`:"-";
+  return `
+    <td class="p-2.5">${r.thumb?`<button type="button" data-pidx="${idx}" class="btn-thumb block group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer"><img src="${r.thumb}" alt="Thumb" class="w-12 h-12 object-cover group-hover:scale-105 transition"></button>`:""}</td>
+    <td class="p-2.5">${badgeHtml(r.status)}</td>
+    <td class="p-2.5 max-w-[220px]">${esc(r.reason)||'<span class="text-slate-400">-</span>'}</td>
+    <td class="p-2.5"><div class="font-medium">${esc(r.ai||"-")}</div>${r.aiScore?`<div class="text-[11px] text-slate-500">skor ${esc(r.aiScore)}</div>`:""}${r.dup?`<div class="text-[11px] text-rose-600 dark:text-rose-400">Duplikat: ${esc(r.dup)}</div>`:""}</td>
+    <td class="p-2.5"><div class="font-semibold">${esc(r.nama||"-")}</div><div class="text-[11px] text-slate-500 font-mono">${esc(r.kontrak||"-")} · ${esc(r.wilayah||"-")}</div><button type="button" data-pidx="${idx}" class="btn-thumb text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Inspect Foto ↗</button></td>
+    <td class="p-2.5 font-mono">${esc(r.urlDate||"-")}</td>
+    <td class="p-2.5 font-mono">${esc(r.stampDate||"-")}</td>
+    <td class="p-2.5">${gpsCell}</td>
+    <td class="p-2.5 max-w-[200px] text-[11px] text-slate-500 dark:text-slate-400 break-words">${esc(r.ocr||"-")}</td>`;
+}
+function renderFotoTable(){
+  const list=results.map((r,i)=>({r,i})).filter(({r})=>{
+    if(FILT&&r.status!==FILT)return false;
+    if(WIL_FILT&&(r.wilayah||"(tanpa wilayah)")!==WIL_FILT)return false;
+    if(QRY){
+      const hay=[r.nama,r.kontrak,r.idpic,r.wilayah,r.reason,r.ai,r.ocr].join(" ").toLowerCase();
+      if(!hay.includes(QRY))return false;
+    }
+    return true;
+  });
+  $("shown").textContent=`Menampilkan ${list.length} dari ${results.length}`;
+  $("body").innerHTML=list.map(({r,i})=>`<tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">${rowHtml(r,i)}</tr>`).join("");
+  $("body").querySelectorAll(".btn-thumb").forEach(b=>b.onclick=()=>openPhotoModal(results[+b.dataset.pidx]));
+}
 function reasonKey(s){return s.replace(/^Tanggal stamp \d+ != tanggal URL .*/,"Tanggal stamp ≠ tanggal URL").replace(/^Tanggal stamp \d+ != TGL LKP/,"Tanggal stamp ≠ TGL LKP").replace(/^Foto sama dengan kontrak .*/,"Duplikat dengan kontrak lain")}
 function renderBreak(){
   const rc={},wc={};
@@ -752,66 +1209,85 @@ function renderBreak(){
     if(r.status==="VALID")o.v++;else if(r.status==="PERLU CEK")o.c++;else if(r.status==="TIDAK VALID")o.x++;else o.f++;
   }
   const rs=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
-  $("why").innerHTML=rs.length?rs.map(([k,n])=>`<span class="chip">${esc(k)}: <b>${n}</b></span>`).join(" "):'<span class="hint">Belum ada temuan.</span>';
-  $("wtab").innerHTML="<tr><th>Wilayah</th><th>Total</th><th>Valid</th><th>Perlu cek</th><th>Tidak valid</th><th>Gagal</th></tr>"+Object.entries(wc).sort().map(([w,o])=>`<tr><td>${esc(w)}</td><td>${o.t}</td><td>${o.v}</td><td>${o.c}</td><td>${o.x}</td><td>${o.f}</td></tr>`).join("");
+  $("why").innerHTML=rs.length?rs.map(([k,n])=>`<button type="button" data-rk="${esc(k)}" class="chip-why px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer">${esc(k)}: <b>${n}</b></button>`).join(""):`<span class="text-xs text-slate-400">Belum ada temuan.</span>`;
+  $("why").querySelectorAll(".chip-why").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.rk;QRY=b.dataset.rk.toLowerCase();renderFotoTable()});
+  $("wtab").innerHTML=`<thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300"><tr><th class="p-2.5">Wilayah</th><th class="p-2.5">Total</th><th class="p-2.5 text-emerald-600">Valid</th><th class="p-2.5 text-amber-600">Perlu Cek</th><th class="p-2.5 text-rose-600">Tidak Valid</th><th class="p-2.5">Gagal</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-700">`+
+    Object.entries(wc).sort().map(([w,o])=>`<tr><td class="p-2.5 font-semibold">${esc(w)}</td><td class="p-2.5 tabular">${o.t}</td><td class="p-2.5 tabular">${o.v}</td><td class="p-2.5 tabular">${o.c}</td><td class="p-2.5 tabular">${o.x}</td><td class="p-2.5 tabular">${o.f}</td></tr>`).join("")+"</tbody>";
+  const cur=$("wilFilterFoto").value;
+  $("wilFilterFoto").innerHTML=`<option value="">Semua Wilayah</option>`+Object.keys(wc).sort().map(w=>`<option value="${esc(w)}"${w===cur?" selected":""}>${esc(w)} (${wc[w].t})</option>`).join("");
 }
 function summary(){
   const c=s=>results.filter(r=>r.status===s).length;
-  $("nT").textContent=results.length;$("nV").textContent=c("VALID");$("nC").textContent=c("PERLU CEK");$("nX").textContent=c("TIDAK VALID");$("nF").textContent=c("GAGAL DOWNLOAD");
   const cv=c("VALID"),cc=c("PERLU CEK"),cx=c("TIDAK VALID"),cf=c("GAGAL DOWNLOAD"),tt=results.length||1,pc=n=>(n/tt*100).toFixed(1)+"%";
+  $("badgeFoto").textContent=results.length;
+  $("nT").textContent=results.length;$("nV").textContent=cv;$("nC").textContent=cc;$("nX").textContent=cx;$("nF").textContent=cf;
   $("pV").textContent=pc(cv);$("pC").textContent=pc(cc);$("pX").textContent=pc(cx);$("pF").textContent=pc(cf);
-  $("dist").innerHTML=[["g",cv,"Valid"],["y",cc,"Perlu cek"],["r",cx,"Tidak valid"],["f",cf,"Gagal download"]].map(([k,n,l])=>n?`<i class="${k}" style="width:${n/tt*100}%" title="${l}: ${n} (${pc(n)})"></i>`:"").join("");
-  $("rsub").textContent=`${results.length}${TOTAL?" dari "+TOTAL:""} foto diperiksa`;$("exp2").disabled=!results.length;
-  $("pb").style.width=(TOTAL?Math.min(100,results.length/TOTAL*100):0)+"%";shown();if(results.length%10===0||(TOTAL&&results.length>=TOTAL))renderBreak();
+  $("dist").innerHTML=[["bg-emerald-500",cv,"Valid"],["bg-amber-500",cc,"Perlu cek"],["bg-rose-600",cx,"Tidak valid"],["bg-slate-400",cf,"Gagal download"]].map(([k,n,l])=>n?`<div class="${k} h-full" style="width:${n/tt*100}%" title="${l}: ${n} (${pc(n)})"></div>`:"").join("");
+  $("rsub").textContent=`${results.length}${TOTAL?" dari "+TOTAL:""} foto diperiksa`;
+  $("exp2").disabled=!results.length;
+  $("pb").style.width=(TOTAL?Math.min(100,results.length/TOTAL*100):0)+"%";
+  if(results.length){$("emptyFoto").classList.add("hidden");$("fotoContent").classList.remove("hidden")}
+  renderFotoTable();
+  if(results.length%10===0||(TOTAL&&results.length>=TOTAL))renderBreak();
 }
-document.querySelectorAll(".box").forEach(b=>b.onclick=()=>{FILT=b.dataset.f;document.querySelectorAll(".box").forEach(x=>x.classList.toggle("on",x===b));[...$("body").children].forEach(vis);shown()});
-$("q").oninput=e=>{QRY=e.target.value.trim().toLowerCase();[...$("body").children].forEach(vis);shown()};
+document.querySelectorAll(".kpi-foto").forEach(b=>b.onclick=()=>{
+  FILT=b.dataset.f;
+  document.querySelectorAll(".kpi-foto").forEach(x=>{x.classList.toggle("border-blue-600",x===b);x.classList.toggle("border-slate-200",x!==b);x.classList.toggle("dark:border-slate-700",x!==b)});
+  renderFotoTable();
+});
+$("q").oninput=e=>{QRY=e.target.value.trim().toLowerCase();renderFotoTable()};
+$("wilFilterFoto").onchange=e=>{WIL_FILT=e.target.value;renderFotoTable()};
+$("btnResetFoto").onclick=()=>{FILT="";QRY="";WIL_FILT="";$("q").value="";$("wilFilterFoto").value="";document.querySelectorAll(".kpi-foto").forEach((x,i)=>{x.classList.toggle("border-blue-600",i===0);x.classList.toggle("border-slate-200",i!==0);x.classList.toggle("dark:border-slate-700",i!==0)});renderFotoTable()};
 $("exp2").onclick=()=>$("exp").onclick();
 $("stop").onclick=()=>{stopFlag=true;$("st").textContent="Menghentikan..."};
 
+/* ---------- Proses Pemeriksaan ---------- */
 $("go").onclick=async()=>{
   const pasted=$("urls").value.match(new RegExp(URL_RE.source,"g"))||[];let list=[];
   if(pasted.length)list=pasted.map(u=>rowMap.has(u)?{...rowMap.get(u)}:{file:"",tgl:"",wilayah:"",kontrak:"",idpic:"",nama:"",url:u});
   else if(rows.length)list=rows.map(r=>({...r}));
-  if(!list.length){alert(loadedFiles.length?"Langkah 2: pilih Wilayah atau centang Select All terlebih dahulu.":"Langkah 1: upload Excel atau tempel URL getImage dulu.");return}
+  if(!list.length){notify(loadedFiles.length?"Pilih Wilayah di Langkah 2 terlebih dahulu.":"Unggah file Excel, tempel URL, atau klik ✨ Muat Data Demo.","warn");return}
   list=list.map((r,i)=>({...r,key:r.kontrak?`${r.tgl}|${r.kontrak}|${r.idpic}`:"u"+i}));
-  results=[];stopFlag=false;TOTAL=list.length;FILT="";QRY="";$("q").value="";$("body").innerHTML="";
-  document.querySelectorAll(".box").forEach((x,i)=>x.classList.toggle("on",i===0));
-  $("res").classList.remove("hidden");$("emptyRes").classList.add("hidden");$("exp").classList.add("hidden");$("go").disabled=true;$("stop").classList.remove("hidden");summary();
+  results=[];stopFlag=false;TOTAL=list.length;FILT="";QRY="";WIL_FILT="";$("q").value="";
+  switchTab("foto");$("exp").classList.add("hidden");$("go").disabled=true;$("stop").classList.remove("hidden");summary();
   preferred=null;$("st").textContent="Mengetes koneksi ke server foto...";
   if(!(await canFetchAny(list.slice(0,3).map(r=>r.url)))){
-    const diag=await diagnose(list[0].url);
-    alert("Diagnosa: "+diag+"\n\nSolusi: isi Proxy URL (Pengaturan lanjutan) dengan Cloudflare Worker pribadi, atau jalankan local_server.py di komputer Anda.");
-    $("go").disabled=false;$("stop").classList.add("hidden");$("st").textContent="Koneksi ke server foto gagal.";return}
+    notify("Koneksi ke server foto gagal (CORS/jaringan). Isi Custom Proxy URL di Langkah 3 atau jalankan local_server.py.","bad");
+    $("go").disabled=false;$("stop").classList.add("hidden");$("st").textContent="Koneksi gagal.";return;
+  }
   const needOcr=["t_sx","t_sy","t_lat0","t_lat1","t_lon0","t_lon1"].some(isOn);let ocr=null;
   if(needOcr){$("st").textContent=`Terhubung via [${preferred}]. Memuat OCR...`;ocr=await Tesseract.createWorker("eng")}
-  $("st").textContent=`Terhubung via [${preferred}]. Memuat model AI (pertama kali ±90 MB)...`;
-  let clip=null,clipMode="";
-  try{const L=await loadClip();clip=L.fn;clipMode=L.mode;$("st").textContent=`Model AI siap (mode ${clipMode}).`}catch(e){alert("Model AI gagal dimuat, pemeriksaan isi foto dilewati: "+e.message)}
+  $("st").textContent=`Terhubung via [${preferred}]. Memuat model AI (±90 MB pertama kali)...`;
+  let clip=null;
+  try{const L=await loadClip();clip=L.fn;$("st").textContent=`Model AI siap (mode ${L.mode}).`}catch(e){notify("Model AI gagal dimuat, pemeriksaan isi foto dilewati: "+e.message,"warn")}
   const pre=new Map(),t0=Date.now();
   for(let i=0;i<list.length&&!stopFlag;i++){
-    const done=i,eta=done?Math.round((Date.now()-t0)/done*(list.length-done)/1000):0;
+    const eta=i?Math.round((Date.now()-t0)/i*(list.length-i)/1000):0;
     $("st").textContent=`Memeriksa ${i+1} / ${list.length}`+(eta?` · sisa ±${eta>=60?Math.round(eta/60)+" menit":eta+" dtk"}`:"");
     for(let k=i;k<Math.min(i+3,list.length);k++)if(!pre.has(k))pre.set(k,getPhoto(list[k].url));
-    const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);addRow(r);summary();
+    const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);summary();
   }
   for(let round=1;round<=3&&!stopFlag;round++){
     const idxs=[];results.forEach((r,i)=>{if(r.status==="GAGAL DOWNLOAD"&&r.reason!=="URL tidak valid")idxs.push(i)});
     if(!idxs.length)break;
     for(let k=0;k<idxs.length&&!stopFlag;k++){
-      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1} / ${idxs.length})`;
-      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;updateRow(idxs[k],r);summary();
+      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1}/${idxs.length})`;
+      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;summary();
     }
   }
   if(ocr)await ocr.terminate();
-  findDups(results);results.forEach(verdict);$("body").innerHTML="";results.forEach(addRow);summary();renderBreak();
-  try{buildHistory()}catch(e){$("hist").classList.remove("hidden");$("hsum").textContent="Analisis history gagal: "+e.message}
+  findDups(results);results.forEach(verdict);summary();renderBreak();
+  try{buildHistory()}catch(e){notify("Analisis history gagal: "+e.message,"warn")}
   $("pb").style.width=stopFlag?$("pb").style.width:"100%";
-  $("st").textContent=stopFlag?`Dihentikan di ${results.length} foto.`:`Selesai. ${results.length} foto diperiksa. Klik kartu ringkasan untuk memfilter hasil.`;
-  $("go").disabled=false;$("stop").classList.add("hidden");$("rsub").textContent=$("st").textContent;if(results.length)$("exp").classList.remove("hidden");
+  $("st").textContent=stopFlag?`Dihentikan di ${results.length} foto.`:`Selesai. ${results.length} foto diperiksa.`;
+  $("go").disabled=false;$("stop").classList.add("hidden");$("rsub").textContent=$("st").textContent;
+  if(results.length)$("exp").classList.remove("hidden");
+  notify("Pemeriksaan selesai! Anda dapat memfilter hasil atau mengunduh Excel.","ok");
 };
 
+/* ---------- Export Excel (5 Sheets) ---------- */
 $("exp").onclick=()=>{
+  if(!results.length&&!HIST){notify("Belum ada data untuk diekspor.","warn");return}
   const fmt=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"";
   const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"";
   const all=results.map(r=>({"TGL LKP":fmt(r.tgl),CLUSTER:r.wilayah,"NO KONTRAK":r.kontrak,"ID PIC":r.idpic,"NAMA PIC":r.nama,"FOTO KUNJUNGAN":r.url,"STATUS KEASLIAN":r.status,ALASAN:r.reason.toUpperCase(),"TGL URL":r.urlDate,"TGL STAMP":r.stampDate,"GPS STAMP":r.gps,"DETEKSI AI":r.ai,"SKOR AI":r.aiScore,"DUPLIKAT DENGAN":r.dup,"OCR STAMP":r.ocr,"SUMBER FILE":r.file}));
@@ -820,36 +1296,68 @@ $("exp").onclick=()=>{
   add(flagged,"KUALITAS LKP FOTO");add(all,"AUDIT KEASLIAN FOTO");
   if(HIST){
     const H1=["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
-    add(HIST.pics.filter(x=>!x.ok).map(x=>({
-      "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
-      "TGL LKP":fmtDash(x.m.tgl),
-      "ID CABANG":x.m.idcab||x.f.idcab||"",
-      "NAMA CABANG":x.m.nmcab||x.f.nmcab||"",
-      "ID PIC":x.m.idpic,
-      "NAMA PIC":x.m.nama||x.f.nama||"",
-      "JML LKP (NON-BAYAR)":x.jml,
-      "KESIMPULAN KETERANGAN":x.kesimpulan,
-      "STATUS":x.status,
-      "DETAIL EVALUASI":x.detail
-    })),"KUALITAS LKP HISTORY",[14,12,12,22,10,26,18,80,14,52],H1);
+    add(HIST.pics.filter(x=>!x.ok).map(x=>({"NAMA WILAYAH":x.m.cluster||x.f.cluster||"","TGL LKP":fmtDash(x.m.tgl),"ID CABANG":x.m.idcab||x.f.idcab||"","NAMA CABANG":x.m.nmcab||x.f.nmcab||"","ID PIC":x.m.idpic,"NAMA PIC":x.m.nama||x.f.nama||"","JML LKP (NON-BAYAR)":x.jml,"KESIMPULAN KETERANGAN":x.kesimpulan,"STATUS":x.status,"DETAIL EVALUASI":x.detail})),"KUALITAS LKP HISTORY",[14,12,12,22,10,26,18,80,14,52],H1);
     const HS=["NAMA WILAYAH","TGL LKP","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
-    add(HIST.pics.map(x=>({
-      "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
-      "TGL LKP":fmtDash(x.m.tgl),
-      "ID PIC":x.m.idpic,
-      "NAMA PIC":x.m.nama||x.f.nama||"",
-      "JML LKP (NON-BAYAR)":x.jml,
-      "KESIMPULAN KETERANGAN":x.kesimpulan,
-      "STATUS":x.status,
-      "DETAIL EVALUASI":x.detail
-    })),"SUMMARY HISTORY LKP",[14,12,10,26,18,80,14,52],HS);
+    add(HIST.pics.map(x=>({"NAMA WILAYAH":x.m.cluster||x.f.cluster||"","TGL LKP":fmtDash(x.m.tgl),"ID PIC":x.m.idpic,"NAMA PIC":x.m.nama||x.f.nama||"","JML LKP (NON-BAYAR)":x.jml,"KESIMPULAN KETERANGAN":x.kesimpulan,"STATUS":x.status,"DETAIL EVALUASI":x.detail})),"SUMMARY HISTORY LKP",[14,12,10,26,18,80,14,52],HS);
     const H2=["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","PANJANG KARAKTER","AUTO UPDATE","STATUS PIC","DETAIL EVALUASI","DETEKSI AI FOTO"];
     add(HIST.det.map(d=>({...d,"TGL LKP":fmt(d["TGL LKP"])})),"AUDIT HISTORY LKP",[12,14,10,26,18,80,16,12,14,48,34],H2);
   }
   const ds=[...new Set(results.map(r=>r.tgl||r.urlDate).filter(Boolean))].sort(),fdn=d=>d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1");
   const dp=!ds.length?"":ds.length===1?" "+fdn(ds[0]):` ${fdn(ds[0])} to ${fdn(ds[ds.length-1])}`;
   XLSX.writeFile(wb,"Hasil Monitoring LKP"+dp+".xlsx");
+  notify("File Excel (5 sheet) berhasil diunduh.","ok");
 };
+
+/* ---------- Demo Mode (Instant Offline Preview) ---------- */
+function makeDemoThumb(bg,title,sub){
+  const c=document.createElement("canvas");c.width=320;c.height=240;const ctx=c.getContext("2d");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,320,240);
+  ctx.fillStyle="rgba(255,255,255,0.12)";ctx.beginPath();ctx.arc(260,50,90,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#ffffff";ctx.font="bold 20px Inter, sans-serif";ctx.fillText(title,20,115);
+  ctx.fillStyle="rgba(255,255,255,0.85)";ctx.font="13px monospace";ctx.fillText(sub,20,142);
+  ctx.fillStyle="rgba(0,0,0,0.45)";ctx.fillRect(0,205,320,35);
+  ctx.fillStyle="#e2e8f0";ctx.font="11px monospace";ctx.fillText("17 Nov 2026 10:15 · -8.6659, 116.5597",16,227);
+  return c.toDataURL("image/jpeg",0.85);
+}
+$("btnDemo").onclick=()=>{
+  results=[
+    {tgl:"20261117",wilayah:"LOMBOK-1",kontrak:"1029384756",idpic:"PIC001",nama:"Ahmad Fauzi",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo1.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.665937, 116.559796",ai:"Selfie PIC di depan rumah/bangunan",aiScore:"88.4%",ocr:"Selasa, 17 Nov 2026 10:15 -8.665937, 116.559796 Labuhan Haji",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0f766e","VALID · Selfie Rumah","LOMBOK-1 · PIC001")},
+    {tgl:"20261117",wilayah:"LOMBOK-1",kontrak:"1029384759",idpic:"PIC001",nama:"Ahmad Fauzi",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo2.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.651200, 116.540120",ai:"Selfie PIC di warung/toko",aiScore:"82.1%",ocr:"Selasa, 17 Nov 2026 11:02 -8.651200, 116.540120 Selong",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0369a1","VALID · Warung","LOMBOK-1 · PIC001")},
+    {tgl:"20261117",wilayah:"LOMBOK-2",kontrak:"1029384801",idpic:"PIC002",nama:"Budi Santoso",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo3.png",status:"TIDAK VALID",reason:"FOTO UANG",urlDate:"20261117",stampDate:"20261117",gps:"-8.583100, 116.116500",ai:"FOTO UANG",aiScore:"91.2%",ocr:"Selasa, 17 Nov 2026 13:20 -8.583100, 116.116500 Mataram",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#be123c","TIDAK VALID · Uang","LOMBOK-2 · PIC002")},
+    {tgl:"20261117",wilayah:"SUMSEL-1",kontrak:"2048192831",idpic:"PIC003",nama:"Dedi Kurniawan",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo4.png",status:"PERLU CEK",reason:"Foto hanya selfie saja | GPS di luar area",urlDate:"20261117",stampDate:"20261117",gps:"-3.045194, 104.776321",ai:"Foto hanya selfie saja",aiScore:"64.5%",ocr:"Selasa, 17 Nov 2026 09:58 -3.045194, 104.776321 Pemulutan",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#b45309","PERLU CEK · Selfie","SUMSEL-1 · PIC003")},
+    {tgl:"20261117",wilayah:"JABAR-1",kontrak:"3091827364",idpic:"PIC004",nama:"Rian Hidayat",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo5.png",status:"TIDAK VALID",reason:"Foto sama dengan kontrak 3091827369",urlDate:"20261117",stampDate:"20261117",gps:"-6.914744, 107.609810",ai:"Foto orang di depan rumah",aiScore:"79.0%",ocr:"Selasa, 17 Nov 2026 14:40 -6.914744, 107.609810 Bandung",dup:"3091827369",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#9f1239","TIDAK VALID · Duplikat","JABAR-1 · PIC004")},
+    {tgl:"20261117",wilayah:"JABAR-1",kontrak:"3091827370",idpic:"PIC005",nama:"Siti Rahma",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo6.png",status:"GAGAL DOWNLOAD",reason:"Foto tidak bisa dimuat (404 / CORS / proxy gagal).",urlDate:"20261117",stampDate:"",gps:"",ai:"",aiScore:"",ocr:"",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:""}
+  ];
+  TOTAL=results.length;
+  const demoMon=[
+    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",cluster:"LOMBOK-1",idcab:"CB01",nmcab:"CABANG SELONG"},
+    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",cluster:"LOMBOK-2",idcab:"CB02",nmcab:"CABANG MATARAM"},
+    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",cluster:"SUMSEL-1",idcab:"CB03",nmcab:"CABANG PALEMBANG"},
+    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",cluster:"JABAR-1",idcab:"CB04",nmcab:"CABANG BANDUNG"},
+    {tgl:"20261117",idpic:"PIC005",nama:"Siti Rahma",cluster:"JABAR-1",idcab:"CB04",nmcab:"CABANG BANDUNG"}
+  ];
+  const demoHist=[
+    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",kontrak:"1029384756",ket:"Bertemu istri konsumen Ibu Sari di rumah, konsumen sedang kerja proyek luar kota. Janji bayar Rp 1.250.000 tgl 25 Nov via VA setelah gajian, sudah diedukasi denda harian dan akan di-FU ulang tgl 24.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1"},
+    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",kontrak:"1029384759",ket:"Kunjungan ke warung konsumen Bpk Hendra, usaha sedang sepi minggu ini namun komitmen bayar parsial Rp 600.000 hari Jumat sore. Titip surat pengingat dan jadwal kunjungan ulang hari Sabtu.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1"},
+    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384801",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
+    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384802",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
+    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384803",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
+    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",kontrak:"2048192831",ket:"Belum ada dana, janji minggu depan",stBayar:"BELUM BAYAR",cluster:"SUMSEL-1"},
+    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",kontrak:"2048192832",ket:"Rumah sepi, titip pesan tetangga",stBayar:"BELUM BAYAR",cluster:"SUMSEL-1"},
+    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827364",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari anak, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
+    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827365",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari istri, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
+    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827366",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari keluarga, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
+    {tgl:"20261117",idpic:"PIC005",nama:"Siti Rahma",kontrak:"3091827370",ket:"AUTO UPDATE BY SYSTEM",stBayar:"BELUM BAYAR",cluster:"JABAR-1"}
+  ];
+  monRows=demoMon;histRows=demoHist;
+  $("wilAll").checked=true;wilCheckboxes.forEach(c=>c.checked=true);updateWilayahUI();
+  summary();renderBreak();buildHistory();
+  $("pb").style.width="100%";$("exp").classList.remove("hidden");
+  $("st").textContent="Mode Demo aktif: 6 foto & 5 PIC History (Smart Logic) dimuat.";
+  switchTab("foto");
+  notify("Data Demo berhasil dimuat! Coba klik thumbnail foto, kartu KPI, atau pindah ke tab Kualitas LKP History.","ok");
+};
+
 updateWilayahUI();
 </script>
 </body>

@@ -115,7 +115,7 @@ tbody tr:nth-child(even){background:#fafcff}tbody tr:hover{background:#f1f6ff}
   <li><b>Kualitas gambar</b> — kosong/satu warna, terlalu gelap, blur, terlalu terang. <i>Selalu aktif.</i></li>
   <li><b>Stamp tanggal &amp; GPS (OCR)</b> — membaca teks stamp pada foto. <i>Opsional.</i></li>
   <li><b>Duplikat</b> — foto mirip dengan kontrak lain. <i>Opsional.</i></li>
-  <li><b>Kualitas LKP History</b> — membaca kolom KETERANGAN di sheet HISTORY LKP untuk PIC yang ada di MONITORING (TGL LKP sama): valid &amp; informatif, normatif/terlalu singkat, copy-paste, atau tidak sinkron dengan foto. <i>Otomatis bila sheet HISTORY LKP ada.</i></li></ul></div>
+  <li><b>Kualitas LKP History (Smart Logic)</b> — mengevaluasi kolom KETERANGAN non-bayar per PIC per TGL LKP: hanya Auto Update, Copy Paste Identik (1 keterangan untuk ≥3 LKP), Kurang Informatif (&lt;60 kar), Extreme Template (kemiripan ≥80%), Templated (kemiripan ≥60% &amp; panjang &lt;150 kar), atau Valid, Bervariasi &amp; Informatif. <i>Otomatis bila sheet HISTORY LKP ada.</i></li></ul></div>
  <div><h4>Arti status</h4><div class="lg">
   <span class="bd b-VALID">VALID</span><span>Tidak ada temuan.</span>
   <span class="bd b-PERLUCEK">PERLU CEK</span><span>Temuan ringan: stamp tidak terbaca, GPS di luar area, tanggal stamp beda dari TGL LKP, atau AI kurang yakin. Lihat manual.</span>
@@ -184,9 +184,9 @@ tbody tr:nth-child(even){background:#fafcff}tbody tr:hover{background:#f1f6ff}
   </div>
   <div class="card"><b>Temuan terbanyak</b><div id="why" class="chips"></div>
     <details><summary>Rekap per wilayah</summary><div class="tw" style="max-height:260px;margin-top:8px"><table id="wtab"></table></div></details></div>
-  <div class="card hidden" id="hist"><b>Kualitas LKP History</b>
+  <div class="card hidden" id="hist"><b>Kualitas LKP History (Smart Logic)</b>
     <div id="hsum" class="chips"></div><p class="tip hidden" id="hwarn" style="margin:10px 0 0;border-color:#e11d48"></p>
-    <p class="hint">PIC yang keterangannya Valid &amp; Informatif tidak dimasukkan ke sheet KUALITAS LKP HISTORY. Detail per kontrak ada di sheet AUDIT HISTORY LKP.</p></div>
+    <p class="hint">PIC berstatus SESUAI tidak dimasukkan ke sheet KUALITAS LKP HISTORY. Semua PIC (SESUAI &amp; TIDAK SESUAI) tersedia di sheet SUMMARY HISTORY LKP, dan rincian per kontrak di sheet AUDIT HISTORY LKP.</p></div>
   <div class="find"><input type="text" id="q" placeholder="Cari nama PIC, kontrak, ID, alasan…" aria-label="Cari hasil"><span class="hint" id="shown"></span></div>
   <div class="tw"><table>
     <thead><tr><th>Preview</th><th>Status</th><th>Alasan</th><th>Deteksi AI</th><th>PIC / Kontrak</th><th>Tgl URL</th><th>Tgl Stamp</th><th>GPS</th><th>OCR Stamp</th></tr></thead>
@@ -311,7 +311,20 @@ async function loadFiles(files){
     const str=v=>String(v??"").trim();
     if(mon)for(const mr of readSheet(wb,mon)){const idpic=normId(pick(mr,"ID PIC"));if(idpic)monAcc.push({tgl:normDate(pick(mr,"TGL LKP","TGL PENUGASAN")),idpic,nama:str(pick(mr,"NAMA PIC")),cluster:str(pick(mr,"CLUSTER","NAMA WILAYAH")).toUpperCase(),idcab:normId(pick(mr,"ID CABANG","KODE CABANG","KD CAB","KODE OUTLET")),nmcab:str(pick(mr,"NAMA CABANG","NAMA OUTLET"))})}
     const hs=findSheet(wb,["HISTORY"]);
-    if(hs)for(const hr of readSheet(wb,hs)){const idpic=normId(pick(hr,"ID PIC"));if(idpic)histAcc.push({tgl:normDate(pick(hr,"TGL LKP","TGL PENUGASAN")),idpic,nama:str(pick(hr,"NAMA PIC")),kontrak:normId(pick(hr,"NO KONTRAK")),ket:str(pick(hr,"KETERANGAN")),cluster:str(pick(hr,"NAMA WILAYAH","CLUSTER")).toUpperCase(),idcab:normId(pick(hr,"ID CABANG","KODE OUTLET","KODE CABANG")),nmcab:str(pick(hr,"NAMA CABANG","NAMA OUTLET"))})}
+    if(hs)for(const hr of readSheet(wb,hs)){
+      const idpic=normId(pick(hr,"ID PIC"));
+      if(idpic)histAcc.push({
+        tgl:normDate(pick(hr,"TGL LKP","TGL PENUGASAN")),
+        idpic,
+        nama:str(pick(hr,"NAMA PIC")),
+        kontrak:normId(pick(hr,"NO KONTRAK")),
+        ket:str(pick(hr,"KETERANGAN")),
+        stBayar:str(pick(hr,"STATUS BAYAR","HASIL KUNJUNGAN","STATUS KUNJUNGAN","STATUS LKP","HASIL","STATUS")).toUpperCase(),
+        cluster:str(pick(hr,"NAMA WILAYAH","CLUSTER")).toUpperCase(),
+        idcab:normId(pick(hr,"ID CABANG","KODE OUTLET","KODE CABANG")),
+        nmcab:str(pick(hr,"NAMA CABANG","NAMA OUTLET"))
+      });
+    }
     else notes.push(`${f.name}: sheet HISTORY LKP tidak ada (analisis keterangan dilewati)`);
     for(const r of readSheet(wb,fs)){
       const wilayah=String(pick(r,"NAMA WILAYAH","CLUSTER")).trim().toUpperCase();
@@ -565,68 +578,157 @@ async function processRow(r,ocr,clip,pre){
   bmp.close();return res;
 }
 
-/* ---------- Kualitas LKP History ---------- */
-const normTxt=t=>String(t??"").toUpperCase().replace(/[^A-Z0-9 ]+/g," ").replace(/\s+/g," ").trim();
-const RX={
-  who:/(BERTEMU|BERTEMY|KETEMU|TEMUI|DITEMUI|BERBICARA|BICARA|ISTRI|SUAMI|PASANGAN|\bANAK|TETANGGA|ORANG ?TUA|ORTU|KELUARGA|MERTUA|\bIBU\b|BAPAK|KAKAK|KAKA\b|ADIK|SAUDARA|MENANTU|PENJAGA|KARYAWAN|KETUA RT|\bRT\b|\bRW\b|INFO(RMASI)? (DARI |CA|YBS|ANGGOTA|AGT))/,
-  cond:/(KOSONG|SEPI|BEKERJA|\bKERJA|LUAR KOTA|SAKIT|\b(BELUM|BLM|BLUM)\b|KIRIMAN|KENDALA|PINDAH|MENINGGAL|MERANTAU|JAKARTA|GAJI|PHK|USAHA|DAGANG|JUAL|PANEN|SIBUK|\b(TIDAK|TDK|GA)\b|SEDANG|MASIH|PERGI|KELUAR|PULANG|TERLIHAT|UANG|DANA|NUNGGU|TUNGGU|MENUNGGU|SEKOLAH|KEBUN|PROYEK)/,
-  komit:/(\bRP\b|\d+ ?(JT|RB|RIBU|JUTA)|\bTGL\b|\bTGK\b|TANGGAL|\bHARI\b|SENIN|SELASA|RABU|KAMIS|JUMAT|SABTU|MINGGU|BESOK|LUSA|AKHIR BULAN|GAJIAN|\bJB\b|JANJI|MALAM|SORE|PAGI|SEMINGGU|PALING LAMBAT|SELAMBAT|\b\d{1,2}\b)/,
-  next:/(\bFU\b|FOLLOW ?UP|KUNJUNG(I|AN)? ULANG|AKAN (DI ?)?(KUNJUNG|HUBUNGI|TELP|DATANG|TAGIH|CEK)|DI ?KUNJUNG|KEMBALI|KAWAL|PUTAR BALIK|TEKAN|DI ?HUBUNGI|HUBUNGI|VIA (TELP|TLP|WA)|DI ?EDUKASI|EDUKASI|DI ?INFOKAN|DIMINTA|TITIP|TINGGALKAN|KONFIRMASI|TINDAK LANJUT|DI ?INGATKAN|\bNEX\b)/,
-  meet:/(BERTEMU|BERTEMY|KETEMU|TEMUI|DITEMUI|BERBICARA|BICARA DENGAN|KUNJUNGAN DI ?LAKUKAN DI RUMAH|DI ?RUMAH CA)/,
-  none:/(KOSONG|SEPI|TIDAK (ADA ORANG|BERTEMU|KETEMU|ADA DI ?RUMAH))/,
-  auto:/AUTO UPDATE/
-};
-const BADLBL=["Foto jalan/lantai/motor tanpa orang","Hanya foto rumah","Foto hanya selfie saja","Foto dari foto","FOTO UANG","Foto dokumen atau kertas"];
-function elems(t){
-  const u=normTxt(t),w=u?u.split(" ").length:0,e={who:RX.who.test(u),cond:RX.cond.test(u),komit:RX.komit.test(u),next:RX.next.test(u)};
-  const sc=(+e.who)+(+e.cond)+(+e.komit)+(+e.next);
-  const au=RX.auto.test(u),valid=!au&&(sc>=4||(sc>=3&&e.who&&e.cond&&e.next&&!e.komit&&w>=8));
-  const generic=/^(RUMAH KOSONG|TIDAK ADA ORANG|JANJI BAYAR|BELUM ADA UANG|SUDAH (DI ?)?KUNJUNGI|SUDAH DIKUNJUNGI)$/.test(u);
-  return {u,w,e,sc,valid,auto:au,short:!valid&&(au||w<6||sc<=1||generic)};
+/* ---------- Kualitas LKP History (Smart Logic) ---------- */
+function isBayarStatus(st){
+  if(!st)return false;
+  if(/(BELUM|BLM|TIDAK|TDK|JANJI|NON|GAGAL|BATAL)/.test(st))return false;
+  return /(BAYAR|LUNAS|PAID|SELESAI|SETTLE)/.test(st);
 }
-function sumText(n,c){
-  if(!n)return {ok:false,text:"⚠ TIDAK ADA DATA HISTORY LKP UNTUK TANGGAL INI"};
-  if(c.v/n>=0.8&&!c.mi)return {ok:true,text:c.v===n?`HISTORY SESUAI DAN PENYELESAIAN ${n} KONTRAK`:`HISTORY SESUAI (${c.v} DARI ${n} KONTRAK VALID & INFORMATIF)`};
-  const p=[];
-  if(c.mi)p.push(`⚠ KETERANGAN TIDAK SINKRON DENGAN FOTO (${c.mi} KONTRAK)`);
-  if(c.cp/n>=0.3)p.push(`COPY PASTE (${c.cp} DARI ${n} KONTRAK)`);
-  if(c.s/n>=0.3)p.push(`TERLALU SINGKAT (${c.s} DARI ${n} KONTRAK)`);
-  if(c.pp/n>=0.3)p.push(`KURANG LENGKAP PENJABARANNYA (${c.pp} DARI ${n} KONTRAK)`);
-  if(!p.length)p.push(`HISTORY KURANG LENGKAP (${n-c.v} DARI ${n} KONTRAK BELUM VALID)`);
-  return {ok:false,text:p.join(" / ")};
+function isAutoUpdate(s){return /AUTO\s*UPDATE/i.test(String(s||""))}
+
+/* Port persis Python difflib.SequenceMatcher (dengan autojunk) */
+function seqRatio(a,b){
+  const la=a.length,lb=b.length;
+  if(!la&&!lb)return 1;
+  if(!la||!lb)return 0;
+  const b2j=new Map();
+  for(let i=0;i<lb;i++){
+    const ch=b[i];
+    let arr=b2j.get(ch);
+    if(!arr){arr=[];b2j.set(ch,arr)}
+    arr.push(i);
+  }
+  if(lb>=200){
+    const ntest=Math.floor(lb/100)+1;
+    for(const [ch,idxs] of b2j)if(idxs.length>ntest)b2j.delete(ch);
+  }
+  function findLongest(alo,ahi,blo,bhi){
+    let besti=alo,bestj=blo,bestsize=0;
+    let j2len=new Map();
+    for(let i=alo;i<ahi;i++){
+      const newj2len=new Map();
+      const idxs=b2j.get(a[i]);
+      if(idxs){
+        for(let t=0;t<idxs.length;t++){
+          const j=idxs[t];
+          if(j<blo)continue;
+          if(j>=bhi)break;
+          const k=(j2len.get(j-1)||0)+1;
+          newj2len.set(j,k);
+          if(k>bestsize){besti=i-k+1;bestj=j-k+1;bestsize=k}
+        }
+      }
+      j2len=newj2len;
+    }
+    while(besti>alo&&bestj>blo&&a[besti-1]===b[bestj-1]){besti--;bestj--;bestsize++}
+    while(besti+bestsize<ahi&&bestj+bestsize<bhi&&a[besti+bestsize]===b[bestj+bestsize])bestsize++;
+    return [besti,bestj,bestsize];
+  }
+  const queue=[[0,la,0,lb]];
+  let matches=0;
+  while(queue.length){
+    const [alo,ahi,blo,bhi]=queue.pop();
+    const [i,j,k]=findLongest(alo,ahi,blo,bhi);
+    if(k){
+      matches+=k;
+      if(alo<i&&blo<j)queue.push([alo,i,blo,j]);
+      if(i+k<ahi&&j+k<bhi)queue.push([i+k,ahi,j+k,bhi]);
+    }
+  }
+  return (2*matches)/(la+lb);
 }
+function avgSeqSim(items){
+  if(items.length<2)return 0;
+  const low=items.map(s=>s.toLowerCase());
+  let tot=0,cnt=0;
+  for(let i=0;i<low.length;i++){
+    for(let j=i+1;j<low.length;j++){tot+=seqRatio(low[i],low[j]);cnt++}
+  }
+  return cnt?(tot/cnt)*100:0;
+}
+function evalSmartLogic(jml,uniqueKets){
+  if(!jml)return {ok:false,status:"TIDAK SESUAI",tag:"no_data",detail:"Tidak ada data History LKP untuk tanggal ini",avgLen:0,sim:0};
+  const nonAuto=uniqueKets.filter(k=>!isAutoUpdate(k));
+  if(!nonAuto.length)return {ok:false,status:"TIDAK SESUAI",tag:"auto",detail:"Hanya berisi pesan Sistem / Auto Update",avgLen:0,sim:0};
+  if(nonAuto.length===1&&jml>=3)return {ok:false,status:"TIDAK SESUAI",tag:"copypaste",detail:`Copy Paste Identik (1 keterangan untuk ${jml} LKP)`,avgLen:nonAuto[0].length,sim:100};
+  const avgLen=nonAuto.reduce((s,k)=>s+k.length,0)/nonAuto.length;
+  if(avgLen<60)return {ok:false,status:"TIDAK SESUAI",tag:"short",detail:`Kurang Informatif (Rata-rata ${Math.floor(avgLen)} karakter)`,avgLen,sim:0};
+  const sim=avgSeqSim(nonAuto);
+  if(nonAuto.length>=3&&sim>=80)return {ok:false,status:"TIDAK SESUAI",tag:"extreme",detail:`Extreme Template (Kemiripan sangat tinggi ${Math.floor(sim)}%)`,avgLen,sim};
+  if(nonAuto.length>=3&&sim>=60&&avgLen<150)return {ok:false,status:"TIDAK SESUAI",tag:"templated",detail:`Templated / Kurang Informatif (Kemiripan ${Math.floor(sim)}%, Panjang ${Math.floor(avgLen)} kar)`,avgLen,sim};
+  return {ok:true,status:"SESUAI",tag:"ok",detail:"Valid, Bervariasi & Informatif",avgLen,sim};
+}
+
 function buildHistory(){
   HIST=null;$("hist").classList.add("hidden");
   if(!histRows.length||!monRows.length)return;
   const selAll=$("wilAll").checked,wil=getSelectedWilayah();
   if(!selAll&&!wil.length)return;
-  const base=new Map(),byPT=new Map(),txtMap=new Map(),ph=new Map();
-  for(const m of monRows){const k=m.tgl+"|"+m.idpic;if(base.has(k))continue;if(!selAll&&m.cluster&&!wil.includes(m.cluster))continue;base.set(k,m)}
+  const base=new Map(),byPT=new Map(),ph=new Map();
+  for(const m of monRows){
+    const k=m.tgl+"|"+m.idpic;
+    if(base.has(k))continue;
+    if(!selAll&&m.cluster&&!wil.includes(m.cluster))continue;
+    base.set(k,m);
+  }
   for(const h of histRows){
-    const k=h.idpic+"|"+h.tgl;if(!byPT.has(k))byPT.set(k,[]);byPT.get(k).push(h);
-    const u=normTxt(h.ket);if(u){const tk=h.idpic+"|"+u;if(!txtMap.has(tk))txtMap.set(tk,new Set());txtMap.get(tk).add(h.kontrak+"|"+h.tgl)}
+    if(isBayarStatus(h.stBayar))continue;
+    const k=h.idpic+"|"+h.tgl;
+    if(!byPT.has(k))byPT.set(k,[]);
+    byPT.get(k).push(h);
   }
   for(const r of results)if(r.kontrak)ph.set(r.kontrak,r);
+
   const pics=[],det=[];
   for(const [k,m] of base){
-    const rs=byPT.get(m.idpic+"|"+m.tgl)||[],c={v:0,s:0,pp:0,cp:0,mi:0},f=rs[0]||{};
+    const rs=byPT.get(m.idpic+"|"+m.tgl)||[],f=rs[0]||{};
+    const seen=new Set(),uniqueKets=[];
     for(const h of rs){
-      const x=elems(h.ket),copy=!x.auto&&!!x.u&&txtMap.get(m.idpic+"|"+x.u).size>=2,p=ph.get(h.kontrak),conf=p?parseFloat(p.aiScore)||0:0;
-      const mis=!!(p&&RX.meet.test(x.u)&&!RX.none.test(x.u)&&p.ai&&BADLBL.includes(p.ai)&&conf>=40);
-      const cat=mis?"TIDAK SINKRON":copy?"REPETITIF (COPY PASTE)":x.valid?"VALID & INFORMATIF":"NORMATIF / TERLALU SINGKAT";
-      if(cat==="VALID & INFORMATIF")c.v++;if(x.short)c.s++;if(!x.valid&&!x.short)c.pp++;if(copy)c.cp++;if(mis)c.mi++;
-      det.push({"TGL LKP":m.tgl,"CLUSTER":m.cluster||f.cluster||"","ID PIC":m.idpic,"NAMA PIC":m.nama||h.nama,"NO KONTRAK":h.kontrak,"KETERANGAN":h.ket,
-        "UNSUR TERPENUHI":[x.e.who&&"BERTEMU SIAPA",x.e.cond&&"KONDISI/ALASAN",x.e.komit&&"NOMINAL/TANGGAL",x.e.next&&"TINDAK LANJUT"].filter(Boolean).join(", "),
-        "KATEGORI":cat,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa","PERINGATAN":mis?"KETERANGAN TIDAK SINKRON DENGAN FOTO":""});
+      const raw=String(h.ket||"").trim();
+      if(!raw)continue;
+      const key=raw.toUpperCase();
+      if(!seen.has(key)){seen.add(key);uniqueKets.push(raw)}
     }
-    const t=sumText(rs.length,c);
-    pics.push({m,f,n:rs.length,c,ok:t.ok,text:t.text});
+    const kesimpulan=uniqueKets.map(x=>"• "+x).join("\n");
+    const ev=evalSmartLogic(rs.length,uniqueKets);
+    pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim});
+    for(const h of rs){
+      const p=ph.get(h.kontrak);
+      det.push({
+        "TGL LKP":m.tgl,
+        "CLUSTER":m.cluster||f.cluster||"",
+        "ID PIC":m.idpic,
+        "NAMA PIC":m.nama||h.nama,
+        "NO KONTRAK":h.kontrak,
+        "KETERANGAN":h.ket,
+        "PANJANG KARAKTER":String(h.ket||"").trim().length,
+        "AUTO UPDATE":isAutoUpdate(h.ket)?"YA":"TIDAK",
+        "STATUS PIC":ev.status,
+        "DETAIL EVALUASI":ev.detail,
+        "DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
+      });
+    }
   }
   HIST={pics,det};
-  const bad=pics.filter(x=>!x.ok),warn=pics.filter(x=>x.c.mi),nod=pics.filter(x=>!x.n);
-  $("hsum").innerHTML=[`${histRows.length} baris history dibaca`,`${pics.length} PIC diperiksa`,`${pics.length-bad.length} sesuai`,`${bad.length} perlu perhatian`,`${warn.length} peringatan tidak sinkron`,`${nod.length} tanpa data history`].map(t=>`<span class="chip">${t}</span>`).join(" ");
-  const w=$("hwarn");w.classList.toggle("hidden",!warn.length);
-  w.innerHTML=warn.length?`⚠ <b>Peringatan:</b> keterangan tidak sinkron dengan foto — `+warn.slice(0,8).map(x=>`${esc(x.m.nama||x.m.idpic)} (${x.c.mi} kontrak)`).join(", ")+(warn.length>8?` +${warn.length-8} PIC lain`:""):"";
+  const cnt=t=>pics.filter(x=>x.tag===t).length;
+  const okN=cnt("ok"),badN=pics.length-okN;
+  const chips=[
+    `${histRows.length} baris history dibaca`,
+    `${pics.length} PIC diperiksa`,
+    `${okN} SESUAI`,
+    `${badN} TIDAK SESUAI`
+  ];
+  const breakdown=[
+    ["auto","Auto Update"],["copypaste","Copy Paste Identik"],
+    ["short","Kurang Informatif"],["templated","Templated"],
+    ["extreme","Extreme Template"],["no_data","Tanpa Data"]
+  ];
+  for(const [t,lbl] of breakdown){const n=cnt(t);if(n)chips.push(`${lbl}: ${n}`)}
+  $("hsum").innerHTML=chips.map(t=>`<span class="chip">${esc(t)}</span>`).join(" ");
+  const w=$("hwarn");
+  const badList=pics.filter(x=>!x.ok);
+  w.classList.toggle("hidden",!badList.length);
+  w.innerHTML=badList.length?`⚠ <b>Perlu Perhatian (${badList.length} PIC):</b> `+badList.slice(0,8).map(x=>`${esc(x.m.nama||x.m.idpic)} (${esc(x.detail)})`).join(", ")+(badList.length>8?` +${badList.length-8} PIC lain`:""):"";
   $("hist").classList.remove("hidden");
 }
 
@@ -711,16 +813,38 @@ $("go").onclick=async()=>{
 
 $("exp").onclick=()=>{
   const fmt=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"";
+  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"";
   const all=results.map(r=>({"TGL LKP":fmt(r.tgl),CLUSTER:r.wilayah,"NO KONTRAK":r.kontrak,"ID PIC":r.idpic,"NAMA PIC":r.nama,"FOTO KUNJUNGAN":r.url,"STATUS KEASLIAN":r.status,ALASAN:r.reason.toUpperCase(),"TGL URL":r.urlDate,"TGL STAMP":r.stampDate,"GPS STAMP":r.gps,"DETEKSI AI":r.ai,"SKOR AI":r.aiScore,"DUPLIKAT DENGAN":r.dup,"OCR STAMP":r.ocr,"SUMBER FILE":r.file}));
   const flagged=all.filter(r=>r["STATUS KEASLIAN"]!=="VALID"),wb=XLSX.utils.book_new();
   const add=(data,name,wd,hdr)=>{const ws=XLSX.utils.json_to_sheet(data,hdr?{header:hdr}:undefined);ws["!cols"]=(wd||[12,12,18,10,24,70,16,60,10,10,22,28,8,16,50,24]).map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,name)};
   add(flagged,"KUALITAS LKP FOTO");add(all,"AUDIT KEASLIAN FOTO");
   if(HIST){
-    const fd=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"";
-    const H1=["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","KESESUAIAN HISTORIS LKP"];
-    add(HIST.pics.filter(x=>!x.ok).map(x=>({"TGL PENUGASAN":fd(x.m.tgl),CLUSTER:x.m.cluster||x.f.cluster||"","ID CABANG":x.m.idcab||x.f.idcab||"","NAMA CABANG":x.m.nmcab||x.f.nmcab||"","ID PIC":x.m.idpic,"NAMA PIC":x.m.nama||x.f.nama||"","KESESUAIAN HISTORIS LKP":x.text})),"KUALITAS LKP HISTORY",[14,14,12,22,10,28,80],H1);
-    const H2=["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","UNSUR TERPENUHI","KATEGORI","DETEKSI AI FOTO","PERINGATAN"];
-    add(HIST.det.map(d=>({...d,"TGL LKP":fd(d["TGL LKP"])})),"AUDIT HISTORY LKP",[12,14,10,26,18,80,40,26,36,36],H2);
+    const H1=["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
+    add(HIST.pics.filter(x=>!x.ok).map(x=>({
+      "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
+      "TGL LKP":fmtDash(x.m.tgl),
+      "ID CABANG":x.m.idcab||x.f.idcab||"",
+      "NAMA CABANG":x.m.nmcab||x.f.nmcab||"",
+      "ID PIC":x.m.idpic,
+      "NAMA PIC":x.m.nama||x.f.nama||"",
+      "JML LKP (NON-BAYAR)":x.jml,
+      "KESIMPULAN KETERANGAN":x.kesimpulan,
+      "STATUS":x.status,
+      "DETAIL EVALUASI":x.detail
+    })),"KUALITAS LKP HISTORY",[14,12,12,22,10,26,18,80,14,52],H1);
+    const HS=["NAMA WILAYAH","TGL LKP","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
+    add(HIST.pics.map(x=>({
+      "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
+      "TGL LKP":fmtDash(x.m.tgl),
+      "ID PIC":x.m.idpic,
+      "NAMA PIC":x.m.nama||x.f.nama||"",
+      "JML LKP (NON-BAYAR)":x.jml,
+      "KESIMPULAN KETERANGAN":x.kesimpulan,
+      "STATUS":x.status,
+      "DETAIL EVALUASI":x.detail
+    })),"SUMMARY HISTORY LKP",[14,12,10,26,18,80,14,52],HS);
+    const H2=["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","PANJANG KARAKTER","AUTO UPDATE","STATUS PIC","DETAIL EVALUASI","DETEKSI AI FOTO"];
+    add(HIST.det.map(d=>({...d,"TGL LKP":fmt(d["TGL LKP"])})),"AUDIT HISTORY LKP",[12,14,10,26,18,80,16,12,14,48,34],H2);
   }
   const ds=[...new Set(results.map(r=>r.tgl||r.urlDate).filter(Boolean))].sort(),fdn=d=>d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1");
   const dp=!ds.length?"":ds.length===1?" "+fdn(ds[0]):` ${fdn(ds[0])} to ${fdn(ds[ds.length-1])}`;

@@ -568,20 +568,21 @@ async function processRow(r,ocr,clip,pre){
 /* ---------- Kualitas LKP History ---------- */
 const normTxt=t=>String(t??"").toUpperCase().replace(/[^A-Z0-9 ]+/g," ").replace(/\s+/g," ").trim();
 const RX={
-  who:/(BERTEMU|KETEMU|DITEMUI|BERBICARA|BICARA|ISTRI|SUAMI|ANAK|TETANGGA|ORANG ?TUA|KELUARGA|MERTUA|\bIBU\b|BAPAK|KAKAK|ADIK|SAUDARA|MENANTU|PENJAGA|KARYAWAN|KETUA RT|\bRT\b|\bRW\b|INFORMASI DARI|INFO DARI|INFO ANAK)/,
-  cond:/(KOSONG|BEKERJA|\bKERJA\b|LUAR KOTA|SAKIT|BELUM (DAPAT|ADA|TERIMA|MENERIMA|GAJIAN)|KIRIMAN|KENDALA|PINDAH|MENINGGAL|MERANTAU|JAKARTA|GAJI|PHK|USAHA|DAGANG|SIBUK|TIDAK (ADA|BISA|DI)|SEDANG|MASIH)/,
-  komit:/(\bRP\b|\d+ ?(JT|RB|RIBU|JUTA)|\bTGL\b|TANGGAL|\bHARI\b|SENIN|SELASA|RABU|KAMIS|JUMAT|SABTU|MINGGU|BESOK|LUSA|AKHIR BULAN|GAJIAN|\b\d{1,2}\b)/,
-  next:/(AKAN (DI ?)?(KUNJUNG|HUBUNGI|TELP|DATANG|TAGIH|CEK|FOLLOW)|KUNJUNGAN ULANG|DI ?HUBUNGI|HUBUNGI|DI ?EDUKASI|EDUKASI|DI ?INFOKAN|DIMINTA|MINTA|KKH|KE KANTOR|TINDAK LANJUT|FOLLOW ?UP|DI ?INGATKAN|DITUNGGU|MENUNGGU|JB AKAN|AKAN MELAKUKAN)/,
-  meet:/(BERTEMU|KETEMU|DITEMUI|BERBICARA|BICARA DENGAN|KUNJUNGAN DI ?LAKUKAN DI RUMAH|DI ?RUMAH CA)/,
-  none:/(KOSONG|TIDAK (ADA ORANG|BERTEMU|KETEMU|ADA DI RUMAH))/
+  who:/(BERTEMU|BERTEMY|KETEMU|TEMUI|DITEMUI|BERBICARA|BICARA|ISTRI|SUAMI|PASANGAN|\bANAK|TETANGGA|ORANG ?TUA|ORTU|KELUARGA|MERTUA|\bIBU\b|BAPAK|KAKAK|KAKA\b|ADIK|SAUDARA|MENANTU|PENJAGA|KARYAWAN|KETUA RT|\bRT\b|\bRW\b|INFO(RMASI)? (DARI |CA|YBS|ANGGOTA|AGT))/,
+  cond:/(KOSONG|SEPI|BEKERJA|\bKERJA|LUAR KOTA|SAKIT|\b(BELUM|BLM|BLUM)\b|KIRIMAN|KENDALA|PINDAH|MENINGGAL|MERANTAU|JAKARTA|GAJI|PHK|USAHA|DAGANG|JUAL|PANEN|SIBUK|\b(TIDAK|TDK|GA)\b|SEDANG|MASIH|PERGI|KELUAR|PULANG|TERLIHAT|UANG|DANA|NUNGGU|TUNGGU|MENUNGGU|SEKOLAH|KEBUN|PROYEK)/,
+  komit:/(\bRP\b|\d+ ?(JT|RB|RIBU|JUTA)|\bTGL\b|\bTGK\b|TANGGAL|\bHARI\b|SENIN|SELASA|RABU|KAMIS|JUMAT|SABTU|MINGGU|BESOK|LUSA|AKHIR BULAN|GAJIAN|\bJB\b|JANJI|MALAM|SORE|PAGI|SEMINGGU|PALING LAMBAT|SELAMBAT|\b\d{1,2}\b)/,
+  next:/(\bFU\b|FOLLOW ?UP|KUNJUNG(I|AN)? ULANG|AKAN (DI ?)?(KUNJUNG|HUBUNGI|TELP|DATANG|TAGIH|CEK)|DI ?KUNJUNG|KEMBALI|KAWAL|PUTAR BALIK|TEKAN|DI ?HUBUNGI|HUBUNGI|VIA (TELP|TLP|WA)|DI ?EDUKASI|EDUKASI|DI ?INFOKAN|DIMINTA|TITIP|TINGGALKAN|KONFIRMASI|TINDAK LANJUT|DI ?INGATKAN|\bNEX\b)/,
+  meet:/(BERTEMU|BERTEMY|KETEMU|TEMUI|DITEMUI|BERBICARA|BICARA DENGAN|KUNJUNGAN DI ?LAKUKAN DI RUMAH|DI ?RUMAH CA)/,
+  none:/(KOSONG|SEPI|TIDAK (ADA ORANG|BERTEMU|KETEMU|ADA DI ?RUMAH))/,
+  auto:/AUTO UPDATE/
 };
 const BADLBL=["Foto jalan/lantai/motor tanpa orang","Hanya foto rumah","Foto hanya selfie saja","Foto dari foto","FOTO UANG","Foto dokumen atau kertas"];
 function elems(t){
   const u=normTxt(t),w=u?u.split(" ").length:0,e={who:RX.who.test(u),cond:RX.cond.test(u),komit:RX.komit.test(u),next:RX.next.test(u)};
   const sc=(+e.who)+(+e.cond)+(+e.komit)+(+e.next);
-  const valid=sc>=4||(sc>=3&&e.who&&e.cond&&e.next&&!e.komit&&w>=8);
+  const au=RX.auto.test(u),valid=!au&&(sc>=4||(sc>=3&&e.who&&e.cond&&e.next&&!e.komit&&w>=8));
   const generic=/^(RUMAH KOSONG|TIDAK ADA ORANG|JANJI BAYAR|BELUM ADA UANG|SUDAH (DI ?)?KUNJUNGI|SUDAH DIKUNJUNGI)$/.test(u);
-  return {u,w,e,sc,valid,short:!valid&&(w<6||sc<=1||generic)};
+  return {u,w,e,sc,valid,auto:au,short:!valid&&(au||w<6||sc<=1||generic)};
 }
 function sumText(n,c){
   if(!n)return {ok:false,text:"⚠ TIDAK ADA DATA HISTORY LKP UNTUK TANGGAL INI"};
@@ -608,9 +609,9 @@ function buildHistory(){
   for(const r of results)if(r.kontrak)ph.set(r.kontrak,r);
   const pics=[],det=[];
   for(const [k,m] of base){
-    const rs=byPT.get(k)||[],c={v:0,s:0,pp:0,cp:0,mi:0},f=rs[0]||{};
+    const rs=byPT.get(m.idpic+"|"+m.tgl)||[],c={v:0,s:0,pp:0,cp:0,mi:0},f=rs[0]||{};
     for(const h of rs){
-      const x=elems(h.ket),copy=!!x.u&&txtMap.get(m.idpic+"|"+x.u).size>=2,p=ph.get(h.kontrak),conf=p?parseFloat(p.aiScore)||0:0;
+      const x=elems(h.ket),copy=!x.auto&&!!x.u&&txtMap.get(m.idpic+"|"+x.u).size>=2,p=ph.get(h.kontrak),conf=p?parseFloat(p.aiScore)||0:0;
       const mis=!!(p&&RX.meet.test(x.u)&&!RX.none.test(x.u)&&p.ai&&BADLBL.includes(p.ai)&&conf>=40);
       const cat=mis?"TIDAK SINKRON":copy?"REPETITIF (COPY PASTE)":x.valid?"VALID & INFORMATIF":"NORMATIF / TERLALU SINGKAT";
       if(cat==="VALID & INFORMATIF")c.v++;if(x.short)c.s++;if(!x.valid&&!x.short)c.pp++;if(copy)c.cp++;if(mis)c.mi++;
@@ -623,7 +624,7 @@ function buildHistory(){
   }
   HIST={pics,det};
   const bad=pics.filter(x=>!x.ok),warn=pics.filter(x=>x.c.mi),nod=pics.filter(x=>!x.n);
-  $("hsum").innerHTML=[`${pics.length} PIC diperiksa`,`${pics.length-bad.length} sesuai`,`${bad.length} perlu perhatian`,`${warn.length} peringatan tidak sinkron`,`${nod.length} tanpa data history`].map(t=>`<span class="chip">${t}</span>`).join(" ");
+  $("hsum").innerHTML=[`${histRows.length} baris history dibaca`,`${pics.length} PIC diperiksa`,`${pics.length-bad.length} sesuai`,`${bad.length} perlu perhatian`,`${warn.length} peringatan tidak sinkron`,`${nod.length} tanpa data history`].map(t=>`<span class="chip">${t}</span>`).join(" ");
   const w=$("hwarn");w.classList.toggle("hidden",!warn.length);
   w.innerHTML=warn.length?`⚠ <b>Peringatan:</b> keterangan tidak sinkron dengan foto — `+warn.slice(0,8).map(x=>`${esc(x.m.nama||x.m.idpic)} (${x.c.mi} kontrak)`).join(", ")+(warn.length>8?` +${warn.length-8} PIC lain`:""):"";
   $("hist").classList.remove("hidden");

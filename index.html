@@ -514,7 +514,7 @@
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">VALID</span> Tidak ada temuan.</li>
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">PERLU CEK</span> Temuan ringan (stamp tak terbaca, GPS di luar area, AI ragu).</li>
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">TIDAK VALID</span> Temuan kuat (foto uang, kosong/blur/gelap, duplikat, tgl beda).</li>
-            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">GAGAL DOWNLOAD</span> Foto gagal dimuat setelah 3 ronde cek ulang.</li>
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">GAGAL DOWNLOAD</span> Foto gagal dimuat (404 / timeout setelah 2 ronde cek ulang).</li>
           </ul>
         </div>
         <div class="md:col-span-2 p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
@@ -859,7 +859,7 @@ function candidates(u){
   return c;
 }
 async function viaImg(src){
-  const img=await new Promise((ok,no)=>{const i=new Image();i.crossOrigin="Anonymous";const t=setTimeout(()=>no(new Error("timeout")),12000);
+  const img=await new Promise((ok,no)=>{const i=new Image();i.crossOrigin="Anonymous";const t=setTimeout(()=>no(new Error("timeout")),7000);
     i.onload=()=>{clearTimeout(t);ok(i)};i.onerror=()=>{clearTimeout(t);no(new Error("img"))};i.src=src});
   const bmp=await createImageBitmap(img),c=document.createElement("canvas");c.width=bmp.width;c.height=bmp.height;
   c.getContext("2d").drawImage(bmp,0,0);
@@ -867,8 +867,9 @@ async function viaImg(src){
 }
 async function fetchPhoto(c){
   if(c.via==="fetch"){
-    const ctrl=new AbortController(),t=setTimeout(()=>ctrl.abort(),15000);
-    try{const resp=await fetch(c.src,{signal:ctrl.signal});if(!resp.ok)throw new Error("HTTP "+resp.status);
+    const ctrl=new AbortController(),t=setTimeout(()=>ctrl.abort(),8000);
+    try{const resp=await fetch(c.src,{signal:ctrl.signal});
+      if(!resp.ok){const e=new Error("HTTP "+resp.status);e.status=resp.status;throw e}
       const blob=await resp.blob();if(!blob.type.startsWith("image/")&&blob.size<1000)throw new Error("Bukan gambar");
       return {bmp:await createImageBitmap(blob),blob}}finally{clearTimeout(t)}
   }
@@ -997,40 +998,40 @@ function verdict(r){
 function findDups(list){
   if(!isOn("t_ham")){for(const a of list)a.dup="";return}
   const th=+$("ham").value,idx=list.filter(r=>r.hash);
-  for(const a of idx){const refs=[];
-    for(const b of idx){if(a===b||a.key===b.key)continue;if(pop(a.hash[0]^b.hash[0])+pop(a.hash[1]^b.hash[1])<=th)refs.push(b.kontrak||b.url.slice(-12))}
-    a.dup=refs.slice(0,3).join(", ")+(refs.length>3?` (+${refs.length-3})`:"");}
-}
-async function loadClip(){
-  const id="Xenova/clip-vit-base-patch32";
+async function getPhoto(url){
+  const list=candidates(url);
+  let rest=list;
+  if(preferred&&list.length){
+    try{
+      const g=await fetchPhoto(list[0]);
+      return {bmp:g.bmp,blob:g.blob};
+    }catch(e){
+      if(e&&e.status===404)return {err:"404"};
+      rest=list.slice(1);
+    }
+  }
+  if(!rest.length)return {err:"fail"};
+  let won=false;
   try{
-    const tok=await T.AutoTokenizer.from_pretrained(id),tm=await T.CLIPTextModelWithProjection.from_pretrained(id),
-      proc=await T.AutoProcessor.from_pretrained(id),vm=await T.CLIPVisionModelWithProjection.from_pretrained(id);
-    const {text_embeds}=await tm(tok(LABELS.map(l=>l[0]),{padding:true,truncation:true}));
-    const D=text_embeds.dims[1],raw=Array.from(text_embeds.data),tv=[];
-    for(let i=0;i<LABELS.length;i++){const v=raw.slice(i*D,(i+1)*D),n=Math.hypot(...v);tv.push(v.map(x=>x/n))}
-    const fast=async u=>{
-      const {image_embeds}=await vm(await proc(await T.RawImage.read(u)));
-      const e=Array.from(image_embeds.data),n=Math.hypot(...e),lg=tv.map(t=>100*t.reduce((a,x,i)=>a+x*e[i]/n,0));
-      const m=Math.max(...lg),ex=lg.map(x=>Math.exp(x-m)),sum=ex.reduce((a,b)=>a+b,0);
-      return LABELS.map((l,i)=>({label:l[0],score:ex[i]/sum})).sort((a,b)=>b.score-a.score);
-    };
-    const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.fillStyle="#888";x.fillRect(0,0,64,64);
-    const tu=URL.createObjectURL(await new Promise(r=>c.toBlob(r)));
-    try{const o=await fast(tu);if(!Array.isArray(o)||o.length!==LABELS.length||!isFinite(o[0].score))throw new Error("uji gagal")}finally{URL.revokeObjectURL(tu)}
-    return {fn:u=>fast(u),mode:"cepat"};
-  }catch(e){console.warn("Fallback ke pipeline standar:",e)}
-  const pl=await T.pipeline("zero-shot-image-classification",id);
-  return {fn:(u,t,o)=>pl(u,t,o),mode:"standar"};
+    const win=await Promise.any(rest.map(c=>fetchPhoto(c).then(res=>{
+      if(won){try{res.bmp.close()}catch{} throw new Error("late")}
+      won=true;
+      return {...res,kind:c.kind};
+    })));
+    preferred=win.kind;
+    return {bmp:win.bmp,blob:win.blob};
+  }catch(e){
+    const is404=e&&Array.isArray(e.errors)&&e.errors.some(er=>er&&er.status===404);
+    return {err:is404?"404":"fail"};
+  }
 }
-async function getPhoto(url){for(const c of candidates(url)){try{const g=await fetchPhoto(c);preferred=c.kind;return g}catch{}}return null}
 async function processRow(r,ocr,clip,pre){
   const res={...r,status:"",reason:"",urlDate:"",stampDate:"",gps:"",ai:"",aiStatus:"",aiScore:"",ocr:"",hash:null,thumb:"",dup:"",failed:false};
   const fail=m=>{res.failed=true;res.status="GAGAL DOWNLOAD";res.reason=m;return res};
   try{res.urlDate=new URL(r.url).searchParams.get("date")||""}catch{return fail("URL tidak valid")}
   if(!res.tgl&&res.urlDate)res.tgl=res.urlDate;
-  let got=pre?await pre:null;if(!got)got=await getPhoto(r.url);
-  if(!got)return fail("Foto tidak bisa dimuat (404 / CORS / proxy gagal).");
+  const got=pre?await pre:await getPhoto(r.url);
+  if(!got||got.err)return fail(got&&got.err==="404"?"Foto tidak ditemukan (404)":"Foto tidak bisa dimuat (timeout / CORS / proxy gagal).");
   const {bmp,blob}=got;
   res.thumb=thumb(bmp);if(isOn("t_ham"))res.hash=dhash(bmp);
   if(ocr){
@@ -1367,12 +1368,15 @@ $("go").onclick=async()=>{
     for(let k=i;k<Math.min(i+3,list.length);k++)if(!pre.has(k))pre.set(k,getPhoto(list[k].url));
     const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);addRow(r,results.length-1);summary();
   }
-  for(let round=1;round<=3&&!stopFlag;round++){
-    const idxs=[];results.forEach((r,i)=>{if(r.status==="GAGAL DOWNLOAD"&&r.reason!=="URL tidak valid")idxs.push(i)});
+  for(let round=1;round<=2&&!stopFlag;round++){
+    const idxs=[];results.forEach((r,i)=>{if(r.status==="GAGAL DOWNLOAD"&&r.reason!=="URL tidak valid"&&r.reason!=="Foto tidak ditemukan (404)")idxs.push(i)});
     if(!idxs.length)break;
+    const rpre=new Map();
     for(let k=0;k<idxs.length&&!stopFlag;k++){
-      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1} / ${idxs.length})`;
-      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;updateRow(idxs[k],r);summary();
+      $("st").textContent=`Cek ulang gagal download — ronde ${round}/2 (${k+1} / ${idxs.length})`;
+      for(let m=k;m<Math.min(k+3,idxs.length);m++)if(!rpre.has(m))rpre.set(m,getPhoto(list[idxs[m]].url));
+      const r=await processRow(list[idxs[k]],ocr,clip,rpre.get(k));rpre.delete(k);
+      verdict(r);results[idxs[k]]=r;updateRow(idxs[k],r);summary();
     }
   }
   if(ocr)await ocr.terminate();

@@ -396,18 +396,22 @@
 
       <div id="histContent" class="hidden space-y-4">
         <!-- History KPI Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-blue-600 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total PIC Diperiksa</span>
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Semua PIC</span>
             <b id="hTotal" class="text-2xl font-extrabold tabular">0</b>
           </button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="TIDAK SESUAI">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tidak Sesuai</span>
+            <b id="hBad" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular">0</b>
+          </button>
           <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="SESUAI">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status SESUAI</span>
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sesuai</span>
             <b id="hOk" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular">0</b>
           </button>
-          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="TIDAK SESUAI">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status TIDAK SESUAI</span>
-            <b id="hBad" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular">0</b>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-500 bg-white dark:bg-slate-800/90 shadow-sm transition cursor-pointer" data-hf="FOTO_FLAG">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Terdeteksi di Foto</span>
+            <b id="hPhotoFlag" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 tabular">0</b>
           </button>
         </div>
 
@@ -416,35 +420,37 @@
           <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Ringkasan Kategori Smart Logic</div>
           <div id="hsum" class="flex flex-wrap gap-2"></div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3">
-            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code>TIDAK SESUAI</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
+            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code>TIDAK SESUAI</code> dengan 8 kolom standar + <code>CATATAN FOTO</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
           </p>
         </div>
 
         <!-- History Filter Bar -->
         <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm">
-          <input type="text" id="hq" placeholder="Cari PIC, Wilayah, ID PIC, atau Detail Evaluasi..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input type="text" id="hq" placeholder="Cari PIC, Cluster, Cabang, ID PIC, Kesesuaian, atau Catatan Foto..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <select id="hStatusSel" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Semua Status</option>
-            <option value="TIDAK SESUAI">TIDAK SESUAI</option>
-            <option value="SESUAI">SESUAI</option>
+            <option value="TIDAK SESUAI">Tidak Sesuai</option>
+            <option value="SESUAI">Sesuai</option>
+            <option value="FOTO_FLAG">Terdeteksi di Foto</option>
           </select>
           <span id="hShown" class="text-xs text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
         </div>
 
-        <!-- History Table -->
+        <!-- History Table (Exact 8 Columns + Preview Action) -->
         <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto max-h-[62vh]">
             <table class="w-full text-xs text-left border-collapse">
               <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th class="p-3">Nama Wilayah</th>
-                  <th class="p-3">Tgl LKP</th>
-                  <th class="p-3">ID PIC</th>
-                  <th class="p-3">Nama PIC</th>
-                  <th class="p-3 text-center">Jml LKP (Non-Bayar)</th>
-                  <th class="p-3">Status</th>
-                  <th class="p-3">Detail Evaluasi</th>
-                  <th class="p-3 text-right">Keterangan</th>
+                  <th class="p-3 whitespace-nowrap">TGL PENUGASAN</th>
+                  <th class="p-3 whitespace-nowrap">CLUSTER</th>
+                  <th class="p-3 whitespace-nowrap">ID CABANG</th>
+                  <th class="p-3 whitespace-nowrap">NAMA CABANG</th>
+                  <th class="p-3 whitespace-nowrap">ID PIC</th>
+                  <th class="p-3 whitespace-nowrap">NAMA PIC</th>
+                  <th class="p-3">KESESUAIAN HISTORIS LKP</th>
+                  <th class="p-3">CATATAN FOTO</th>
+                  <th class="p-3 text-right whitespace-nowrap">AKSI</th>
                 </tr>
               </thead>
               <tbody id="hBody" class="divide-y divide-slate-100 dark:divide-slate-700/70"></tbody>
@@ -1050,16 +1056,23 @@ function avgSeqSim(items){
   return cnt?(tot/cnt)*100:0;
 }
 function evalSmartLogic(jml,uniqueKets){
-  if(!jml)return {ok:false,status:"TIDAK SESUAI",tag:"no_data",detail:"Tidak ada data History LKP untuk tanggal ini",avgLen:0,sim:0};
+  if(!jml)return {ok:false,status:"TIDAK SESUAI",tag:"no_data",detail:"TIDAK ADA DATA HISTORY LKP",avgLen:0,sim:0};
   const nonAuto=uniqueKets.filter(k=>!isAutoUpdate(k));
-  if(!nonAuto.length)return {ok:false,status:"TIDAK SESUAI",tag:"auto",detail:"Hanya berisi pesan Sistem / Auto Update",avgLen:0,sim:0};
-  if(nonAuto.length===1&&jml>=3)return {ok:false,status:"TIDAK SESUAI",tag:"copypaste",detail:`Copy Paste Identik (1 keterangan untuk ${jml} LKP)`,avgLen:nonAuto[0].length,sim:100};
+  if(!nonAuto.length)return {ok:false,status:"TIDAK SESUAI",tag:"auto",detail:"HANYA BERISI PESAN SISTEM / AUTO UPDATE",avgLen:0,sim:0};
+  if(nonAuto.length===1&&jml>=3)return {ok:false,status:"TIDAK SESUAI",tag:"copypaste",detail:`COPY PASTE IDENTIK (1 KETERANGAN UNTUK ${jml} LKP)`,avgLen:nonAuto[0].length,sim:100};
   const avgLen=nonAuto.reduce((s,k)=>s+k.length,0)/nonAuto.length;
-  if(avgLen<60)return {ok:false,status:"TIDAK SESUAI",tag:"short",detail:`Kurang Informatif (Rata-rata ${Math.floor(avgLen)} karakter)`,avgLen,sim:0};
+  if(avgLen<60)return {ok:false,status:"TIDAK SESUAI",tag:"short",detail:`PENULISAN HISTORIS TERLALU SINGKAT (RATA-RATA ${Math.floor(avgLen)} KAR)`,avgLen,sim:0};
   const sim=avgSeqSim(nonAuto);
-  if(nonAuto.length>=3&&sim>=80)return {ok:false,status:"TIDAK SESUAI",tag:"extreme",detail:`Extreme Template (Kemiripan sangat tinggi ${Math.floor(sim)}%)`,avgLen,sim};
-  if(nonAuto.length>=3&&sim>=60&&avgLen<150)return {ok:false,status:"TIDAK SESUAI",tag:"templated",detail:`Templated / Kurang Informatif (Kemiripan ${Math.floor(sim)}%, Panjang ${Math.floor(avgLen)} kar)`,avgLen,sim};
-  return {ok:true,status:"SESUAI",tag:"ok",detail:"Valid, Bervariasi & Informatif",avgLen,sim};
+  if(nonAuto.length>=3&&sim>=80)return {ok:false,status:"TIDAK SESUAI",tag:"extreme",detail:`EXTREME TEMPLATE / COPY PASTE (KEMIRIPAN ${Math.floor(sim)}%)`,avgLen,sim};
+  if(nonAuto.length>=3&&sim>=60&&avgLen<150)return {ok:false,status:"TIDAK SESUAI",tag:"templated",detail:`MASIH KURANG PENJELASAN DAN COPY PASTE (KEMIRIPAN ${Math.floor(sim)}%, PANJANG ${Math.floor(avgLen)} KAR)`,avgLen,sim};
+  return {ok:true,status:"SESUAI",tag:"ok",detail:`HISTORY SESUAI DAN PENYELESAIAN ${jml} KONTRAK`,avgLen,sim};
+}
+
+function buildPhotoFlagNote(picId,tgl){
+  const flagged=results.filter(r=>r.status!=="VALID"&&normId(r.idpic)===normId(picId)&&(!tgl||!r.tgl||r.tgl===tgl));
+  if(!flagged.length)return "";
+  const statuses=[...new Set(flagged.map(r=>r.status))];
+  return `SUDAH TERDETEKSI DI FOTO (${flagged.length} TEMUAN: ${statuses.join(" / ")})`;
 }
 
 function renderHistoryUI(){
@@ -1068,21 +1081,24 @@ function renderHistoryUI(){
   }
   $("emptyHist").classList.add("hidden");$("histContent").classList.remove("hidden");
   const pics=HIST.pics,cnt=t=>pics.filter(x=>x.tag===t).length,okN=cnt("ok"),badN=pics.length-okN;
+  const flagPhotoN=pics.filter(x=>!!x.catatanFoto).length;
   $("badgeHist").textContent=pics.length;
-  $("hTotal").textContent=pics.length;$("hOk").textContent=okN;$("hBad").textContent=badN;
-  const breakdown=[["auto","Auto Update"],["copypaste","Copy Paste Identik"],["short","Kurang Informatif"],["templated","Templated"],["extreme","Extreme Template"],["no_data","Tanpa Data"]];
-  const chips=[`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Valid &amp; Informatif: ${okN}</span>`];
+  $("hTotal").textContent=pics.length;$("hOk").textContent=okN;$("hBad").textContent=badN;$("hPhotoFlag").textContent=flagPhotoN;
+  const breakdown=[["auto","Auto Update"],["copypaste","Copy Paste Identik"],["short","Terlalu Singkat"],["templated","Kurang Penjelasan & Copy Paste"],["extreme","Extreme Template"],["no_data","Tanpa Data"]];
+  const chips=[`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Sesuai: ${okN}</span>`];
   for(const [t,lbl] of breakdown){const n=cnt(t);if(n)chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">${lbl}: ${n}</span>`)}
+  if(flagPhotoN)chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">📷 Terdeteksi di Foto: ${flagPhotoN}</span>`);
   $("hsum").innerHTML=chips.join("");
   renderHistoryTable();
 }
 function renderHistoryTable(){
   if(!HIST)return;
-  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"-";
+  const fmtSlash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"-";
   const list=HIST.pics.filter(x=>{
-    if(H_FILT&&x.status!==H_FILT)return false;
+    if(H_FILT==="FOTO_FLAG"){if(!x.catatanFoto)return false}
+    else if(H_FILT&&x.status!==H_FILT)return false;
     if(H_QRY){
-      const hay=[x.m.cluster,x.m.idpic,x.m.nama,x.detail,x.status].join(" ").toLowerCase();
+      const hay=[x.m.cluster,x.m.idcab,x.m.nmcab,x.m.idpic,x.m.nama,x.detail,x.status,x.catatanFoto].join(" ").toLowerCase();
       if(!hay.includes(H_QRY))return false;
     }
     return true;
@@ -1091,25 +1107,29 @@ function renderHistoryTable(){
   $("hBody").innerHTML=list.map(x=>{
     const idx=HIST.pics.indexOf(x);
     const bCls=x.ok?"bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300":"bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300";
+    const fotoCell=x.catatanFoto
+      ?`<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">📷 ${esc(x.catatanFoto)}</span>`
+      :`<span class="text-slate-400">-</span>`;
     return `<tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">
-      <td class="p-3 font-semibold">${esc(x.m.cluster||x.f.cluster||"-")}</td>
-      <td class="p-3 font-mono">${esc(fmtDash(x.m.tgl))}</td>
-      <td class="p-3 font-mono">${esc(x.m.idpic)}</td>
-      <td class="p-3 font-medium">${esc(x.m.nama||x.f.nama||"-")}</td>
-      <td class="p-3 text-center font-bold tabular">${x.jml}</td>
-      <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${bCls}">${esc(x.status)}</span></td>
-      <td class="p-3">${esc(x.detail)}</td>
-      <td class="p-3 text-right"><button type="button" data-hidx="${idx}" class="btn-hist-view px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer">Lihat Keterangan</button></td>
+      <td class="p-3 font-mono whitespace-nowrap">${esc(fmtSlash(x.m.tgl))}</td>
+      <td class="p-3 font-semibold whitespace-nowrap">${esc(x.m.cluster||x.f.cluster||"-")}</td>
+      <td class="p-3 font-mono whitespace-nowrap">${esc(x.m.idcab||x.f.idcab||"-")}</td>
+      <td class="p-3 whitespace-nowrap">${esc(x.m.nmcab||x.f.nmcab||"-")}</td>
+      <td class="p-3 font-mono whitespace-nowrap">${esc(x.m.idpic)}</td>
+      <td class="p-3 font-medium whitespace-nowrap">${esc(x.m.nama||x.f.nama||"-")}</td>
+      <td class="p-3"><span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${bCls}">${esc(x.detail)}</span></td>
+      <td class="p-3">${fotoCell}</td>
+      <td class="p-3 text-right whitespace-nowrap"><button type="button" data-hidx="${idx}" class="btn-hist-view px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer">Lihat Keterangan</button></td>
     </tr>`;
   }).join("");
   $("hBody").querySelectorAll(".btn-hist-view").forEach(b=>b.onclick=()=>openHistModal(HIST.pics[+b.dataset.hidx]));
 }
 function openHistModal(x){
-  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"-";
+  const fmtSlash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"-";
   $("hmTitle").textContent=`${x.m.nama||x.m.idpic} (${x.m.idpic})`;
-  $("hmSub").textContent=`Wilayah: ${x.m.cluster||"-"} · TGL LKP: ${fmtDash(x.m.tgl)} · ${x.jml} LKP Non-Bayar`;
+  $("hmSub").textContent=`Cluster: ${x.m.cluster||"-"} · Cabang: ${x.m.idcab||"-"} ${x.m.nmcab||""} · TGL PENUGASAN: ${fmtSlash(x.m.tgl)} · ${x.jml} LKP Non-Bayar`;
   $("hmEval").className=`p-3 rounded-xl text-xs font-semibold border ${x.ok?"bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300":"bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"}`;
-  $("hmEval").textContent=`${x.status} — ${x.detail}`;
+  $("hmEval").textContent=`${x.status} — ${x.detail}`+(x.catatanFoto?` | 📷 ${x.catatanFoto}`:"");
   $("hmBody").textContent=x.kesimpulan||"(Tidak ada keterangan)";
   $("histModal").classList.remove("hidden");
 }
@@ -1130,13 +1150,14 @@ function buildHistory(){
     for(const h of rs){const raw=String(h.ket||"").trim();if(!raw)continue;const key=raw.toUpperCase();if(!seen.has(key)){seen.add(key);uniqueKets.push(raw)}}
     const kesimpulan=uniqueKets.map(x=>"• "+x).join("\n");
     const ev=evalSmartLogic(rs.length,uniqueKets);
-    pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim});
+    const catatanFoto=buildPhotoFlagNote(m.idpic,m.tgl);
+    pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim,catatanFoto});
     for(const h of rs){
       const p=ph.get(h.kontrak);
       det.push({
         "TGL LKP":m.tgl,"CLUSTER":m.cluster||f.cluster||"","ID PIC":m.idpic,"NAMA PIC":m.nama||h.nama,"NO KONTRAK":h.kontrak,
         "KETERANGAN":h.ket,"PANJANG KARAKTER":String(h.ket||"").trim().length,"AUTO UPDATE":isAutoUpdate(h.ket)?"YA":"TIDAK",
-        "STATUS PIC":ev.status,"DETAIL EVALUASI":ev.detail,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
+        "STATUS PIC":ev.status,"DETAIL EVALUASI":ev.detail,"CATATAN FOTO":catatanFoto,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
       });
     }
   }
@@ -1289,18 +1310,38 @@ $("go").onclick=async()=>{
 $("exp").onclick=()=>{
   if(!results.length&&!HIST){notify("Belum ada data untuk diekspor.","warn");return}
   const fmt=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3/$2/$1"):"";
-  const fmtDash=d=>d?d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1"):"";
   const all=results.map(r=>({"TGL LKP":fmt(r.tgl),CLUSTER:r.wilayah,"NO KONTRAK":r.kontrak,"ID PIC":r.idpic,"NAMA PIC":r.nama,"FOTO KUNJUNGAN":r.url,"STATUS KEASLIAN":r.status,ALASAN:r.reason.toUpperCase(),"TGL URL":r.urlDate,"TGL STAMP":r.stampDate,"GPS STAMP":r.gps,"DETEKSI AI":r.ai,"SKOR AI":r.aiScore,"DUPLIKAT DENGAN":r.dup,"OCR STAMP":r.ocr,"SUMBER FILE":r.file}));
   const flagged=all.filter(r=>r["STATUS KEASLIAN"]!=="VALID"),wb=XLSX.utils.book_new();
   const add=(data,name,wd,hdr)=>{const ws=XLSX.utils.json_to_sheet(data,hdr?{header:hdr}:undefined);ws["!cols"]=(wd||[12,12,18,10,24,70,16,60,10,10,22,28,8,16,50,24]).map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,name)};
   add(flagged,"KUALITAS LKP FOTO");add(all,"AUDIT KEASLIAN FOTO");
   if(HIST){
-    const H1=["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
-    add(HIST.pics.filter(x=>!x.ok).map(x=>({"NAMA WILAYAH":x.m.cluster||x.f.cluster||"","TGL LKP":fmtDash(x.m.tgl),"ID CABANG":x.m.idcab||x.f.idcab||"","NAMA CABANG":x.m.nmcab||x.f.nmcab||"","ID PIC":x.m.idpic,"NAMA PIC":x.m.nama||x.f.nama||"","JML LKP (NON-BAYAR)":x.jml,"KESIMPULAN KETERANGAN":x.kesimpulan,"STATUS":x.status,"DETAIL EVALUASI":x.detail})),"KUALITAS LKP HISTORY",[14,12,12,22,10,26,18,80,14,52],H1);
-    const HS=["NAMA WILAYAH","TGL LKP","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI"];
-    add(HIST.pics.map(x=>({"NAMA WILAYAH":x.m.cluster||x.f.cluster||"","TGL LKP":fmtDash(x.m.tgl),"ID PIC":x.m.idpic,"NAMA PIC":x.m.nama||x.f.nama||"","JML LKP (NON-BAYAR)":x.jml,"KESIMPULAN KETERANGAN":x.kesimpulan,"STATUS":x.status,"DETAIL EVALUASI":x.detail})),"SUMMARY HISTORY LKP",[14,12,10,26,18,80,14,52],HS);
-    const H2=["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","PANJANG KARAKTER","AUTO UPDATE","STATUS PIC","DETAIL EVALUASI","DETEKSI AI FOTO"];
-    add(HIST.det.map(d=>({...d,"TGL LKP":fmt(d["TGL LKP"])})),"AUDIT HISTORY LKP",[12,14,10,26,18,80,16,12,14,48,34],H2);
+    const H1=["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","KESESUAIAN HISTORIS LKP","CATATAN FOTO"];
+    add(HIST.pics.filter(x=>!x.ok).map(x=>({
+      "TGL PENUGASAN":fmt(x.m.tgl),
+      "CLUSTER":x.m.cluster||x.f.cluster||"",
+      "ID CABANG":x.m.idcab||x.f.idcab||"",
+      "NAMA CABANG":x.m.nmcab||x.f.nmcab||"",
+      "ID PIC":x.m.idpic,
+      "NAMA PIC":x.m.nama||x.f.nama||"",
+      "KESESUAIAN HISTORIS LKP":x.detail,
+      "CATATAN FOTO":x.catatanFoto||""
+    })),"KUALITAS LKP HISTORY",[14,14,12,22,10,26,56,44],H1);
+    const HS=["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI","CATATAN FOTO"];
+    add(HIST.pics.map(x=>({
+      "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
+      "TGL LKP":fmt(x.m.tgl),
+      "ID CABANG":x.m.idcab||x.f.idcab||"",
+      "NAMA CABANG":x.m.nmcab||x.f.nmcab||"",
+      "ID PIC":x.m.idpic,
+      "NAMA PIC":x.m.nama||x.f.nama||"",
+      "JML LKP (NON-BAYAR)":x.jml,
+      "KESIMPULAN KETERANGAN":x.kesimpulan,
+      "STATUS":x.status,
+      "DETAIL EVALUASI":x.detail,
+      "CATATAN FOTO":x.catatanFoto||""
+    })),"SUMMARY HISTORY LKP",[14,12,12,22,10,26,18,80,14,56,44],HS);
+    const H2=["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","PANJANG KARAKTER","AUTO UPDATE","STATUS PIC","DETAIL EVALUASI","CATATAN FOTO","DETEKSI AI FOTO"];
+    add(HIST.det.map(d=>({...d,"TGL LKP":fmt(d["TGL LKP"])})),"AUDIT HISTORY LKP",[12,14,10,26,18,80,16,12,14,52,44,34],H2);
   }
   const ds=[...new Set(results.map(r=>r.tgl||r.urlDate).filter(Boolean))].sort(),fdn=d=>d.replace(/(\d{4})(\d{2})(\d{2})/,"$3-$2-$1");
   const dp=!ds.length?"":ds.length===1?" "+fdn(ds[0]):` ${fdn(ds[0])} to ${fdn(ds[ds.length-1])}`;
@@ -1321,41 +1362,41 @@ function makeDemoThumb(bg,title,sub){
 }
 $("btnDemo").onclick=()=>{
   results=[
-    {tgl:"20261117",wilayah:"LOMBOK-1",kontrak:"1029384756",idpic:"PIC001",nama:"Ahmad Fauzi",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo1.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.665937, 116.559796",ai:"Selfie PIC di depan rumah/bangunan",aiScore:"88.4%",ocr:"Selasa, 17 Nov 2026 10:15 -8.665937, 116.559796 Labuhan Haji",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0f766e","VALID · Selfie Rumah","LOMBOK-1 · PIC001")},
-    {tgl:"20261117",wilayah:"LOMBOK-1",kontrak:"1029384759",idpic:"PIC001",nama:"Ahmad Fauzi",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo2.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.651200, 116.540120",ai:"Selfie PIC di warung/toko",aiScore:"82.1%",ocr:"Selasa, 17 Nov 2026 11:02 -8.651200, 116.540120 Selong",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0369a1","VALID · Warung","LOMBOK-1 · PIC001")},
-    {tgl:"20261117",wilayah:"LOMBOK-2",kontrak:"1029384801",idpic:"PIC002",nama:"Budi Santoso",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo3.png",status:"TIDAK VALID",reason:"FOTO UANG",urlDate:"20261117",stampDate:"20261117",gps:"-8.583100, 116.116500",ai:"FOTO UANG",aiScore:"91.2%",ocr:"Selasa, 17 Nov 2026 13:20 -8.583100, 116.116500 Mataram",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#be123c","TIDAK VALID · Uang","LOMBOK-2 · PIC002")},
-    {tgl:"20261117",wilayah:"SUMSEL-1",kontrak:"2048192831",idpic:"PIC003",nama:"Dedi Kurniawan",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo4.png",status:"PERLU CEK",reason:"Foto hanya selfie saja | GPS di luar area",urlDate:"20261117",stampDate:"20261117",gps:"-3.045194, 104.776321",ai:"Foto hanya selfie saja",aiScore:"64.5%",ocr:"Selasa, 17 Nov 2026 09:58 -3.045194, 104.776321 Pemulutan",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#b45309","PERLU CEK · Selfie","SUMSEL-1 · PIC003")},
-    {tgl:"20261117",wilayah:"JABAR-1",kontrak:"3091827364",idpic:"PIC004",nama:"Rian Hidayat",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo5.png",status:"TIDAK VALID",reason:"Foto sama dengan kontrak 3091827369",urlDate:"20261117",stampDate:"20261117",gps:"-6.914744, 107.609810",ai:"Foto orang di depan rumah",aiScore:"79.0%",ocr:"Selasa, 17 Nov 2026 14:40 -6.914744, 107.609810 Bandung",dup:"3091827369",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#9f1239","TIDAK VALID · Duplikat","JABAR-1 · PIC004")},
-    {tgl:"20261117",wilayah:"JABAR-1",kontrak:"3091827370",idpic:"PIC005",nama:"Siti Rahma",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo6.png",status:"GAGAL DOWNLOAD",reason:"Foto tidak bisa dimuat (404 / CORS / proxy gagal).",urlDate:"20261117",stampDate:"",gps:"",ai:"",aiScore:"",ocr:"",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:""}
+    {tgl:"20261117",wilayah:"LOMBOK-3",kontrak:"1029384756",idpic:"8991",nama:"RAHUL SANI",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo1.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.665937, 116.559796",ai:"Selfie PIC di depan rumah/bangunan",aiScore:"88.4%",ocr:"Selasa, 17 Nov 2026 10:15 -8.665937, 116.559796 Aikmel",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0f766e","VALID · Selfie Rumah","LOMBOK-3 · 8991")},
+    {tgl:"20261117",wilayah:"LOMBOK-3",kontrak:"1029384759",idpic:"8991",nama:"RAHUL SANI",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo2.png",status:"VALID",reason:"",urlDate:"20261117",stampDate:"20261117",gps:"-8.651200, 116.540120",ai:"Selfie PIC di warung/toko",aiScore:"82.1%",ocr:"Selasa, 17 Nov 2026 11:02 -8.651200, 116.540120 Aikmel",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#0369a1","VALID · Warung","LOMBOK-3 · 8991")},
+    {tgl:"20261117",wilayah:"LOMBOK-3",kontrak:"1029384801",idpic:"12199",nama:"WAHYU HIDAYAT",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo3.png",status:"TIDAK VALID",reason:"FOTO UANG",urlDate:"20261117",stampDate:"20261117",gps:"-8.623100, 116.316500",ai:"FOTO UANG",aiScore:"91.2%",ocr:"Selasa, 17 Nov 2026 13:20 -8.623100, 116.316500 Batukliang",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#be123c","TIDAK VALID · Uang","LOMBOK-3 · 12199")},
+    {tgl:"20261117",wilayah:"LOMBOK-3",kontrak:"2048192831",idpic:"12723",nama:"AHMAD FATONI",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo4.png",status:"PERLU CEK",reason:"Foto hanya selfie saja | GPS di luar area",urlDate:"20261117",stampDate:"20261117",gps:"-8.545194, 116.676321",ai:"Foto hanya selfie saja",aiScore:"64.5%",ocr:"Selasa, 17 Nov 2026 09:58 -8.545194, 116.676321 Pringgabaya",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#b45309","PERLU CEK · Selfie","LOMBOK-3 · 12723")},
+    {tgl:"20261117",wilayah:"LOMBOK-1",kontrak:"3091827364",idpic:"15850",nama:"ABDUL HAMID",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo5.png",status:"TIDAK VALID",reason:"Foto sama dengan kontrak 3091827369",urlDate:"20261117",stampDate:"20261117",gps:"-8.584744, 116.129810",ai:"Foto orang di depan rumah",aiScore:"79.0%",ocr:"Selasa, 17 Nov 2026 14:40 -8.584744, 116.129810 Sandubaya",dup:"3091827369",file:"Monitoring_LKP_Demo.xlsx",thumb:makeDemoThumb("#9f1239","TIDAK VALID · Duplikat","LOMBOK-1 · 15850")},
+    {tgl:"20261117",wilayah:"LOMBOK-2",kontrak:"3091827370",idpic:"15567",nama:"M NURSIYAH JAYADI",url:"http://backend.sehati.co.id/api/getImage?module=collection&date=20261117&image=demo6.png",status:"GAGAL DOWNLOAD",reason:"Foto tidak bisa dimuat (404 / CORS / proxy gagal).",urlDate:"20261117",stampDate:"",gps:"",ai:"",aiScore:"",ocr:"",dup:"",file:"Monitoring_LKP_Demo.xlsx",thumb:""}
   ];
   TOTAL=results.length;
   const demoMon=[
-    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",cluster:"LOMBOK-1",idcab:"CB01",nmcab:"CABANG SELONG"},
-    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",cluster:"LOMBOK-2",idcab:"CB02",nmcab:"CABANG MATARAM"},
-    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",cluster:"SUMSEL-1",idcab:"CB03",nmcab:"CABANG PALEMBANG"},
-    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",cluster:"JABAR-1",idcab:"CB04",nmcab:"CABANG BANDUNG"},
-    {tgl:"20261117",idpic:"PIC005",nama:"Siti Rahma",cluster:"JABAR-1",idcab:"CB04",nmcab:"CABANG BANDUNG"}
+    {tgl:"20261117",idpic:"8991",nama:"RAHUL SANI",cluster:"LOMBOK-3",idcab:"7081",nmcab:"AIKMEL"},
+    {tgl:"20261117",idpic:"12199",nama:"WAHYU HIDAYAT",cluster:"LOMBOK-3",idcab:"7088",nmcab:"BATUKLIANG"},
+    {tgl:"20261117",idpic:"12723",nama:"AHMAD FATONI",cluster:"LOMBOK-3",idcab:"7084",nmcab:"PRINGGABAYA"},
+    {tgl:"20261117",idpic:"15850",nama:"ABDUL HAMID",cluster:"LOMBOK-1",idcab:"7090",nmcab:"SANDUBAYA"},
+    {tgl:"20261117",idpic:"15567",nama:"M NURSIYAH JAYADI",cluster:"LOMBOK-2",idcab:"7082",nmcab:"PRAYA"}
   ];
   const demoHist=[
-    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",kontrak:"1029384756",ket:"Bertemu istri konsumen Ibu Sari di rumah, konsumen sedang kerja proyek luar kota. Janji bayar Rp 1.250.000 tgl 25 Nov via VA setelah gajian, sudah diedukasi denda harian dan akan di-FU ulang tgl 24.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1"},
-    {tgl:"20261117",idpic:"PIC001",nama:"Ahmad Fauzi",kontrak:"1029384759",ket:"Kunjungan ke warung konsumen Bpk Hendra, usaha sedang sepi minggu ini namun komitmen bayar parsial Rp 600.000 hari Jumat sore. Titip surat pengingat dan jadwal kunjungan ulang hari Sabtu.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1"},
-    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384801",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
-    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384802",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
-    {tgl:"20261117",idpic:"PIC002",nama:"Budi Santoso",kontrak:"1029384803",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2"},
-    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",kontrak:"2048192831",ket:"Belum ada dana, janji minggu depan",stBayar:"BELUM BAYAR",cluster:"SUMSEL-1"},
-    {tgl:"20261117",idpic:"PIC003",nama:"Dedi Kurniawan",kontrak:"2048192832",ket:"Rumah sepi, titip pesan tetangga",stBayar:"BELUM BAYAR",cluster:"SUMSEL-1"},
-    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827364",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari anak, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
-    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827365",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari istri, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
-    {tgl:"20261117",idpic:"PIC004",nama:"Rian Hidayat",kontrak:"3091827366",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari keluarga, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"JABAR-1"},
-    {tgl:"20261117",idpic:"PIC005",nama:"Siti Rahma",kontrak:"3091827370",ket:"AUTO UPDATE BY SYSTEM",stBayar:"BELUM BAYAR",cluster:"JABAR-1"}
+    {tgl:"20261117",idpic:"8991",nama:"RAHUL SANI",kontrak:"1029384756",ket:"Bertemu istri konsumen Ibu Sari di rumah, konsumen sedang kerja proyek luar kota. Janji bayar Rp 1.250.000 tgl 25 Nov via VA setelah gajian, sudah diedukasi denda harian dan akan di-FU ulang tgl 24.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7081",nmcab:"AIKMEL"},
+    {tgl:"20261117",idpic:"8991",nama:"RAHUL SANI",kontrak:"1029384759",ket:"Kunjungan ke warung konsumen Bpk Hendra, usaha sedang sepi minggu ini namun komitmen bayar parsial Rp 600.000 hari Jumat sore. Titip surat pengingat dan jadwal kunjungan ulang hari Sabtu.",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7081",nmcab:"AIKMEL"},
+    {tgl:"20261117",idpic:"12199",nama:"WAHYU HIDAYAT",kontrak:"1029384801",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7088",nmcab:"BATUKLIANG"},
+    {tgl:"20261117",idpic:"12199",nama:"WAHYU HIDAYAT",kontrak:"1029384802",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7088",nmcab:"BATUKLIANG"},
+    {tgl:"20261117",idpic:"12199",nama:"WAHYU HIDAYAT",kontrak:"1029384803",ket:"Rumah kosong tidak ada orang",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7088",nmcab:"BATUKLIANG"},
+    {tgl:"20261117",idpic:"12723",nama:"AHMAD FATONI",kontrak:"2048192831",ket:"Belum ada dana, janji minggu depan",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7084",nmcab:"PRINGGABAYA"},
+    {tgl:"20261117",idpic:"12723",nama:"AHMAD FATONI",kontrak:"2048192832",ket:"Rumah sepi, titip pesan tetangga",stBayar:"BELUM BAYAR",cluster:"LOMBOK-3",idcab:"7084",nmcab:"PRINGGABAYA"},
+    {tgl:"20261117",idpic:"15850",nama:"ABDUL HAMID",kontrak:"3091827364",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari anak, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1",idcab:"7090",nmcab:"SANDUBAYA"},
+    {tgl:"20261117",idpic:"15850",nama:"ABDUL HAMID",kontrak:"3091827365",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari istri, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1",idcab:"7090",nmcab:"SANDUBAYA"},
+    {tgl:"20261117",idpic:"15850",nama:"ABDUL HAMID",kontrak:"3091827366",ket:"Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari keluarga, akan di-FU lagi besok",stBayar:"BELUM BAYAR",cluster:"LOMBOK-1",idcab:"7090",nmcab:"SANDUBAYA"},
+    {tgl:"20261117",idpic:"15567",nama:"M NURSIYAH JAYADI",kontrak:"3091827370",ket:"AUTO UPDATE BY SYSTEM",stBayar:"BELUM BAYAR",cluster:"LOMBOK-2",idcab:"7082",nmcab:"PRAYA"}
   ];
   monRows=demoMon;histRows=demoHist;
   $("wilAll").checked=true;wilCheckboxes.forEach(c=>c.checked=true);updateWilayahUI();
   summary();renderBreak();buildHistory();
   $("pb").style.width="100%";$("exp").classList.remove("hidden");
-  $("st").textContent="Mode Demo aktif: 6 foto & 5 PIC History (Smart Logic) dimuat.";
-  switchTab("foto");
-  notify("Data Demo berhasil dimuat! Coba klik thumbnail foto, kartu KPI, atau pindah ke tab Kualitas LKP History.","ok");
+  $("st").textContent="Mode Demo aktif: 6 foto & 5 PIC History (Smart Logic + Catatan Foto) dimuat.";
+  switchTab("history");
+  notify("Data Demo berhasil dimuat! Lihat tab Kualitas LKP History untuk kolom standar & badge Catatan Foto.","ok");
 };
 
 updateWilayahUI();

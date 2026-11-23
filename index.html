@@ -28,62 +28,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
   <style>
-    /* Ensure hidden elements can never intercept clicks */
     .hidden { display: none !important; pointer-events: none !important; }
-
-    /* Non-blocking Sunrise Light & Starry Night Dark background layers */
-    body {
-      position: relative;
-      background-color: #f8fafc;
-      transition: background-color 0.25s ease, color 0.25s ease;
-    }
+    body { position: relative; background-color: #f8fafc; transition: background-color 0.25s ease, color 0.25s ease; }
     body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background-image:
         radial-gradient(at 0% 0%, rgba(254, 215, 170, 0.45) 0px, transparent 52%),
         radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.55) 0px, transparent 52%);
     }
-    html.dark body {
-      background-color: #070d1d;
-    }
+    html.dark body { background-color: #070d1d; }
     html.dark body::before {
-      background-image:
-        radial-gradient(rgba(255, 153, 0, 0.18) 1px, transparent 1px),
-        radial-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px);
-      background-size: 28px 28px, 18px 18px;
-      background-position: 0 0, 9px 9px;
+      background-image: radial-gradient(rgba(255, 153, 0, 0.18) 1px, transparent 1px), radial-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+      background-size: 28px 28px, 18px 18px; background-position: 0 0, 9px 9px;
     }
-
-    /* Interactive containers always sit above the background layer */
     main, footer { position: relative; z-index: 1; }
     button { cursor: pointer; }
-
-    /* Custom Toggle Switch */
     .switch { position: relative; width: 40px; height: 22px; flex: none; cursor: pointer; display: inline-block; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 999px; transition: .2s; }
     html.dark .slider { background: #334155; }
-    .slider:before {
-      content: "";
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      left: 3px;
-      top: 3px;
-      background: #fff;
-      border-radius: 50%;
-      transition: .2s;
-      box-shadow: 0 1px 2px rgba(0,0,0,.2);
-    }
+    .slider:before { content: ""; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
     .switch input:checked + .slider { background: #1d4ed8; }
     html.dark .switch input:checked + .slider { background: #FF9900; }
     .switch input:checked + .slider:before { transform: translateX(18px); }
-
-    /* Scrollbar polish */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
@@ -93,10 +60,8 @@
 </head>
 <body class="text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
 
-  <!-- Toast Container (replaces alert/confirm) -->
   <div id="toastBox" class="fixed top-20 right-4 z-[120] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-  <!-- Single Clean Header: Brand Bar + 3-Tab Bar -->
   <header class="sticky top-0 z-40 bg-[#0b1f44] dark:bg-[#070d1d]/95 backdrop-blur border-b-2 border-blue-600 dark:border-[#FF9900] text-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
@@ -107,19 +72,11 @@
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
-        <button id="btnDemo" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500 dark:bg-[#FF9900] hover:bg-amber-400 text-slate-950 shadow-sm transition">
-          <span>✨</span><span>Muat Data Demo</span>
-        </button>
-        <button id="btnGuide" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition">
-          <span>📘</span><span>Panduan</span>
-        </button>
-        <button id="btnTheme" type="button" title="Ganti Tema Sunrise / Starry Night" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition">
-          <span id="themeIcon">🌙</span><span id="themeLabel" class="hidden sm:inline">Starry Night</span>
-        </button>
+        <button id="btnDemo" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-500 dark:bg-[#FF9900] hover:bg-amber-400 text-slate-950 shadow-sm transition"><span>✨</span><span>Muat Data Demo</span></button>
+        <button id="btnGuide" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition"><span>📘</span><span>Panduan</span></button>
+        <button id="btnTheme" type="button" title="Ganti Tema Sunrise / Starry Night" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition"><span id="themeIcon">🌙</span><span id="themeLabel" class="hidden sm:inline">Starry Night</span></button>
       </div>
     </div>
-
-    <!-- Single Tab Navigation Bar -->
     <div class="bg-[#0f2754] dark:bg-[#0b152c]/95 border-t border-white/10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
         <button type="button" data-tab="setup" class="tab-btn px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 border-blue-400 dark:border-[#FF9900] text-white whitespace-nowrap flex items-center gap-2 transition">
@@ -138,37 +95,25 @@
     </div>
   </header>
 
-  <!-- Main Workspace -->
   <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 pb-28">
 
-    <!-- ==================== TAB 1: SETUP & SUMBER DATA ==================== -->
+    <!-- TAB 1: SETUP -->
     <section id="tab-setup" class="space-y-5">
-      <!-- Visual 3-Step Indicator -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
           <div id="step1Dot" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center shrink-0">1</div>
-          <div class="min-w-0">
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 1</div>
-            <div class="text-sm font-semibold truncate">Unggah Excel / URL</div>
-          </div>
+          <div class="min-w-0"><div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 1</div><div class="text-sm font-semibold truncate">Unggah Excel / URL</div></div>
         </div>
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
           <div id="step2Dot" class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center shrink-0">2</div>
-          <div class="min-w-0">
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 2</div>
-            <div class="text-sm font-semibold truncate">Pilih Wilayah</div>
-          </div>
+          <div class="min-w-0"><div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 2</div><div class="text-sm font-semibold truncate">Pilih Wilayah</div></div>
         </div>
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center gap-3 shadow-sm">
           <div id="step3Dot" class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center shrink-0">3</div>
-          <div class="min-w-0">
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 3 (Opsional)</div>
-            <div class="text-sm font-semibold truncate">Aturan Tambahan</div>
-          </div>
+          <div class="min-w-0"><div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Langkah 3 (Opsional)</div><div class="text-sm font-semibold truncate">Aturan Tambahan</div></div>
         </div>
       </div>
 
-      <!-- Card 1: Sumber Data -->
       <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
         <div class="flex items-start justify-between gap-3 mb-3">
           <div>
@@ -177,43 +122,33 @@
           </div>
           <span class="hidden sm:inline-block text-[11px] font-medium px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Diproses lokal di browser</span>
         </div>
-
         <label id="drop" class="block border-2 border-dashed border-blue-300 dark:border-blue-700/70 rounded-xl p-7 text-center bg-blue-50/50 dark:bg-slate-900/60 hover:bg-blue-50 dark:hover:bg-slate-900 cursor-pointer transition">
           <input type="file" id="xl" accept=".xlsx,.xls,.csv" multiple class="hidden">
           <div class="text-2xl mb-1">📂</div>
           <div class="text-sm font-bold text-blue-700 dark:text-[#FF9900]">Tarik &amp; lepas file Excel ke sini, atau klik untuk memilih</div>
           <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Format: .xlsx, .xls, .csv · Filter TGL LKP &amp; ID PIC otomatis</div>
         </label>
-
         <div id="files" class="flex flex-wrap items-center gap-2 mt-3"></div>
         <div id="dataInfo" class="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></div>
-
         <details class="mt-4 group">
-          <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-[#FF9900] select-none">
-            ▸ Atau tempel URL foto secara manual (satu per baris)
-          </summary>
+          <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-[#FF9900] select-none">▸ Atau tempel URL foto secara manual (satu per baris)</summary>
           <textarea id="urls" rows="4" class="mt-2 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]" placeholder="http://backend.sehati.co.id/api/getImage?module=collection&date=20261105&image=xxxx.png"></textarea>
         </details>
       </div>
 
-      <!-- Card 2: Filter Wilayah -->
       <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
         <div class="mb-3">
           <h2 class="text-base font-bold">2. Filter Wilayah / Cluster</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih satu atau beberapa wilayah (34 cluster tersedia), atau centang <b>Select All</b>. Data dimuat otomatis setelah dipilih.</p>
         </div>
-
         <div class="relative" id="wilWrap">
           <button type="button" id="wilBtn" class="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-left hover:border-blue-500 dark:hover:border-[#FF9900] transition">
-            <span id="wilBtnText" class="text-slate-400">-- Pilih Wilayah --</span>
-            <span class="text-xs text-slate-400">▼</span>
+            <span id="wilBtnText" class="text-slate-400">-- Pilih Wilayah --</span><span class="text-xs text-slate-400">▼</span>
           </button>
           <div id="wilMenu" class="hidden absolute left-0 right-0 top-[calc(100%+6px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[60] p-3">
             <input type="text" id="wilSearch" placeholder="Cari wilayah (mis. LOMBOK, JABAR, SUMSEL)..." class="w-full mb-2.5 px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]">
             <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-700 text-xs">
-              <label class="flex items-center gap-2 font-semibold cursor-pointer">
-                <input type="checkbox" id="wilAll" class="rounded text-blue-600 focus:ring-blue-500"> Select All (34 Wilayah)
-              </label>
+              <label class="flex items-center gap-2 font-semibold cursor-pointer"><input type="checkbox" id="wilAll" class="rounded text-blue-600 focus:ring-blue-500"> Select All (34 Wilayah)</label>
               <button type="button" id="wilClear" class="text-rose-600 dark:text-rose-400 font-semibold hover:underline">Hapus Pilihan</button>
             </div>
             <div id="wilList" class="max-h-56 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1"></div>
@@ -221,96 +156,60 @@
         </div>
       </div>
 
-      <!-- Card 3: Aturan Pemeriksaan Tambahan -->
       <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
         <div class="mb-3">
           <h2 class="text-base font-bold">3. Aturan Pemeriksaan Tambahan</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Semua aturan di bawah default <b>OFF</b>. Pemeriksaan isi foto (AI CLIP) dan kualitas gambar (gelap/blur/kosong) selalu aktif otomatis.</p>
         </div>
-
         <details id="extra">
-          <summary id="extraSum" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-xs font-semibold hover:bg-blue-50 dark:hover:bg-slate-800 transition select-none">
-            Aturan tambahan (0 aktif) — klik untuk membuka
-          </summary>
-
+          <summary id="extraSum" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/70 text-xs font-semibold hover:bg-blue-50 dark:hover:bg-slate-800 transition select-none">Aturan tambahan (0 aktif) — klik untuk membuka</summary>
           <div class="mt-4 space-y-5">
             <div class="flex flex-wrap gap-2">
               <button id="allOn" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-600 dark:border-[#FF9900] text-blue-600 dark:text-[#FF9900] hover:bg-blue-50 dark:hover:bg-slate-800">Aktifkan Semua</button>
               <button id="allOff" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Matikan Semua</button>
             </div>
-
             <div id="rules" class="space-y-5">
-              <!-- OCR Stamp -->
               <div>
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Stamp Tanggal (OCR)</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 dark:border-[#FF9900] px-3 py-2 rounded-r-lg mb-3">
-                  Menyalakan X atau Y mengaktifkan OCR stamp. Default 0.35 &amp; 0.80 membaca pojok kanan bawah. Tanggal stamp ≠ URL → <b>TIDAK VALID</b>; tidak terbaca / ≠ TGL LKP → <b>PERLU CEK</b>.
-                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 dark:border-[#FF9900] px-3 py-2 rounded-r-lg mb-3">Menyalakan X atau Y mengaktifkan OCR stamp. Default 0.35 &amp; 0.80 membaca pojok kanan bawah. Tanggal stamp ≠ URL → <b>TIDAK VALID</b>; tidak terbaca / ≠ TGL LKP → <b>PERLU CEK</b>.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="sx" class="text-xs font-semibold">Area stamp mulai X (0–1)</label>
-                      <label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="sx" class="text-xs font-semibold">Area stamp mulai X (0–1)</label><label class="switch"><input type="checkbox" id="t_sx" data-target="sx"><span class="slider"></span></label></div>
                     <input type="number" id="sx" value="0.35" step="0.05" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="sy" class="text-xs font-semibold">Area stamp mulai Y (0–1)</label>
-                      <label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="sy" class="text-xs font-semibold">Area stamp mulai Y (0–1)</label><label class="switch"><input type="checkbox" id="t_sy" data-target="sy"><span class="slider"></span></label></div>
                     <input type="number" id="sy" value="0.80" step="0.05" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                 </div>
               </div>
-
-              <!-- GPS Bounding Box -->
               <div>
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Batas Area GPS</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 dark:border-[#FF9900] px-3 py-2 rounded-r-lg mb-3">
-                  Koordinat pada stamp dibandingkan dengan batas yang aktif. Di luar batas atau tidak terbaca → <b>PERLU CEK</b>. Mengaktifkan GPS ikut menjalankan OCR.
-                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 border-l-4 border-blue-600 dark:border-[#FF9900] px-3 py-2 rounded-r-lg mb-3">Koordinat pada stamp dibandingkan dengan batas yang aktif. Di luar batas atau tidak terbaca → <b>PERLU CEK</b>. Mengaktifkan GPS ikut menjalankan OCR.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="lat0" class="text-xs font-semibold">Latitude min</label>
-                      <label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="lat0" class="text-xs font-semibold">Latitude min</label><label class="switch"><input type="checkbox" id="t_lat0" data-target="lat0"><span class="slider"></span></label></div>
                     <input type="number" id="lat0" value="-9.3" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="lat1" class="text-xs font-semibold">Latitude max</label>
-                      <label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="lat1" class="text-xs font-semibold">Latitude max</label><label class="switch"><input type="checkbox" id="t_lat1" data-target="lat1"><span class="slider"></span></label></div>
                     <input type="number" id="lat1" value="-8.0" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="lon0" class="text-xs font-semibold">Longitude min</label>
-                      <label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="lon0" class="text-xs font-semibold">Longitude min</label><label class="switch"><input type="checkbox" id="t_lon0" data-target="lon0"><span class="slider"></span></label></div>
                     <input type="number" id="lon0" value="115.7" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="lon1" class="text-xs font-semibold">Longitude max</label>
-                      <label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="lon1" class="text-xs font-semibold">Longitude max</label><label class="switch"><input type="checkbox" id="t_lon1" data-target="lon1"><span class="slider"></span></label></div>
                     <input type="number" id="lon1" value="116.9" step="0.1" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                 </div>
               </div>
-
-              <!-- Duplicate dHash & Proxy -->
               <div>
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Deteksi Duplikat (dHash) &amp; Proxy</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
-                    <div class="flex items-center justify-between mb-2">
-                      <label for="ham" class="text-xs font-semibold">Batas beda bit duplikat (0–20)</label>
-                      <label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label>
-                    </div>
+                    <div class="flex items-center justify-between mb-2"><label for="ham" class="text-xs font-semibold">Batas beda bit duplikat (0–20)</label><label class="switch"><input type="checkbox" id="t_ham" data-target="ham"><span class="slider"></span></label></div>
                     <input type="number" id="ham" value="5" min="0" max="20" disabled class="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-50">
                   </div>
                   <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/50">
@@ -325,59 +224,44 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 2: AUDIT FOTO ==================== -->
+    <!-- TAB 2: AUDIT FOTO -->
     <section id="tab-foto" class="hidden space-y-4">
       <div id="emptyFoto" class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center shadow-sm">
         <div class="text-3xl mb-2">📷</div>
         <h3 class="text-base font-bold">Belum Ada Hasil Audit Foto</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Unggah file Excel di tab <b>Setup &amp; Sumber Data</b> lalu klik <b>Mulai Periksa</b>, atau klik <b>✨ Muat Data Demo</b> untuk melihat pratinjau interaktif.</p>
       </div>
-
       <div id="fotoContent" class="hidden space-y-4">
-        <!-- Header & Distribution Bar -->
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <h2 class="text-base font-bold">Ringkasan Audit Foto</h2>
-              <p id="rsub" class="text-xs text-slate-500 dark:text-slate-400">Menunggu proses…</p>
-            </div>
-            <button id="exp2" type="button" disabled class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-sm transition">
-              <span>⬇</span><span>Download Excel (.xlsx)</span>
-            </button>
+            <div><h2 class="text-base font-bold">Ringkasan Audit Foto</h2><p id="rsub" class="text-xs text-slate-500 dark:text-slate-400">Menunggu proses…</p></div>
+            <button id="exp2" type="button" disabled class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white shadow-sm transition"><span>⬇</span><span>Download Excel (.xlsx)</span></button>
           </div>
           <div id="dist" class="flex h-3 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4" aria-hidden="true"></div>
-
-          <!-- KPI Cards -->
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
             <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-blue-600 dark:border-[#FF9900] bg-blue-50/40 dark:bg-slate-900/80 transition" data-f="">
               <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Foto</span>
-              <b id="nT" class="text-2xl font-extrabold font-mono tabular">0</b>
-              <em class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">100%</em>
+              <b id="nT" class="text-2xl font-extrabold font-mono tabular">0</b><em class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">100%</em>
             </button>
             <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-slate-900/50 transition" data-f="VALID">
               <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Valid</span>
-              <b id="nV" class="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tabular">0</b>
-              <em id="pV" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
+              <b id="nV" class="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tabular">0</b><em id="pV" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
             </button>
             <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-500 bg-white dark:bg-slate-900/50 transition" data-f="PERLU CEK">
               <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Perlu Cek</span>
-              <b id="nC" class="text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400 tabular">0</b>
-              <em id="pC" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
+              <b id="nC" class="text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400 tabular">0</b><em id="pC" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
             </button>
             <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-slate-900/50 transition" data-f="TIDAK VALID">
               <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tidak Valid</span>
-              <b id="nX" class="text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tabular">0</b>
-              <em id="pX" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
+              <b id="nX" class="text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tabular">0</b><em id="pX" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
             </button>
             <button type="button" class="kpi-foto text-left p-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-slate-400 bg-white dark:bg-slate-900/50 transition col-span-2 sm:col-span-1" data-f="GAGAL DOWNLOAD">
               <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gagal Download</span>
-              <b id="nF" class="text-2xl font-extrabold font-mono text-slate-600 dark:text-slate-300 tabular">0</b>
-              <em id="pF" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
+              <b id="nF" class="text-2xl font-extrabold font-mono text-slate-600 dark:text-slate-300 tabular">0</b><em id="pF" class="block not-italic text-[11px] font-mono text-slate-500 dark:text-slate-400">0%</em>
             </button>
           </div>
         </div>
 
-        <!-- Temuan Terbanyak & Rekap per Wilayah -->
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm space-y-3">
           <div>
             <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Temuan Terbanyak (Klik chip untuk memfilter)</div>
@@ -385,39 +269,26 @@
           </div>
           <details class="pt-2 border-t border-slate-200 dark:border-slate-800">
             <summary class="cursor-pointer text-xs font-bold text-blue-700 dark:text-[#FF9900] select-none">▸ Lihat Rekap per Wilayah</summary>
-            <div class="mt-2 overflow-x-auto max-h-60 rounded-lg border border-slate-200 dark:border-slate-700">
-              <table id="wtab" class="w-full text-xs text-left border-collapse"></table>
-            </div>
+            <div class="mt-2 overflow-x-auto max-h-60 rounded-lg border border-slate-200 dark:border-slate-700"><table id="wtab" class="w-full text-xs text-left border-collapse"></table></div>
           </details>
         </div>
 
-        <!-- Filter Bar -->
         <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm">
           <input type="text" id="q" placeholder="Cari PIC, kontrak, cabang, alasan, validity, deteksi AI..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]">
-          <select id="wilFilterFoto" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]">
-            <option value="">Semua Wilayah</option>
-          </select>
+          <select id="wilFilterFoto" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]"><option value="">Semua Wilayah</option></select>
           <button id="btnResetFoto" type="button" class="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Reset Filter</button>
           <span id="shown" class="text-xs font-mono text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
         </div>
 
-        <!-- Photo Audit Table -->
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto max-h-[62vh]">
             <table class="w-full text-xs text-left border-collapse">
               <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th class="p-3 whitespace-nowrap">Preview</th>
-                  <th class="p-3 whitespace-nowrap">Tgl Penugasan</th>
-                  <th class="p-3 whitespace-nowrap">Cluster</th>
-                  <th class="p-3 whitespace-nowrap">ID / Nama Cabang</th>
-                  <th class="p-3 whitespace-nowrap">No Kontrak</th>
-                  <th class="p-3 whitespace-nowrap">ID / Nama PIC</th>
-                  <th class="p-3 whitespace-nowrap">Foto Kunjungan</th>
-                  <th class="p-3">Keterangan</th>
-                  <th class="p-3 whitespace-nowrap">Validity</th>
-                  <th class="p-3 whitespace-nowrap">Deteksi AI</th>
-                  <th class="p-3 whitespace-nowrap">Temuan Lain (Tgl / GPS / OCR)</th>
+                  <th class="p-3 whitespace-nowrap">Preview</th><th class="p-3 whitespace-nowrap">Tgl Penugasan</th><th class="p-3 whitespace-nowrap">Cluster</th>
+                  <th class="p-3 whitespace-nowrap">ID / Nama Cabang</th><th class="p-3 whitespace-nowrap">No Kontrak</th><th class="p-3 whitespace-nowrap">ID / Nama PIC</th>
+                  <th class="p-3 whitespace-nowrap">Foto Kunjungan</th><th class="p-3">Keterangan</th><th class="p-3 whitespace-nowrap">Validity</th>
+                  <th class="p-3 whitespace-nowrap">Deteksi AI</th><th class="p-3 whitespace-nowrap">Temuan Lain (Tgl / GPS / OCR)</th>
                 </tr>
               </thead>
               <tbody id="body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -427,72 +298,40 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 3: KUALITAS LKP HISTORY (SMART LOGIC) ==================== -->
+    <!-- TAB 3: HISTORY -->
     <section id="tab-history" class="hidden space-y-4">
       <div id="emptyHist" class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center shadow-sm">
         <div class="text-3xl mb-2">📝</div>
         <h3 class="text-base font-bold">Belum Ada Data Kualitas LKP History</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">Analisis Smart Logic berjalan otomatis setelah pemeriksaan selesai bila file Excel memuat sheet <b>HISTORY LKP</b>, atau klik <b>✨ Muat Data Demo</b>.</p>
       </div>
-
       <div id="histContent" class="hidden space-y-4">
-        <!-- History KPI Cards -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-blue-600 dark:border-[#FF9900] bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Semua PIC</span>
-            <b id="hTotal" class="text-2xl font-extrabold font-mono tabular">0</b>
-          </button>
-          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="TIDAK SESUAI">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tidak Sesuai</span>
-            <b id="hBad" class="text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tabular">0</b>
-          </button>
-          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="SESUAI">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sesuai</span>
-            <b id="hOk" class="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tabular">0</b>
-          </button>
-          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="FOTO_FLAG">
-            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Terdeteksi di Foto</span>
-            <b id="hPhotoFlag" class="text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400 tabular">0</b>
-          </button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-blue-600 dark:border-[#FF9900] bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf=""><span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Semua PIC</span><b id="hTotal" class="text-2xl font-extrabold font-mono tabular">0</b></button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-rose-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="TIDAK SESUAI"><span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tidak Sesuai</span><b id="hBad" class="text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tabular">0</b></button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="SESUAI"><span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sesuai</span><b id="hOk" class="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tabular">0</b></button>
+          <button type="button" class="kpi-hist text-left p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-amber-500 bg-white dark:bg-[#0f172a] shadow-sm transition" data-hf="FOTO_FLAG"><span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Terdeteksi di Foto</span><b id="hPhotoFlag" class="text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400 tabular">0</b></button>
         </div>
-
-        <!-- Breakdown Chips -->
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
           <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Ringkasan Kategori Smart Logic</div>
           <div id="hsum" class="flex flex-wrap gap-2"></div>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3">
-            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code class="font-mono">TIDAK SESUAI</code> dengan 9 kolom standar), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
-          </p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3">Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code class="font-mono">TIDAK SESUAI</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).</p>
         </div>
-
-        <!-- History Filter Bar -->
         <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm">
           <input type="text" id="hq" placeholder="Cari PIC, Cluster, Cabang, ID PIC, Kesesuaian, Detail, atau Catatan Foto..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]">
           <select id="hStatusSel" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#FF9900]">
-            <option value="">Semua Status</option>
-            <option value="TIDAK SESUAI">Tidak Sesuai</option>
-            <option value="SESUAI">Sesuai</option>
-            <option value="FOTO_FLAG">Terdeteksi di Foto</option>
+            <option value="">Semua Status</option><option value="TIDAK SESUAI">Tidak Sesuai</option><option value="SESUAI">Sesuai</option><option value="FOTO_FLAG">Terdeteksi di Foto</option>
           </select>
           <span id="hShown" class="text-xs font-mono text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
         </div>
-
-        <!-- History Table (Exact 9 Columns + Action) -->
         <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto max-h-[62vh]">
             <table class="w-full text-xs text-left border-collapse">
               <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 uppercase text-[11px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                 <tr>
-                  <th class="p-3 whitespace-nowrap">TGL PENUGASAN</th>
-                  <th class="p-3 whitespace-nowrap">CLUSTER</th>
-                  <th class="p-3 whitespace-nowrap">ID CABANG</th>
-                  <th class="p-3 whitespace-nowrap">NAMA CABANG</th>
-                  <th class="p-3 whitespace-nowrap">ID PIC</th>
-                  <th class="p-3 whitespace-nowrap">NAMA PIC</th>
-                  <th class="p-3">KESESUAIAN HISTORIS LKP</th>
-                  <th class="p-3">CATATAN FOTO</th>
-                  <th class="p-3">DETAIL KESESUAIAN HISTORIS LKP</th>
-                  <th class="p-3 text-right whitespace-nowrap">AKSI</th>
+                  <th class="p-3 whitespace-nowrap">TGL PENUGASAN</th><th class="p-3 whitespace-nowrap">CLUSTER</th><th class="p-3 whitespace-nowrap">ID CABANG</th><th class="p-3 whitespace-nowrap">NAMA CABANG</th>
+                  <th class="p-3 whitespace-nowrap">ID PIC</th><th class="p-3 whitespace-nowrap">NAMA PIC</th><th class="p-3">KESESUAIAN HISTORIS LKP</th><th class="p-3">CATATAN FOTO</th>
+                  <th class="p-3">DETAIL KESESUAIAN HISTORIS LKP</th><th class="p-3 text-right whitespace-nowrap">AKSI</th>
                 </tr>
               </thead>
               <tbody id="hBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
@@ -508,9 +347,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
       <div class="flex-1 min-w-[220px]">
         <div id="ready" class="text-xs sm:text-sm font-medium leading-snug"></div>
-        <div class="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5">
-          <div id="pb" class="h-full w-0 bg-blue-600 dark:bg-[#FF9900] transition-all duration-300"></div>
-        </div>
+        <div class="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5"><div id="pb" class="h-full w-0 bg-blue-600 dark:bg-[#FF9900] transition-all duration-300"></div></div>
         <div id="st" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 min-h-[15px]"></div>
       </div>
       <div class="flex items-center gap-2 shrink-0 flex-wrap">
@@ -522,7 +359,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL: PANDUAN ==================== -->
+  <!-- MODAL: PANDUAN -->
   <div id="guideModal" class="hidden fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl p-6">
       <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
@@ -546,85 +383,52 @@
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">VALID</span> Tidak ada temuan.</li>
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">PERLU CEK</span> Temuan ringan (stamp tak terbaca, GPS di luar area, AI ragu).</li>
             <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">TIDAK VALID</span> Temuan kuat (foto uang, kosong/blur/gelap, duplikat, tgl beda).</li>
-            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">GAGAL DOWNLOAD</span> Foto gagal dimuat (404 / timeout setelah 2 ronde cek ulang).</li>
+            <li><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">GAGAL DOWNLOAD</span> Foto gagal dimuat (404 / timeout setelah 3 ronde cek ulang).</li>
           </ul>
         </div>
         <div class="md:col-span-2 p-4 rounded-xl bg-blue-50/60 dark:bg-slate-900/90 border border-blue-200 dark:border-slate-700">
           <h4 class="font-bold text-sm mb-1.5 text-blue-900 dark:text-[#FF9900]">Smart Logic — Kualitas LKP History</h4>
-          <p class="text-slate-600 dark:text-slate-300">
-            Mengevaluasi keterangan non-bayar per <b>(TGL LKP, ID PIC)</b> secara berurutan:
-            (1) Tanpa data history → <b>TIDAK SESUAI</b>,
-            (2) Hanya pesan <code class="font-mono">AUTO UPDATE</code> → <b>TIDAK SESUAI</b>,
-            (3) 1 keterangan unik untuk ≥3 LKP → <b>Copy Paste Identik</b>,
-            (4) Rata-rata panjang &lt; 60 karakter → <b>Kurang Informatif</b>,
-            (5) ≥3 keterangan unik &amp; kemiripan ≥80% → <b>Extreme Template</b>,
-            (6) ≥3 keterangan unik, kemiripan ≥60% &amp; panjang &lt;150 → <b>Templated / Kurang Informatif</b>,
-            selainnya → <b>SESUAI (Valid, Bervariasi &amp; Informatif)</b>.
-          </p>
+          <p class="text-slate-600 dark:text-slate-300">Mengevaluasi keterangan non-bayar per <b>(TGL LKP, ID PIC)</b> secara berurutan:
+            (1) Tanpa data history → <b>TIDAK SESUAI</b>, (2) Hanya pesan <code class="font-mono">AUTO UPDATE</code> → <b>TIDAK SESUAI</b>,
+            (3) 1 keterangan unik untuk ≥3 LKP → <b>Copy Paste Identik</b>, (4) Rata-rata panjang &lt; 60 karakter → <b>Kurang Informatif</b>,
+            (5) ≥3 keterangan unik &amp; kemiripan ≥80% → <b>Extreme Template</b>, (6) ≥3 keterangan unik, kemiripan ≥60% &amp; panjang &lt;150 → <b>Templated / Kurang Informatif</b>,
+            selainnya → <b>SESUAI (Valid, Bervariasi &amp; Informatif)</b>.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL: PHOTO LIGHTBOX ==================== -->
+  <!-- MODAL: PHOTO -->
   <div id="photoModal" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <span id="pmBadge"></span>
-          <h3 id="pmTitle" class="text-sm font-bold truncate">Detail Foto</h3>
-        </div>
+        <div class="flex items-center gap-2.5 min-w-0"><span id="pmBadge"></span><h3 id="pmTitle" class="text-sm font-bold truncate">Detail Foto</h3></div>
         <button type="button" data-close="photoModal" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold">✕</button>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
-        <div class="bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center p-2 min-h-[260px]">
-          <img id="pmImg" src="" alt="Preview Foto" class="max-h-[420px] w-auto rounded-lg object-contain">
-        </div>
+        <div class="bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center p-2 min-h-[260px]"><img id="pmImg" src="" alt="Preview Foto" class="max-h-[420px] w-auto rounded-lg object-contain"></div>
         <div class="space-y-3 text-xs">
-          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-            <div class="text-[11px] font-bold uppercase text-slate-400">Alasan / Temuan</div>
-            <div id="pmReason" class="font-semibold mt-0.5 text-sm"></div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">Alasan / Temuan</div><div id="pmReason" class="font-semibold mt-0.5 text-sm"></div></div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">Deteksi AI</div><div id="pmAi" class="font-semibold mt-0.5"></div></div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">Wilayah / Cabang / Kontrak</div><div id="pmMeta" class="font-semibold mt-0.5"></div></div>
           </div>
           <div class="grid grid-cols-2 gap-2.5">
-            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-              <div class="text-[11px] font-bold uppercase text-slate-400">Deteksi AI</div>
-              <div id="pmAi" class="font-semibold mt-0.5"></div>
-            </div>
-            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-              <div class="text-[11px] font-bold uppercase text-slate-400">Wilayah / Cabang / Kontrak</div>
-              <div id="pmMeta" class="font-semibold mt-0.5"></div>
-            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">Tgl URL / Stamp</div><div id="pmDates" class="font-mono mt-0.5"></div></div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">GPS Stamp</div><div id="pmGps" class="font-mono mt-0.5"></div></div>
           </div>
-          <div class="grid grid-cols-2 gap-2.5">
-            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-              <div class="text-[11px] font-bold uppercase text-slate-400">Tgl URL / Stamp</div>
-              <div id="pmDates" class="font-mono mt-0.5"></div>
-            </div>
-            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-              <div class="text-[11px] font-bold uppercase text-slate-400">GPS Stamp</div>
-              <div id="pmGps" class="font-mono mt-0.5"></div>
-            </div>
-          </div>
-          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-            <div class="text-[11px] font-bold uppercase text-slate-400">Teks OCR Stamp</div>
-            <div id="pmOcr" class="font-mono text-[11px] text-slate-600 dark:text-slate-300 mt-1 break-words"></div>
-          </div>
-          <div class="pt-1 flex justify-end">
-            <a id="pmLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition">Buka URL Asli ↗</a>
-          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[11px] font-bold uppercase text-slate-400">Teks OCR Stamp</div><div id="pmOcr" class="font-mono text-[11px] text-slate-600 dark:text-slate-300 mt-1 break-words"></div></div>
+          <div class="pt-1 flex justify-end"><a id="pmLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition">Buka URL Asli ↗</a></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL: KETERANGAN LKP HISTORY ==================== -->
+  <!-- MODAL: KETERANGAN HISTORY -->
   <div id="histModal" class="hidden fixed inset-0 z-[100] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
-        <div>
-          <h3 id="hmTitle" class="text-sm font-bold">Kesimpulan Keterangan LKP</h3>
-          <p id="hmSub" class="text-xs text-slate-500 dark:text-slate-400"></p>
-        </div>
+        <div><h3 id="hmTitle" class="text-sm font-bold">Kesimpulan Keterangan LKP</h3><p id="hmSub" class="text-xs text-slate-500 dark:text-slate-400"></p></div>
         <button type="button" data-close="histModal" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold">✕</button>
       </div>
       <div class="p-5 overflow-y-auto space-y-3">
@@ -636,35 +440,19 @@
     </div>
   </div>
 
-  <!-- Regular non-blocking script: NO top-level external ES module imports -->
   <script>
   (() => {
     "use strict";
 
-    /* ---------- Safe DOM Helpers ---------- */
+    /* ---------- DOM helpers ---------- */
     const $ = id => document.getElementById(id);
     const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
     const isOn = id => { const el = $(id); return !!(el && el.checked); };
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
     /* ---------- Constants ---------- */
-    const WILAYAH_LIST = [
-      "BANTEN-1","BANTEN-2","BEM-1","BEM-2","BEM-3","BEM-4",
-      "JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6",
-      "JAMBI-1","JAMBI-2","JAMBI-3","JATENG","KALIMANTAN",
-      "LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5",
-      "LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4",
-      "SUMBAWA-1","SUMBAWA-2","SUMBAWA-3",
-      "SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"
-    ];
-    const MONTHS = {
-      januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",
-      juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",
-      january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",
-      august:"08",october:"10",december:"12",jan:"01",feb:"02",mar:"03",
-      apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",
-      oct:"10",nov:"11",des:"12",dec:"12"
-    };
+    const WILAYAH_LIST = ["BANTEN-1","BANTEN-2","BEM-1","BEM-2","BEM-3","BEM-4","JABAR-1","JABAR-2","JABAR-3","JABAR-4","JABAR-5","JABAR-6","JAMBI-1","JAMBI-2","JAMBI-3","JATENG","KALIMANTAN","LAMPUNG-1","LAMPUNG-2","LAMPUNG-3","LAMPUNG-4","LAMPUNG-5","LOMBOK-1","LOMBOK-2","LOMBOK-3","LOMBOK-4","SUMBAWA-1","SUMBAWA-2","SUMBAWA-3","SUMSEL-1","SUMSEL-2","SUMSEL-3","SUMSEL-4","SUMSEL-5"];
+    const MONTHS = {januari:"01",februari:"02",maret:"03",april:"04",mei:"05",juni:"06",juli:"07",agustus:"08",september:"09",oktober:"10",november:"11",desember:"12",january:"01",february:"02",march:"03",may:"05",june:"06",july:"07",august:"08",october:"10",december:"12",jan:"01",feb:"02",mar:"03",apr:"04",jun:"06",jul:"07",agu:"08",aug:"08",sep:"09",okt:"10",oct:"10",nov:"11",des:"12",dec:"12"};
     const LABELS = [
       ["a selfie of a person wearing a helmet or standing outdoors in front of a house or building","Sesuai","Selfie PIC di depan rumah/bangunan"],
       ["an indoor selfie of two people sitting or talking inside a house or living room","Sesuai","Selfie PIC bersama anggota di dalam rumah"],
@@ -687,16 +475,10 @@
     let FILT = "", QRY = "", WIL_FILT = "", H_FILT = "", H_QRY = "", preferred = null;
     const wilCheckboxes = [];
 
-    /* ---------- Toast Notification (replaces alert()) ---------- */
+    /* ---------- Toast ---------- */
     function notify(msg, type = "info") {
-      const box = $("toastBox");
-      if (!box) return;
-      const colors = {
-        info: "bg-slate-900 dark:bg-slate-800 text-white border-slate-700",
-        ok:   "bg-emerald-600 text-white border-emerald-500",
-        warn: "bg-amber-500 text-slate-950 border-amber-400",
-        bad:  "bg-rose-600 text-white border-rose-500"
-      };
+      const box = $("toastBox"); if (!box) return;
+      const colors = { info: "bg-slate-900 dark:bg-slate-800 text-white border-slate-700", ok: "bg-emerald-600 text-white border-emerald-500", warn: "bg-amber-500 text-slate-950 border-amber-400", bad: "bg-rose-600 text-white border-rose-500" };
       const el = document.createElement("div");
       el.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-lg text-xs font-semibold flex items-start justify-between gap-2 transition ${colors[type] || colors.info}`;
       el.innerHTML = `<span class="whitespace-pre-line">${esc(msg)}</span><button type="button" class="opacity-75 hover:opacity-100 font-bold ml-2">✕</button>`;
@@ -705,7 +487,7 @@
       setTimeout(() => { if (el.parentNode) el.remove(); }, 5500);
     }
 
-    /* ---------- Theme Switcher (Sunrise Light / Starry Night Dark) ---------- */
+    /* ---------- Theme ---------- */
     const THEME_KEY = "bpac_theme_v2";
     function applyTheme(mode) {
       const dark = mode === "dark";
@@ -718,12 +500,9 @@
     try { applyTheme(localStorage.getItem(THEME_KEY) || "light"); } catch { applyTheme("light"); }
     on("btnTheme", "click", () => applyTheme(document.documentElement.classList.contains("dark") ? "light" : "dark"));
 
-    /* ---------- Tab Navigation ---------- */
+    /* ---------- Tabs ---------- */
     function switchTab(name) {
-      ["setup", "foto", "history"].forEach(t => {
-        const sec = $("tab-" + t);
-        if (sec) sec.classList.toggle("hidden", t !== name);
-      });
+      ["setup", "foto", "history"].forEach(t => { const sec = $("tab-" + t); if (sec) sec.classList.toggle("hidden", t !== name); });
       document.querySelectorAll(".tab-btn").forEach(b => {
         const active = b.dataset.tab === name;
         b.classList.toggle("border-blue-400", active);
@@ -737,13 +516,8 @@
 
     /* ---------- Modals ---------- */
     on("btnGuide", "click", () => { const m = $("guideModal"); if (m) m.classList.remove("hidden"); });
-    document.querySelectorAll("[data-close]").forEach(b => {
-      b.addEventListener("click", () => { const m = $(b.dataset.close); if (m) m.classList.add("hidden"); });
-    });
-    ["guideModal", "photoModal", "histModal"].forEach(id => {
-      const m = $(id);
-      if (m) m.addEventListener("click", e => { if (e.target === m) m.classList.add("hidden"); });
-    });
+    document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => { const m = $(b.dataset.close); if (m) m.classList.add("hidden"); }));
+    ["guideModal", "photoModal", "histModal"].forEach(id => { const m = $(id); if (m) m.addEventListener("click", e => { if (e.target === m) m.classList.add("hidden"); }); });
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") {
         ["guideModal", "photoModal", "histModal"].forEach(id => { const m = $(id); if (m) m.classList.add("hidden"); });
@@ -751,88 +525,48 @@
       }
     });
 
-    /* ---------- Saved Settings ---------- */
+    /* ---------- Saved settings ---------- */
     const SK = "bpac_settings_v1";
     function saveS() {
       try {
         const s = { proxy: $("proxy") ? $("proxy").value : "" };
-        document.querySelectorAll("input[data-target]").forEach(c => {
-          s[c.id] = c.checked;
-          const t = $(c.dataset.target);
-          if (t) s[c.dataset.target] = t.value;
-        });
+        document.querySelectorAll("input[data-target]").forEach(c => { s[c.id] = c.checked; const t = $(c.dataset.target); if (t) s[c.dataset.target] = t.value; });
         localStorage.setItem(SK, JSON.stringify(s));
       } catch {}
     }
     function loadS() {
       try {
         const s = JSON.parse(localStorage.getItem(SK) || "{}");
-        for (const k in s) {
-          const e = $(k);
-          if (!e) continue;
-          if (e.type === "checkbox") e.checked = !!s[k];
-          else e.value = s[k];
-        }
+        for (const k in s) { const e = $(k); if (!e) continue; if (e.type === "checkbox") e.checked = !!s[k]; else e.value = s[k]; }
       } catch {}
     }
     loadS();
-    if (["localhost", "127.0.0.1"].includes(location.hostname) && $("proxy")) {
-      $("proxy").value = "/proxy?url=";
-    }
+    if (["localhost", "127.0.0.1"].includes(location.hostname) && $("proxy")) $("proxy").value = "/proxy?url=";
 
-    /* ---------- Readiness Summary ---------- */
+    /* ---------- Readiness ---------- */
     const getSelectedWilayah = () => wilCheckboxes.filter(c => c.checked).map(c => c.value);
     function refreshReady() {
       const urlVal = $("urls") ? $("urls").value : "";
       const n = (urlVal.match(new RegExp(URL_RE.source, "g")) || []).length;
       const r = document.querySelectorAll("input[data-target]:checked").length;
-      const w = getSelectedWilayah().length;
-      const all = isOn("wilAll");
-      const hasX = loadedFiles.length > 0;
+      const w = getSelectedWilayah().length, all = isOn("wilAll"), hasX = loadedFiles.length > 0;
       const s2 = n > 0 && (!hasX || all || w > 0);
-
       if ($("badgeSetup")) $("badgeSetup").textContent = n;
-      if ($("step1Dot")) {
-        $("step1Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${n > 0 ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"}`;
-        $("step1Dot").textContent = n > 0 ? "✓" : "1";
-      }
-      if ($("step2Dot")) {
-        $("step2Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${s2 ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
-        $("step2Dot").textContent = s2 ? "✓" : "2";
-      }
-      if ($("step3Dot")) {
-        $("step3Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${r > 0 ? "bg-blue-600 dark:bg-[#FF9900] text-white dark:text-slate-950" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
-      }
+      if ($("step1Dot")) { $("step1Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${n > 0 ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"}`; $("step1Dot").textContent = n > 0 ? "✓" : "1"; }
+      if ($("step2Dot")) { $("step2Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${s2 ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`; $("step2Dot").textContent = s2 ? "✓" : "2"; }
+      if ($("step3Dot")) $("step3Dot").className = `w-8 h-8 rounded-lg font-bold flex items-center justify-center shrink-0 ${r > 0 ? "bg-blue-600 dark:bg-[#FF9900] text-white dark:text-slate-950" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"}`;
       if ($("extraSum")) $("extraSum").textContent = `Aturan tambahan (${r} aktif) — klik untuk membuka/menutup`;
-
-      const next = n > 0
-        ? "Siap — klik <b>Mulai Periksa</b>"
-        : hasX
-          ? ((all || w) ? "Tidak ada foto yang cocok dengan filter ini" : "Pilih Wilayah di Langkah 2")
-          : "Unggah Excel, tempel URL, atau klik <b>✨ Muat Data Demo</b>";
-      if ($("ready")) {
-        $("ready").innerHTML = `<b class="font-mono">${n}</b> foto siap · Wilayah: <b>${all ? "Semua" : (w || "belum dipilih")}</b> · Aturan aktif: <b class="font-mono">${r}</b> · <span class="text-slate-500 dark:text-slate-400">${next}</span>`;
-      }
+      const next = n > 0 ? "Siap — klik <b>Mulai Periksa</b>" : hasX ? ((all || w) ? "Tidak ada foto yang cocok dengan filter ini" : "Pilih Wilayah di Langkah 2") : "Unggah Excel, tempel URL, atau klik <b>✨ Muat Data Demo</b>";
+      if ($("ready")) $("ready").innerHTML = `<b class="font-mono">${n}</b> foto siap · Wilayah: <b>${all ? "Semua" : (w || "belum dipilih")}</b> · Aturan aktif: <b class="font-mono">${r}</b> · <span class="text-slate-500 dark:text-slate-400">${next}</span>`;
     }
 
-    /* ---------- Wilayah Multi-Select ---------- */
+    /* ---------- Wilayah multi-select ---------- */
     function updateWilayahUI() {
-      const sel = getSelectedWilayah();
-      const all = sel.length === WILAYAH_LIST.length;
-      const t = $("wilBtnText");
-      if ($("wilAll")) {
-        $("wilAll").checked = all;
-        $("wilAll").indeterminate = sel.length > 0 && !all;
-      }
+      const sel = getSelectedWilayah(), all = sel.length === WILAYAH_LIST.length, t = $("wilBtnText");
+      if ($("wilAll")) { $("wilAll").checked = all; $("wilAll").indeterminate = sel.length > 0 && !all; }
       if (t) {
         t.classList.toggle("text-slate-400", !sel.length);
-        t.textContent = !sel.length
-          ? "-- Pilih Wilayah --"
-          : all
-            ? `Select All (Semua Wilayah - ${WILAYAH_LIST.length})`
-            : sel.length <= 5
-              ? sel.join(", ")
-              : `${sel.length} wilayah dipilih (${sel.slice(0, 3).join(", ")}, ...)`;
+        t.textContent = !sel.length ? "-- Pilih Wilayah --" : all ? `Select All (Semua Wilayah - ${WILAYAH_LIST.length})` : sel.length <= 5 ? sel.join(", ") : `${sel.length} wilayah dipilih (${sel.slice(0, 3).join(", ")}, ...)`;
       }
       refreshReady();
     }
@@ -843,43 +577,22 @@
         l.className = "flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer";
         l.dataset.wil = w;
         const c = document.createElement("input");
-        c.type = "checkbox";
-        c.value = w;
-        c.className = "rounded text-blue-600 focus:ring-blue-500";
+        c.type = "checkbox"; c.value = w; c.className = "rounded text-blue-600 focus:ring-blue-500";
         c.addEventListener("change", () => { updateWilayahUI(); refreshFromFiles(); });
         l.append(c, document.createTextNode(w));
-        wilListEl.appendChild(l);
-        wilCheckboxes.push(c);
+        wilListEl.appendChild(l); wilCheckboxes.push(c);
       }
     }
-    on("wilBtn", "click", e => {
-      e.stopPropagation();
-      const m = $("wilMenu");
-      if (!m) return;
-      m.classList.toggle("hidden");
-      if (!m.classList.contains("hidden") && $("wilSearch")) $("wilSearch").focus();
-    });
-    document.addEventListener("click", e => {
-      const wrap = $("wilWrap"), m = $("wilMenu");
-      if (wrap && m && !wrap.contains(e.target)) m.classList.add("hidden");
-    });
+    on("wilBtn", "click", e => { e.stopPropagation(); const m = $("wilMenu"); if (!m) return; m.classList.toggle("hidden"); if (!m.classList.contains("hidden") && $("wilSearch")) $("wilSearch").focus(); });
+    document.addEventListener("click", e => { const wrap = $("wilWrap"), m = $("wilMenu"); if (wrap && m && !wrap.contains(e.target)) m.classList.add("hidden"); });
     on("wilSearch", "input", e => {
       const q = e.target.value.trim().toUpperCase();
-      if (!wilListEl) return;
-      wilListEl.querySelectorAll("label").forEach(el => el.classList.toggle("hidden", !!(q && !el.dataset.wil.includes(q))));
+      if (wilListEl) wilListEl.querySelectorAll("label").forEach(el => el.classList.toggle("hidden", !!(q && !el.dataset.wil.includes(q))));
     });
-    on("wilAll", "change", e => {
-      wilCheckboxes.forEach(c => { c.checked = e.target.checked; });
-      updateWilayahUI();
-      refreshFromFiles();
-    });
-    on("wilClear", "click", () => {
-      wilCheckboxes.forEach(c => { c.checked = false; });
-      updateWilayahUI();
-      refreshFromFiles();
-    });
+    on("wilAll", "change", e => { wilCheckboxes.forEach(c => { c.checked = e.target.checked; }); updateWilayahUI(); refreshFromFiles(); });
+    on("wilClear", "click", () => { wilCheckboxes.forEach(c => { c.checked = false; }); updateWilayahUI(); refreshFromFiles(); });
 
-    /* ---------- Rule Toggles ---------- */
+    /* ---------- Rule toggles ---------- */
     const toggles = [...document.querySelectorAll("input[data-target]")];
     toggles.forEach(c => {
       const t = $(c.dataset.target);
@@ -894,50 +607,32 @@
     on("allOff", "click", () => setAll(false));
     on("urls", "input", refreshReady);
 
-    /* ---------- Excel Reading (SheetJS) ---------- */
+    /* ---------- Excel reading ---------- */
     function normDate(v) {
       if (v == null || v === "") return "";
-      if (v instanceof Date && !isNaN(v)) {
-        return `${v.getFullYear()}${String(v.getMonth() + 1).padStart(2, "0")}${String(v.getDate()).padStart(2, "0")}`;
-      }
-      if (typeof v === "number" && typeof XLSX !== "undefined") {
-        const d = XLSX.SSF.parse_date_code(v);
-        return d ? `${d.y}${String(d.m).padStart(2, "0")}${String(d.d).padStart(2, "0")}` : "";
-      }
+      if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}${String(v.getMonth() + 1).padStart(2, "0")}${String(v.getDate()).padStart(2, "0")}`;
+      if (typeof v === "number" && typeof XLSX !== "undefined") { const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}${String(d.m).padStart(2, "0")}${String(d.d).padStart(2, "0")}` : ""; }
       const s = String(v).trim();
       let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
       if (m) return m[1] + m[2].padStart(2, "0") + m[3].padStart(2, "0");
       m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
       if (m) return (m[3].length === 2 ? "20" + m[3] : m[3]) + m[2].padStart(2, "0") + m[1].padStart(2, "0");
       m = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})/);
-      if (m) {
-        const mon = MONTHS[m[2].toLowerCase()];
-        if (mon) return (m[3].length === 2 ? "20" + m[3] : m[3]) + mon + m[1].padStart(2, "0");
-      }
+      if (m) { const mon = MONTHS[m[2].toLowerCase()]; if (mon) return (m[3].length === 2 ? "20" + m[3] : m[3]) + mon + m[1].padStart(2, "0"); }
       return "";
     }
     const normId = v => String(v ?? "").trim().replace(/\.0$/, "");
     const findSheet = (wb, kws) => wb.SheetNames.find(n => kws.some(k => n.trim().toUpperCase().includes(k)));
-    const pick = (r, ...keys) => {
-      for (const k of keys) {
-        const v = r[k];
-        if (v !== undefined && v !== null && String(v).trim() !== "") return v;
-      }
-      return "";
-    };
+    const pick = (r, ...keys) => { for (const k of keys) { const v = r[k]; if (v !== undefined && v !== null && String(v).trim() !== "") return v; } return ""; };
     function readSheet(wb, name) {
       const grid = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: "" });
       if (!grid.length) return [];
       let h = 0;
       for (let i = 0; i < Math.min(grid.length, 30); i++) {
         const v = grid[i].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
-        if (v.includes("NAMA WILAYAH") || v.includes("ID PIC") || v.includes("NO KONTRAK") || v.includes("LINK FOTO KUNJUNGAN")) {
-          h = i;
-          break;
-        }
+        if (v.includes("NAMA WILAYAH") || v.includes("ID PIC") || v.includes("NO KONTRAK") || v.includes("LINK FOTO KUNJUNGAN")) { h = i; break; }
       }
-      const headers = grid[h].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase());
-      const out = [];
+      const headers = grid[h].map(x => String(x).trim().replace(/\s+/g, " ").toUpperCase()), out = [];
       for (let i = h + 1; i < grid.length; i++) {
         const a = grid[i];
         if (!a || a.every(c => String(c).trim() === "")) continue;
@@ -952,39 +647,24 @@
       const selectAll = isOn("wilAll"), wil = getSelectedWilayah();
       if (!selectAll && !wil.length) return { out, notes, mon: monAcc, hist: histAcc };
       if (typeof XLSX === "undefined") throw new Error("Library SheetJS (XLSX) gagal dimuat dari CDN.");
-
       for (const f of files) {
         const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: "array" });
-        const mon = findSheet(wb, ["MONITORING"]);
-        const fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
+        const mon = findSheet(wb, ["MONITORING"]), fs = findSheet(wb, ["FOTO KUNJUNGAN", "FOTO"]);
         if (!fs) { notes.push(`${f.name}: sheet FOTO tidak ada`); continue; }
         let valid = null;
         const str = v => String(v ?? "").trim();
         const monByKey = new Map(), monByPic = new Map();
-
         if (mon) {
           const mRows = readSheet(wb, mon);
           valid = new Set(mRows.map(mr => normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")) + "|" + normId(pick(mr, "ID PIC"))));
           for (const mr of mRows) {
             const idpic = normId(pick(mr, "ID PIC"));
             if (!idpic) continue;
-            const rec = {
-              tgl: normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")),
-              idpic,
-              nama: str(pick(mr, "NAMA PIC")),
-              cluster: str(pick(mr, "CLUSTER", "NAMA WILAYAH")).toUpperCase(),
-              idcab: normId(pick(mr, "ID CABANG", "KODE CABANG", "KD CAB", "KODE OUTLET")),
-              nmcab: str(pick(mr, "NAMA CABANG", "NAMA OUTLET"))
-            };
+            const rec = { tgl: normDate(pick(mr, "TGL LKP", "TGL PENUGASAN")), idpic, nama: str(pick(mr, "NAMA PIC")), cluster: str(pick(mr, "CLUSTER", "NAMA WILAYAH")).toUpperCase(), idcab: normId(pick(mr, "ID CABANG", "KODE CABANG", "KD CAB", "KODE OUTLET")), nmcab: str(pick(mr, "NAMA CABANG", "NAMA OUTLET")) };
             monAcc.push(rec);
-            if (rec.idcab || rec.nmcab) {
-              monByKey.set(rec.tgl + "|" + idpic, rec);
-              if (!monByPic.has(idpic)) monByPic.set(idpic, rec);
-            }
+            if (rec.idcab || rec.nmcab) { monByKey.set(rec.tgl + "|" + idpic, rec); if (!monByPic.has(idpic)) monByPic.set(idpic, rec); }
           }
-        } else {
-          notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
-        }
+        } else notes.push(`${f.name}: tanpa sheet MONITORING (tidak difilter)`);
 
         const hs = findSheet(wb, ["HISTORY"]);
         if (hs) {
@@ -992,40 +672,27 @@
             const idpic = normId(pick(hr, "ID PIC"));
             if (!idpic) continue;
             histAcc.push({
-              tgl: normDate(pick(hr, "TGL LKP", "TGL PENUGASAN")),
-              idpic,
-              nama: str(pick(hr, "NAMA PIC")),
-              kontrak: normId(pick(hr, "NO KONTRAK")),
-              ket: str(pick(hr, "KETERANGAN")),
+              tgl: normDate(pick(hr, "TGL LKP", "TGL PENUGASAN")), idpic, nama: str(pick(hr, "NAMA PIC")), kontrak: normId(pick(hr, "NO KONTRAK")), ket: str(pick(hr, "KETERANGAN")),
               stBayar: str(pick(hr, "STATUS BAYAR", "HASIL KUNJUNGAN", "STATUS KUNJUNGAN", "STATUS LKP", "HASIL", "STATUS")).toUpperCase(),
-              cluster: str(pick(hr, "NAMA WILAYAH", "CLUSTER")).toUpperCase(),
-              idcab: normId(pick(hr, "ID CABANG", "KODE OUTLET", "KODE CABANG")),
-              nmcab: str(pick(hr, "NAMA CABANG", "NAMA OUTLET"))
+              cluster: str(pick(hr, "NAMA WILAYAH", "CLUSTER")).toUpperCase(), idcab: normId(pick(hr, "ID CABANG", "KODE OUTLET", "KODE CABANG")), nmcab: str(pick(hr, "NAMA CABANG", "NAMA OUTLET"))
             });
           }
-        } else {
-          notes.push(`${f.name}: sheet HISTORY LKP tidak ada`);
-        }
+        } else notes.push(`${f.name}: sheet HISTORY LKP tidak ada`);
 
         for (const r of readSheet(wb, fs)) {
           const wilayah = str(pick(r, "NAMA WILAYAH", "CLUSTER")).toUpperCase();
           if (!selectAll && !wil.includes(wilayah)) continue;
-          const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN"));
-          const idpic = normId(pick(r, "ID PIC"));
+          const tgl = normDate(pick(r, "TGL LKP", "TGL PENUGASAN")), idpic = normId(pick(r, "ID PIC"));
           if (valid && !valid.has(tgl + "|" + idpic)) continue;
           let url = str(pick(r, "LINK FOTO KUNJUNGAN", "FOTO KUNJUNGAN"));
-          if (!/^https?:/i.test(url)) {
-            const m = Object.values(r).map(String).join(" ").match(URL_RE);
-            url = m ? m[0] : "";
-          }
+          if (!/^https?:/i.test(url)) { const m = Object.values(r).map(String).join(" ").match(URL_RE); url = m ? m[0] : ""; }
           if (!url) continue;
           const fb = monByKey.get(tgl + "|" + idpic) || monByPic.get(idpic) || {};
-          const idcab = normId(pick(r, "ID CABANG", "KODE CABANG", "KD CAB", "KODE OUTLET")) || fb.idcab || "";
-          const nmcab = str(pick(r, "NAMA CABANG", "NAMA OUTLET")) || fb.nmcab || "";
           out.push({
-            file: f.name, tgl, wilayah, idcab, nmcab,
-            kontrak: normId(pick(r, "NO KONTRAK")),
-            idpic, nama: str(pick(r, "NAMA PIC")), url
+            file: f.name, tgl, wilayah,
+            idcab: normId(pick(r, "ID CABANG", "KODE CABANG", "KD CAB", "KODE OUTLET")) || fb.idcab || "",
+            nmcab: str(pick(r, "NAMA CABANG", "NAMA OUTLET")) || fb.nmcab || "",
+            kontrak: normId(pick(r, "NO KONTRAK")), idpic, nama: str(pick(r, "NAMA PIC")), url
           });
         }
       }
@@ -1033,13 +700,11 @@
     }
 
     function showDataInfo(out) {
-      const el = $("dataInfo");
-      if (!el) return;
+      const el = $("dataInfo"); if (!el) return;
       if (!out.length) { el.innerHTML = ""; return; }
       const f = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-";
       const ds = out.map(r => r.tgl).filter(Boolean).sort();
-      const pic = new Set(out.map(r => r.idpic).filter(Boolean)).size;
-      const wc = {};
+      const pic = new Set(out.map(r => r.idpic).filter(Boolean)).size, wc = {};
       out.forEach(r => { const w = r.wilayah || "(kosong)"; wc[w] = (wc[w] || 0) + 1; });
       const top = Object.entries(wc).sort((a, b) => b[1] - a[1]);
       el.innerHTML = `<div class="mb-2"><b class="font-mono">${out.length}</b> foto dari <b class="font-mono">${loadedFiles.length}</b> file · <b class="font-mono">${pic}</b> PIC unik · TGL LKP <b class="font-mono">${f(ds[0])} – ${f(ds[ds.length - 1])}</b></div><div class="flex flex-wrap gap-1.5">` +
@@ -1074,8 +739,7 @@
     }
 
     function renderFiles() {
-      const el = $("files");
-      if (!el) return;
+      const el = $("files"); if (!el) return;
       el.innerHTML = loadedFiles.map(f => `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">📄 ${esc(f.name)}</span>`).join("") +
         (loadedFiles.length ? '<button class="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline ml-1" id="clr" type="button">Hapus semua</button>' : "");
       on("clr", "click", () => {
@@ -1095,12 +759,11 @@
       ["dragleave", "drop"].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove("ring-2", "ring-blue-500"); }));
       dz.addEventListener("drop", e => {
         const f = [...e.dataTransfer.files].filter(x => /\.(xlsx|xls|csv)$/i.test(x.name));
-        if (f.length) setFiles(f);
-        else notify("Hanya file .xlsx, .xls, atau .csv yang didukung.", "warn");
+        if (f.length) setFiles(f); else notify("Hanya file .xlsx, .xls, atau .csv yang didukung.", "warn");
       });
     }
 
-    /* ---------- Fast & Reliable Photo Fetching ---------- */
+    /* ---------- Photo fetching (DIPERBAIKI: berurutan, timeout lebih longgar, 404 tidak dipercaya dari 1 proxy) ---------- */
     function candidates(u) {
       const p = $("proxy") ? $("proxy").value.trim() : "";
       if (p) return [{ kind: "proxy", via: "fetch", src: p + encodeURIComponent(u) }];
@@ -1116,171 +779,106 @@
       if (preferred) c.sort((x, y) => (y.kind === preferred) - (x.kind === preferred));
       return c;
     }
-
     async function viaImg(src) {
       const img = await new Promise((ok, no) => {
-        const i = new Image();
-        i.crossOrigin = "Anonymous";
-        const t = setTimeout(() => no(new Error("timeout")), 7000);
+        const i = new Image(); i.crossOrigin = "Anonymous";
+        const t = setTimeout(() => no(new Error("timeout")), 12000);
         i.onload = () => { clearTimeout(t); ok(i); };
         i.onerror = () => { clearTimeout(t); no(new Error("img")); };
         i.src = src;
       });
       const bmp = await createImageBitmap(img);
-      const c = document.createElement("canvas");
-      c.width = bmp.width; c.height = bmp.height;
+      const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
       c.getContext("2d").drawImage(bmp, 0, 0);
       return { bmp, blob: await new Promise(r => c.toBlob(r, "image/jpeg", 0.92)) };
     }
-
     async function fetchPhoto(c) {
       if (c.via === "fetch") {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 8000);
+        const t = setTimeout(() => ctrl.abort(), 15000);
         try {
           const resp = await fetch(c.src, { signal: ctrl.signal });
           if (!resp.ok) { const e = new Error("HTTP " + resp.status); e.status = resp.status; throw e; }
           const blob = await resp.blob();
           if (!blob.type.startsWith("image/") && blob.size < 1000) throw new Error("Bukan gambar");
           return { bmp: await createImageBitmap(blob), blob };
-        } finally {
-          clearTimeout(t);
-        }
+        } finally { clearTimeout(t); }
       }
       return viaImg(c.src);
     }
-
     const testImg = (src, cors) => new Promise(ok => {
-      const i = new Image();
-      if (cors) i.crossOrigin = "Anonymous";
+      const i = new Image(); if (cors) i.crossOrigin = "Anonymous";
       const t = setTimeout(() => ok(false), 8000);
       i.onload = () => { clearTimeout(t); ok(true); };
       i.onerror = () => { clearTimeout(t); ok(false); };
       i.src = src + (src.includes("?") ? "&" : "?") + "_t=" + Date.now();
     });
-
     async function diagnose(u) {
       if ($("proxy") && $("proxy").value.trim()) return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
       const h = u.replace(/^http:/, "https:");
       const [a, b, c, d] = await Promise.all([testImg(u, false), testImg(h, false), testImg(u, true), testImg(h, true)]);
       const y = v => v ? "BISA" : "GAGAL";
-      const why = (c || d)
-        ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)."
-        : (a || b)
-          ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik gagal menjangkau server foto."
-          : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
+      const why = (c || d) ? "Pembacaan piksel bisa (seharusnya berhasil, coba lagi)." : (a || b) ? "Server foto tidak mengirim izin CORS, dan semua fallback proxy publik gagal menjangkau server foto." : "Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
       return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
     }
-
     async function canFetchAny(urls) {
-      for (const u of urls) {
-        for (const c of candidates(u)) {
-          try {
-            const g = await fetchPhoto(c);
-            g.bmp.close();
-            preferred = c.kind;
-            return true;
-          } catch {}
-        }
+      for (const u of urls) for (const c of candidates(u)) {
+        try { const g = await fetchPhoto(c); g.bmp.close(); preferred = c.kind; return true; } catch {}
       }
       return false;
     }
-
+    /* Kandidat dicoba BERURUTAN; "404" hanya bila >=2 kandidat berbeda menjawab 404 */
     async function getPhoto(url) {
-      const list = candidates(url);
-      let rest = list;
-      if (preferred && list.length) {
-        try {
-          const g = await fetchPhoto(list[0]);
-          return { bmp: g.bmp, blob: g.blob };
-        } catch (e) {
-          if (e && e.status === 404) return { err: "404" };
-          rest = list.slice(1);
-        }
+      let n404 = 0;
+      for (const c of candidates(url)) {
+        try { const g = await fetchPhoto(c); preferred = c.kind; return g; }
+        catch (e) { if (e && e.status === 404) n404++; }
       }
-      if (!rest.length) return { err: "fail" };
-      let won = false;
-      try {
-        const win = await Promise.any(rest.map(c => fetchPhoto(c).then(res => {
-          if (won) {
-            try { res.bmp.close(); } catch {}
-            throw new Error("late");
-          }
-          won = true;
-          return { ...res, kind: c.kind };
-        })));
-        preferred = win.kind;
-        return { bmp: win.bmp, blob: win.blob };
-      } catch (e) {
-        const is404 = e && Array.isArray(e.errors) && e.errors.some(er => er && er.status === 404);
-        return { err: is404 ? "404" : "fail" };
-      }
+      return { err: n404 >= 2 ? "404" : "fail" };
     }
 
-    /* ---------- Image Utilities (Crop, Thumb, dHash) ---------- */
+    /* ---------- Image utilities ---------- */
     function cropCanvas(bmp) {
       const sx = isOn("t_sx") ? Math.floor(bmp.width * +$("sx").value) : 0;
       const sy = isOn("t_sy") ? Math.floor(bmp.height * +$("sy").value) : 0;
-      const sw = Math.max(1, bmp.width - sx), sh = Math.max(1, bmp.height - sy);
-      const sc = sw > 1000 ? 1000 / sw : 1;
+      const sw = Math.max(1, bmp.width - sx), sh = Math.max(1, bmp.height - sy), sc = sw > 1000 ? 1000 / sw : 1;
       const c = document.createElement("canvas");
-      c.width = Math.max(1, Math.round(sw * sc));
-      c.height = Math.max(1, Math.round(sh * sc));
+      c.width = Math.max(1, Math.round(sw * sc)); c.height = Math.max(1, Math.round(sh * sc));
       c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
       return c;
     }
     function thumb(bmp) {
-      const c = document.createElement("canvas");
-      c.width = c.height = 64;
+      const c = document.createElement("canvas"); c.width = c.height = 64;
       const s = Math.max(64 / bmp.width, 64 / bmp.height);
       c.getContext("2d").drawImage(bmp, (64 - bmp.width * s) / 2, (64 - bmp.height * s) / 2, bmp.width * s, bmp.height * s);
       return c.toDataURL("image/jpeg", 0.7);
     }
     function dhash(bmp) {
-      const c = document.createElement("canvas");
-      c.width = 9; c.height = 8;
-      const x = c.getContext("2d");
-      x.drawImage(bmp, 0, 0, 9, 8);
-      const d = x.getImageData(0, 0, 9, 8).data;
-      const g = i => d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114;
+      const c = document.createElement("canvas"); c.width = 9; c.height = 8;
+      const x = c.getContext("2d"); x.drawImage(bmp, 0, 0, 9, 8);
+      const d = x.getImageData(0, 0, 9, 8).data, g = i => d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114;
       let hi = 0, lo = 0, n = 0;
-      for (let y = 0; y < 8; y++) {
-        for (let xx = 0; xx < 8; xx++) {
-          const bit = g(y * 9 + xx + 1) > g(y * 9 + xx) ? 1 : 0;
-          if (n < 32) hi = (hi * 2 + bit) >>> 0;
-          else lo = (lo * 2 + bit) >>> 0;
-          n++;
-        }
+      for (let y = 0; y < 8; y++) for (let xx = 0; xx < 8; xx++) {
+        const bit = g(y * 9 + xx + 1) > g(y * 9 + xx) ? 1 : 0;
+        if (n < 32) hi = (hi * 2 + bit) >>> 0; else lo = (lo * 2 + bit) >>> 0;
+        n++;
       }
       return [hi, lo];
     }
-    function pop(x) {
-      x = x >>> 0;
-      x = x - ((x >>> 1) & 0x55555555);
-      x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
-      return Math.imul((x + (x >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24;
-    }
+    function pop(x) { x = x >>> 0; x = x - ((x >>> 1) & 0x55555555); x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return Math.imul((x + (x >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24; }
 
-    /* ---------- Stamp OCR Parsing ---------- */
+    /* ---------- Stamp OCR parsing ---------- */
     function lev(a, b) {
       const m = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
       for (let j = 1; j <= b.length; j++) m[0][j] = j;
-      for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-          m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-        }
-      }
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
       return m[a.length][b.length];
     }
     function stampDate(t) {
       let m = t.match(/(\d{1,2})\s*([A-Za-z]{3,9})\s*(\d{4})/);
       if (m) {
-        const w = m[2].toLowerCase();
-        let best = null, bd = 99;
-        for (const k in MONTHS) {
-          const d = lev(w, k);
-          if (d < bd) { bd = d; best = k; }
-        }
+        const w = m[2].toLowerCase(); let best = null, bd = 99;
+        for (const k in MONTHS) { const d = lev(w, k); if (d < bd) { bd = d; best = k; } }
         if (best && bd <= 2) return m[3] + MONTHS[best] + m[1].padStart(2, "0");
       }
       m = t.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
@@ -1289,21 +887,18 @@
     function stampCoords(t) {
       const m = t.match(/(-?\d{1,3}\.\d{3,})\s*[,;]?\s*(-?\d{1,3}\.\d{3,})/);
       if (!m) return null;
-      const a = +m[1], b = +m[2];
-      const lat0 = +$("lat0").value, lat1 = +$("lat1").value, lon0 = +$("lon0").value, lon1 = +$("lon1").value;
+      const a = +m[1], b = +m[2], lat0 = +$("lat0").value, lat1 = +$("lat1").value, lon0 = +$("lon0").value, lon1 = +$("lon1").value;
       let lat = a, lon = b;
       if (Math.abs(a) > 90 || (a >= lon0 && a <= lon1 && Math.abs(b) <= 90)) { lon = a; lat = b; }
       if (lat > 0 && -lat >= lat0 && -lat <= lat1) lat = -lat;
       return [lat, lon];
     }
 
-    /* ---------- Image Quality & Lazy-Loaded AI CLIP ---------- */
+    /* ---------- Image quality ---------- */
     function checkImageQuality(bmp) {
-      const w = 120, h = 90, c = document.createElement("canvas");
-      c.width = w; c.height = h;
+      const w = 120, h = 90, c = document.createElement("canvas"); c.width = w; c.height = h;
       const ctx = c.getContext("2d");
-      const sx = Math.floor(bmp.width * 0.10), sy = Math.floor(bmp.height * 0.10);
-      const sw = Math.max(1, Math.floor(bmp.width * 0.80)), sh = Math.max(1, Math.floor(bmp.height * 0.65));
+      const sx = Math.floor(bmp.width * 0.10), sy = Math.floor(bmp.height * 0.10), sw = Math.max(1, Math.floor(bmp.width * 0.80)), sh = Math.max(1, Math.floor(bmp.height * 0.65));
       ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
       const d = ctx.getImageData(0, 0, w, h).data, n = w * h, gray = new Float32Array(n);
       let rS = 0, gS = 0, bS = 0, bright = 0, dark = 0;
@@ -1315,22 +910,16 @@
         if (r > 240 && g > 240 && b > 240) bright++;
         if (lum < 22) dark++;
       }
-      const rM = rS / n, gM = gS / n, bM = bS / n;
-      let rV = 0, gV = 0, bV = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        rV += (d[i] - rM) ** 2; gV += (d[i + 1] - gM) ** 2; bV += (d[i + 2] - bM) ** 2;
-      }
+      const rM = rS / n, gM = gS / n, bM = bS / n; let rV = 0, gV = 0, bV = 0;
+      for (let i = 0; i < d.length; i += 4) { rV += (d[i] - rM) ** 2; gV += (d[i + 1] - gM) ** 2; bV += (d[i + 2] - bM) ** 2; }
       if (Math.max(Math.sqrt(rV / n), Math.sqrt(gV / n), Math.sqrt(bV / n)) < 14) return "FOTO KOSONG / SATU WARNA";
       if (dark / n > 0.80) return "FOTO TERLALU GELAP / TIDAK JELAS";
       let lapSum = 0, lapSq = 0, strong = 0, cnt = 0;
-      for (let y = 1; y < h - 1; y++) {
-        for (let x = 1; x < w - 1; x++) {
-          const i = y * w + x;
-          const lap = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - w] - gray[i + w];
-          lapSum += lap; lapSq += lap * lap;
-          if (Math.abs(gray[i + 1] - gray[i - 1]) + Math.abs(gray[i + w] - gray[i - w]) > 22) strong++;
-          cnt++;
-        }
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+        const i = y * w + x, lap = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - w] - gray[i + w];
+        lapSum += lap; lapSq += lap * lap;
+        if (Math.abs(gray[i + 1] - gray[i - 1]) + Math.abs(gray[i + w] - gray[i - w]) > 22) strong++;
+        cnt++;
       }
       const lm = lapSum / cnt;
       if (lapSq / cnt - lm * lm < 40 || strong / cnt < 0.015) return "FOTO BLUR / TIDAK JELAS";
@@ -1338,17 +927,14 @@
       return "";
     }
 
+    /* ---------- AI (halaman utama - dipakai sebagai cadangan) ---------- */
     async function rotatedBlob(bmp, deg) {
       const c = document.createElement("canvas"), swap = deg === 90 || deg === 270;
-      c.width = swap ? bmp.height : bmp.width;
-      c.height = swap ? bmp.width : bmp.height;
+      c.width = swap ? bmp.height : bmp.width; c.height = swap ? bmp.width : bmp.height;
       const ctx = c.getContext("2d");
-      ctx.translate(c.width / 2, c.height / 2);
-      ctx.rotate(deg * Math.PI / 180);
-      ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+      ctx.translate(c.width / 2, c.height / 2); ctx.rotate(deg * Math.PI / 180); ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
       return new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
     }
-
     async function classifyWithRotation(clip, bmp, blob) {
       const texts = LABELS.map(l => l[0]);
       const run = async b => {
@@ -1357,51 +943,32 @@
           const out = await clip(u, texts, { hypothesis_template: "{}" });
           let okSum = 0, badSum = 0, topOk = null;
           for (const it of out) {
-            const L = LABELS.find(l => l[0] === it.label);
-            if (!L) continue;
-            if (L[1] === "Sesuai") {
-              okSum += it.score;
-              if (!topOk) topOk = { label: L[2], score: it.score };
-            } else {
-              badSum += it.score;
-            }
+            const L = LABELS.find(l => l[0] === it.label); if (!L) continue;
+            if (L[1] === "Sesuai") { okSum += it.score; if (!topOk) topOk = { label: L[2], score: it.score }; } else badSum += it.score;
           }
-          const top = out[0], L = LABELS.find(l => l[0] === top.label);
-          if (!L) return null;
+          const top = out[0], L = LABELS.find(l => l[0] === top.label); if (!L) return null;
           if (okSum >= 0.50 && topOk) return { status: "Sesuai", label: topOk.label, score: okSum, okSum, badSum };
           return { status: L[1], label: L[2], score: top.score, okSum, badSum };
-        } finally {
-          URL.revokeObjectURL(u);
-        }
+        } finally { URL.revokeObjectURL(u); }
       };
       let best = await run(blob);
       if (best && best.status === "Tidak Sesuai" && !(best.label === "FOTO UANG" && best.score >= 0.55)) {
         for (const deg of [90, 270]) {
           const alt = await run(await rotatedBlob(bmp, deg));
-          if (alt && (alt.status === "Sesuai" || alt.okSum > best.okSum)) {
-            best = alt;
-            if (alt.status === "Sesuai") break;
-          }
+          if (alt && (alt.status === "Sesuai" || alt.okSum > best.okSum)) { best = alt; if (alt.status === "Sesuai") break; }
         }
       }
       return best;
     }
-
-    /* Lazy-load Transformers.js ONLY when Mulai Periksa is clicked */
     async function loadClip() {
       const T = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2");
       const id = "Xenova/clip-vit-base-patch32";
       try {
-        const tok = await T.AutoTokenizer.from_pretrained(id);
-        const tm = await T.CLIPTextModelWithProjection.from_pretrained(id);
-        const proc = await T.AutoProcessor.from_pretrained(id);
-        const vm = await T.CLIPVisionModelWithProjection.from_pretrained(id);
+        const tok = await T.AutoTokenizer.from_pretrained(id), tm = await T.CLIPTextModelWithProjection.from_pretrained(id);
+        const proc = await T.AutoProcessor.from_pretrained(id), vm = await T.CLIPVisionModelWithProjection.from_pretrained(id);
         const { text_embeds } = await tm(tok(LABELS.map(l => l[0]), { padding: true, truncation: true }));
         const D = text_embeds.dims[1], raw = Array.from(text_embeds.data), tv = [];
-        for (let i = 0; i < LABELS.length; i++) {
-          const v = raw.slice(i * D, (i + 1) * D), n = Math.hypot(...v);
-          tv.push(v.map(x => x / n));
-        }
+        for (let i = 0; i < LABELS.length; i++) { const v = raw.slice(i * D, (i + 1) * D), n = Math.hypot(...v); tv.push(v.map(x => x / n)); }
         const fast = async u => {
           const { image_embeds } = await vm(await proc(await T.RawImage.read(u)));
           const e = Array.from(image_embeds.data), n = Math.hypot(...e);
@@ -1412,31 +979,181 @@
         const c = document.createElement("canvas"); c.width = c.height = 64;
         const x = c.getContext("2d"); x.fillStyle = "#888"; x.fillRect(0, 0, 64, 64);
         const tu = URL.createObjectURL(await new Promise(r => c.toBlob(r)));
-        try {
-          const o = await fast(tu);
-          if (!Array.isArray(o) || o.length !== LABELS.length || !isFinite(o[0].score)) throw new Error("hasil uji tidak valid");
-        } finally {
-          URL.revokeObjectURL(tu);
-        }
+        try { const o = await fast(tu); if (!Array.isArray(o) || o.length !== LABELS.length || !isFinite(o[0].score)) throw new Error("hasil uji tidak valid"); } finally { URL.revokeObjectURL(tu); }
         return { fn: u => fast(u), mode: "cepat" };
-      } catch (e) {
-        console.warn("Mode cepat gagal, memakai pipeline standar:", e);
-      }
+      } catch (e) { console.warn("Mode cepat gagal, memakai pipeline standar:", e); }
       const pl = await T.pipeline("zero-shot-image-classification", id);
       return { fn: (u, t, o) => pl(u, t, o), mode: "standar" };
     }
 
+    /* ---------- PERCEPATAN: model AI yang sama di beberapa Web Worker ---------- */
+    function clipWorkerMain(T) {
+      T.env.allowLocalModels = false;
+      const id = "Xenova/clip-vit-base-patch32";
+      let LABELS = [], clip = null;
+      async function init(labels) {
+        LABELS = labels;
+        try {
+          const tok = await T.AutoTokenizer.from_pretrained(id);
+          const tm = await T.CLIPTextModelWithProjection.from_pretrained(id);
+          const proc = await T.AutoProcessor.from_pretrained(id);
+          const vm = await T.CLIPVisionModelWithProjection.from_pretrained(id);
+          const { text_embeds } = await tm(tok(LABELS.map(l => l[0]), { padding: true, truncation: true }));
+          const D = text_embeds.dims[1], raw = Array.from(text_embeds.data), tv = [];
+          for (let i = 0; i < LABELS.length; i++) { const v = raw.slice(i * D, (i + 1) * D), n = Math.hypot(...v); tv.push(v.map(x => x / n)); }
+          const fast = async u => {
+            const { image_embeds } = await vm(await proc(await T.RawImage.read(u)));
+            const e = Array.from(image_embeds.data), n = Math.hypot(...e);
+            const lg = tv.map(t => 100 * t.reduce((a, x, i) => a + x * e[i] / n, 0));
+            const m = Math.max(...lg), ex = lg.map(x => Math.exp(x - m)), sum = ex.reduce((a, b) => a + b, 0);
+            return LABELS.map((l, i) => ({ label: l[0], score: ex[i] / sum })).sort((a, b) => b.score - a.score);
+          };
+          const c = new OffscreenCanvas(64, 64), x = c.getContext("2d");
+          x.fillStyle = "#888"; x.fillRect(0, 0, 64, 64);
+          const tu = URL.createObjectURL(await c.convertToBlob());
+          try { const o = await fast(tu); if (!Array.isArray(o) || o.length !== LABELS.length || !isFinite(o[0].score)) throw new Error("hasil uji tidak valid"); } finally { URL.revokeObjectURL(tu); }
+          clip = fast;
+          return "cepat";
+        } catch (e) { /* lanjut ke pipeline standar */ }
+        const pl = await T.pipeline("zero-shot-image-classification", id);
+        clip = (u, t, o) => pl(u, t, o);
+        return "standar";
+      }
+      async function rotated(bmp, deg) {
+        const swap = deg === 90 || deg === 270;
+        const c = new OffscreenCanvas(swap ? bmp.height : bmp.width, swap ? bmp.width : bmp.height);
+        const ctx = c.getContext("2d");
+        ctx.translate(c.width / 2, c.height / 2); ctx.rotate(deg * Math.PI / 180); ctx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+        return c.convertToBlob({ type: "image/jpeg", quality: 0.9 });
+      }
+      async function classify(bmp, blob) {
+        const texts = LABELS.map(l => l[0]);
+        const run = async b => {
+          const u = URL.createObjectURL(b);
+          try {
+            const out = await clip(u, texts, { hypothesis_template: "{}" });
+            let okSum = 0, badSum = 0, topOk = null;
+            for (const it of out) {
+              const L = LABELS.find(l => l[0] === it.label); if (!L) continue;
+              if (L[1] === "Sesuai") { okSum += it.score; if (!topOk) topOk = { label: L[2], score: it.score }; } else badSum += it.score;
+            }
+            const top = out[0], L = LABELS.find(l => l[0] === top.label); if (!L) return null;
+            if (okSum >= 0.50 && topOk) return { status: "Sesuai", label: topOk.label, score: okSum, okSum, badSum };
+            return { status: L[1], label: L[2], score: top.score, okSum, badSum };
+          } finally { URL.revokeObjectURL(u); }
+        };
+        let best = await run(blob);
+        if (best && best.status === "Tidak Sesuai" && !(best.label === "FOTO UANG" && best.score >= 0.55)) {
+          for (const deg of [90, 270]) {
+            const alt = await run(await rotated(bmp, deg));
+            if (alt && (alt.status === "Sesuai" || alt.okSum > best.okSum)) { best = alt; if (alt.status === "Sesuai") break; }
+          }
+        }
+        return best;
+      }
+      self.onmessage = async e => {
+        const m = e.data;
+        if (m.t === "init") {
+          try { self.postMessage({ t: "ready", mode: await init(m.labels) }); }
+          catch (err) { self.postMessage({ t: "error", msg: String((err && err.message) || err) }); }
+        } else if (m.t === "job") {
+          try {
+            const best = await classify(m.bmp, m.blob);
+            try { m.bmp.close(); } catch (_) {}
+            self.postMessage({ t: "done", id: m.id, best });
+          } catch (err) { self.postMessage({ t: "done", id: m.id, err: String((err && err.message) || err) }); }
+        }
+      };
+    }
+
+    async function createClipPool(n) {
+      const src = 'import * as T from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2";\n(' + clipWorkerMain.toString() + ")(T);";
+      const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+      const alive = [], free = [], queue = [], jobs = new Map();
+      let nid = 1, mode = "";
+      const dropWorker = (w, err) => {
+        const a = alive.indexOf(w); if (a >= 0) alive.splice(a, 1);
+        const f = free.indexOf(w); if (f >= 0) free.splice(f, 1);
+        for (const [id, e] of jobs) if (e.w === w) { jobs.delete(id); e.j.no(err); }
+        if (!alive.length) while (queue.length) queue.shift().no(err);
+      };
+      const pump = () => {
+        while (free.length && queue.length) {
+          const w = free.pop(), j = queue.shift();
+          jobs.set(j.id, { j, w });
+          try { w.postMessage({ t: "job", id: j.id, bmp: j.bmp, blob: j.blob }, [j.bmp]); }
+          catch (err) { jobs.delete(j.id); free.push(w); j.no(err); }
+        }
+      };
+      const start = () => new Promise((ok, no) => {
+        const w = new Worker(url, { type: "module" });
+        let ready = false;
+        const timer = setTimeout(() => { w.terminate(); no(new Error("worker timeout")); }, 240000);
+        w.onmessage = e => {
+          const m = e.data;
+          if (m.t === "ready") { ready = true; clearTimeout(timer); mode = m.mode; alive.push(w); free.push(w); ok(w); pump(); }
+          else if (m.t === "error") { clearTimeout(timer); w.terminate(); no(new Error(m.msg)); }
+          else if (m.t === "done") {
+            const e2 = jobs.get(m.id); jobs.delete(m.id); free.push(w);
+            if (e2) { if (m.err) e2.j.no(new Error(m.err)); else e2.j.ok(m.best); }
+            pump();
+          }
+        };
+        w.onerror = ev => { const err = new Error(ev.message || "worker error"); if (!ready) { clearTimeout(timer); no(err); } else dropWorker(w, err); };
+        w.postMessage({ t: "init", labels: LABELS });
+      });
+      try { await start(); } catch (e) { URL.revokeObjectURL(url); throw e; }
+      await Promise.allSettled(Array.from({ length: n - 1 }, () => start()));
+      return {
+        size: alive.length, mode,
+        run: (bmp, blob) => new Promise((ok, no) => {
+          if (!alive.length) { no(new Error("tidak ada worker aktif")); return; }
+          queue.push({ id: nid++, bmp, blob, ok, no }); pump();
+        }),
+        close() { alive.slice().forEach(w => w.terminate()); URL.revokeObjectURL(url); }
+      };
+    }
+
+    async function loadAI() {
+      const hc = navigator.hardwareConcurrency || 4, n = Math.max(1, Math.min(3, hc - 1));
+      if (typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined") {
+        try {
+          const pool = await createClipPool(n);
+          return { classify: (bmp, blob) => pool.run(bmp, blob), lanes: pool.size + 1, mode: `paralel ×${pool.size} · ${pool.mode}`, close: () => pool.close() };
+        } catch (e) { console.warn("Mode paralel gagal, memakai halaman utama:", e); }
+      }
+      const L = await loadClip();
+      let chain = Promise.resolve();
+      const classify = (bmp, blob) => { const p = chain.then(() => classifyWithRotation(L.fn, bmp, blob)); chain = p.catch(() => {}); return p; };
+      return { classify, lanes: 2, mode: L.mode, close() {} };
+    }
+
+    async function runLanes({ total, lanes, task, isStopped, onFlush, onProgress }) {
+      const out = new Array(total);
+      let next = 0, flushed = 0, finished = 0;
+      const t0 = Date.now();
+      const lane = async () => {
+        while (!isStopped()) {
+          const i = next++;
+          if (i >= total) break;
+          out[i] = await task(i);
+          finished++;
+          while (out[flushed]) { onFlush(out[flushed], flushed); flushed++; }
+          onProgress(finished, Math.round((Date.now() - t0) / finished * (total - finished) / 1000));
+        }
+      };
+      await Promise.all(Array.from({ length: lanes }, lane));
+    }
+
+    /* ---------- Verdict ---------- */
     function verdict(r) {
       if (r.failed) return;
       const hard = [], warn = [];
-      const cs = isOn("t_sx") || isOn("t_sy");
-      const c0 = isOn("t_lat0"), c1 = isOn("t_lat1"), c2 = isOn("t_lon0"), c3 = isOn("t_lon1");
+      const cs = isOn("t_sx") || isOn("t_sy"), c0 = isOn("t_lat0"), c1 = isOn("t_lat1"), c2 = isOn("t_lon0"), c3 = isOn("t_lon1");
       const conf = parseFloat(r.aiScore) || 0;
-
       if (r.aiErr) warn.push("AI gagal memeriksa foto ini");
-      if (["FOTO KOSONG / SATU WARNA", "FOTO TERLALU TERANG / TIDAK JELAS", "FOTO TERLALU GELAP / TIDAK JELAS", "FOTO BLUR / TIDAK JELAS"].includes(r.ai)) {
-        hard.push(r.ai);
-      } else if (r.aiStatus === "Tidak Sesuai") {
+      if (["FOTO KOSONG / SATU WARNA", "FOTO TERLALU TERANG / TIDAK JELAS", "FOTO TERLALU GELAP / TIDAK JELAS", "FOTO BLUR / TIDAK JELAS"].includes(r.ai)) hard.push(r.ai);
+      else if (r.aiStatus === "Tidak Sesuai") {
         if (["FOTO UANG", "Foto jalan/lantai/motor tanpa orang", "Foto tidak jelas"].includes(r.ai) && conf >= 40) hard.push(r.ai);
         else if (r.ai === "Foto dari foto" && conf >= 55) hard.push(r.ai);
         else if (conf >= 45) warn.push(r.ai);
@@ -1450,54 +1167,42 @@
         if (!r.gps) warn.push("GPS tidak terbaca di stamp");
         else {
           const [la, lo] = r.gps.split(",").map(Number);
-          if ((c0 && la < +$("lat0").value) || (c1 && la > +$("lat1").value) || (c2 && lo < +$("lon0").value) || (c3 && lo > +$("lon1").value)) {
-            warn.push("GPS di luar area");
-          }
+          if ((c0 && la < +$("lat0").value) || (c1 && la > +$("lat1").value) || (c2 && lo < +$("lon0").value) || (c3 && lo > +$("lon1").value)) warn.push("GPS di luar area");
         }
       }
       if (isOn("t_ham") && r.dup) hard.push("Foto sama dengan kontrak " + r.dup);
       r.status = hard.length ? "TIDAK VALID" : warn.length ? "PERLU CEK" : "VALID";
       r.reason = [...hard, ...warn].join(" | ");
     }
-
     function findDups(list) {
       if (!isOn("t_ham")) { for (const a of list) a.dup = ""; return; }
-      const th = +$("ham").value;
-      const idx = list.filter(r => r.hash);
+      const th = +$("ham").value, idx = list.filter(r => r.hash);
       for (const a of idx) {
         const refs = [];
         for (const b of idx) {
           if (a === b || a.key === b.key) continue;
-          if (pop(a.hash[0] ^ b.hash[0]) + pop(a.hash[1] ^ b.hash[1]) <= th) {
-            refs.push(b.kontrak || b.url.slice(-12));
-          }
+          if (pop(a.hash[0] ^ b.hash[0]) + pop(a.hash[1] ^ b.hash[1]) <= th) refs.push(b.kontrak || b.url.slice(-12));
         }
         a.dup = refs.slice(0, 3).join(", ") + (refs.length > 3 ? ` (+${refs.length - 3})` : "");
       }
     }
 
-    async function processRow(r, ocr, clip, pre) {
-      const res = {
-        ...r, status: "", reason: "", urlDate: "", stampDate: "", gps: "",
-        ai: "", aiStatus: "", aiScore: "", ocr: "", hash: null, thumb: "", dup: "", failed: false
-      };
+    /* ---------- Proses satu foto ---------- */
+    async function processRow(r, ocr, classify, pre) {
+      const res = { ...r, status: "", reason: "", urlDate: "", stampDate: "", gps: "", ai: "", aiStatus: "", aiScore: "", ocr: "", hash: null, thumb: "", dup: "", failed: false };
       const fail = m => { res.failed = true; res.status = "GAGAL DOWNLOAD"; res.reason = m; return res; };
       try { res.urlDate = new URL(r.url).searchParams.get("date") || ""; } catch { return fail("URL tidak valid"); }
       if (!res.tgl && res.urlDate) res.tgl = res.urlDate;
 
-      /* Never double-fetch if prefetch (pre) already ran and failed */
-      const got = pre ? await pre : await getPhoto(r.url);
-      if (!got || got.err) {
-        return fail(got && got.err === "404" ? "Foto tidak ditemukan (404)" : "Foto tidak bisa dimuat (timeout / CORS / proxy gagal).");
-      }
+      let got = pre ? await pre : null;
+      if (!got || (got.err && got.err !== "404")) got = await getPhoto(r.url);   // ulang berurutan bila prefetch gagal
+      if (!got || got.err) return fail(got && got.err === "404" ? "Foto tidak ditemukan (404)" : "Foto tidak bisa dimuat (timeout / CORS / proxy gagal).");
+
       const { bmp, blob } = got;
       res.thumb = thumb(bmp);
       if (isOn("t_ham")) res.hash = dhash(bmp);
       if (ocr) {
-        try {
-          const { data: { text } } = await ocr.recognize(cropCanvas(bmp));
-          res.ocr = text.replace(/\n+/g, " ").trim();
-        } catch {}
+        try { const { data: { text } } = await ocr.recognize(cropCanvas(bmp)); res.ocr = text.replace(/\n+/g, " ").trim(); } catch {}
         res.stampDate = stampDate(res.ocr);
         const g = stampCoords(res.ocr);
         res.gps = g ? g[0].toFixed(6) + ", " + g[1].toFixed(6) : "";
@@ -1505,23 +1210,20 @@
       const bad = checkImageQuality(bmp);
       const setBad = () => { res.aiStatus = "Tidak Sesuai"; res.ai = bad; res.aiScore = "100.0%"; };
       const setBest = b => { res.aiStatus = b.status; res.ai = b.label; res.aiScore = (b.score * 100).toFixed(1) + "%"; };
-      if (bad && bad !== "FOTO TERLALU TERANG / TIDAK JELAS") {
-        setBad();
-      } else if (clip) {
+      if (bad && bad !== "FOTO TERLALU TERANG / TIDAK JELAS") setBad();
+      else if (classify) {
         let best = null;
-        try { best = await classifyWithRotation(clip, bmp, blob); } catch (e) { console.warn("AI error:", e); }
+        try { best = await classify(bmp, blob); } catch (e) { console.warn("AI error:", e); }
         if (best && best.status === "Sesuai") setBest(best);
         else if (bad) setBad();
         else if (best) setBest(best);
         else res.aiErr = true;
-      } else if (bad) {
-        setBad();
-      }
-      bmp.close();
+      } else if (bad) setBad();
+      try { bmp.close(); } catch {}
       return res;
     }
 
-    /* ---------- Kualitas LKP History (Smart Logic — exact difflib.SequenceMatcher port) ---------- */
+    /* ---------- Kualitas LKP History (Smart Logic) ---------- */
     function isBayarStatus(st) {
       if (!st) return false;
       if (/(BELUM|BLM|TIDAK|TDK|JANJI|NON|GAGAL|BATAL)/.test(st)) return false;
@@ -1534,29 +1236,19 @@
       if (!la && !lb) return 1;
       if (!la || !lb) return 0;
       const b2j = new Map();
-      for (let i = 0; i < lb; i++) {
-        const ch = b[i];
-        let arr = b2j.get(ch);
-        if (!arr) { arr = []; b2j.set(ch, arr); }
-        arr.push(i);
-      }
-      if (lb >= 200) {
-        const ntest = Math.floor(lb / 100) + 1;
-        for (const [ch, idxs] of b2j) if (idxs.length > ntest) b2j.delete(ch);
-      }
+      for (let i = 0; i < lb; i++) { const ch = b[i]; let arr = b2j.get(ch); if (!arr) { arr = []; b2j.set(ch, arr); } arr.push(i); }
+      if (lb >= 200) { const ntest = Math.floor(lb / 100) + 1; for (const [ch, idxs] of b2j) if (idxs.length > ntest) b2j.delete(ch); }
       function findLongest(alo, ahi, blo, bhi) {
         let besti = alo, bestj = blo, bestsize = 0, j2len = new Map();
         for (let i = alo; i < ahi; i++) {
           const newj2len = new Map(), idxs = b2j.get(a[i]);
-          if (idxs) {
-            for (let t = 0; t < idxs.length; t++) {
-              const j = idxs[t];
-              if (j < blo) continue;
-              if (j >= bhi) break;
-              const k = (j2len.get(j - 1) || 0) + 1;
-              newj2len.set(j, k);
-              if (k > bestsize) { besti = i - k + 1; bestj = j - k + 1; bestsize = k; }
-            }
+          if (idxs) for (let t = 0; t < idxs.length; t++) {
+            const j = idxs[t];
+            if (j < blo) continue;
+            if (j >= bhi) break;
+            const k = (j2len.get(j - 1) || 0) + 1;
+            newj2len.set(j, k);
+            if (k > bestsize) { besti = i - k + 1; bestj = j - k + 1; bestsize = k; }
           }
           j2len = newj2len;
         }
@@ -1564,33 +1256,20 @@
         while (besti + bestsize < ahi && bestj + bestsize < bhi && a[besti + bestsize] === b[bestj + bestsize]) bestsize++;
         return [besti, bestj, bestsize];
       }
-      const queue = [[0, la, 0, lb]];
-      let matches = 0;
+      const queue = [[0, la, 0, lb]]; let matches = 0;
       while (queue.length) {
         const [alo, ahi, blo, bhi] = queue.pop();
         const [i, j, k] = findLongest(alo, ahi, blo, bhi);
-        if (k) {
-          matches += k;
-          if (alo < i && blo < j) queue.push([alo, i, blo, j]);
-          if (i + k < ahi && j + k < bhi) queue.push([i + k, ahi, j + k, bhi]);
-        }
+        if (k) { matches += k; if (alo < i && blo < j) queue.push([alo, i, blo, j]); if (i + k < ahi && j + k < bhi) queue.push([i + k, ahi, j + k, bhi]); }
       }
       return (2 * matches) / (la + lb);
     }
-
     function avgSeqSim(items) {
       if (items.length < 2) return 0;
-      const low = items.map(s => s.toLowerCase());
-      let tot = 0, cnt = 0;
-      for (let i = 0; i < low.length; i++) {
-        for (let j = i + 1; j < low.length; j++) {
-          tot += seqRatio(low[i], low[j]);
-          cnt++;
-        }
-      }
+      const low = items.map(s => s.toLowerCase()); let tot = 0, cnt = 0;
+      for (let i = 0; i < low.length; i++) for (let j = i + 1; j < low.length; j++) { tot += seqRatio(low[i], low[j]); cnt++; }
       return cnt ? (tot / cnt) * 100 : 0;
     }
-
     function evalSmartLogic(jml, uniqueKets) {
       if (!jml) return { ok: false, status: "TIDAK SESUAI", tag: "no_data", shortLabel: "PENULISAN HISTORIS TERLALU SINGKAT", detail: "Tidak ada data History LKP untuk tanggal ini", avgLen: 0, sim: 0 };
       const nonAuto = uniqueKets.filter(k => !isAutoUpdate(k));
@@ -1603,12 +1282,10 @@
       if (nonAuto.length >= 3 && sim >= 60 && avgLen < 150) return { ok: false, status: "TIDAK SESUAI", tag: "templated", shortLabel: "MASIH KURANG PENJELASAN DAN COPY PASTE", detail: `Templated / Kurang Informatif (Kemiripan ${Math.floor(sim)}%, Panjang ${Math.floor(avgLen)} kar)`, avgLen, sim };
       return { ok: true, status: "SESUAI", tag: "ok", shortLabel: `HISTORY SESUAI DAN PENYELESAIAN ${jml} KONTRAK`, detail: "Valid, Bervariasi & Informatif", avgLen, sim };
     }
-
     function buildPhotoFlagNote(picId, tgl) {
       const flagged = results.filter(r => r.status !== "VALID" && normId(r.idpic) === normId(picId) && (!tgl || !r.tgl || r.tgl === tgl));
       if (!flagged.length) return "";
-      const statuses = [...new Set(flagged.map(r => r.status))];
-      return `TERDETEKSI DI AUDIT FOTO (${flagged.length} FOTO: ${statuses.join(" / ")})`;
+      return `TERDETEKSI DI AUDIT FOTO (${flagged.length} FOTO: ${[...new Set(flagged.map(r => r.status))].join(" / ")})`;
     }
 
     function renderHistoryUI() {
@@ -1627,27 +1304,18 @@
       if ($("hOk")) $("hOk").textContent = okN;
       if ($("hBad")) $("hBad").textContent = badN;
       if ($("hPhotoFlag")) $("hPhotoFlag").textContent = flagPhotoN;
-
-      const breakdown = [
-        ["auto", "Auto Update"], ["copypaste", "Copy Paste Identik"], ["short", "Terlalu Singkat"],
-        ["templated", "Templated"], ["extreme", "Extreme Template"], ["no_data", "Tanpa Data"]
-      ];
+      const breakdown = [["auto", "Auto Update"], ["copypaste", "Copy Paste Identik"], ["short", "Terlalu Singkat"], ["templated", "Templated"], ["extreme", "Extreme Template"], ["no_data", "Tanpa Data"]];
       const chips = [`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Sesuai: <span class="font-mono">${okN}</span></span>`];
-      for (const [t, lbl] of breakdown) {
-        const n = cnt(t);
-        if (n) chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">${lbl}: <span class="font-mono">${n}</span></span>`);
-      }
+      for (const [t, lbl] of breakdown) { const n = cnt(t); if (n) chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">${lbl}: <span class="font-mono">${n}</span></span>`); }
       if (flagPhotoN) chips.push(`<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">📷 Terdeteksi di Foto: <span class="font-mono">${flagPhotoN}</span></span>`);
       if ($("hsum")) $("hsum").innerHTML = chips.join("");
       renderHistoryTable();
     }
-
     function renderHistoryTable() {
       if (!HIST || !$("hBody")) return;
       const fmtSlash = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-";
       const list = HIST.pics.filter(x => {
-        if (H_FILT === "FOTO_FLAG") { if (!x.catatanFoto) return false; }
-        else if (H_FILT && x.status !== H_FILT) return false;
+        if (H_FILT === "FOTO_FLAG") { if (!x.catatanFoto) return false; } else if (H_FILT && x.status !== H_FILT) return false;
         if (H_QRY) {
           const hay = [x.m.cluster, x.m.idcab, x.m.nmcab, x.m.idpic, x.m.nama, x.shortLabel, x.detail, x.status, x.catatanFoto].join(" ").toLowerCase();
           if (!hay.includes(H_QRY)) return false;
@@ -1657,12 +1325,8 @@
       if ($("hShown")) $("hShown").textContent = `Menampilkan ${list.length} dari ${HIST.pics.length} PIC`;
       $("hBody").innerHTML = list.map(x => {
         const idx = HIST.pics.indexOf(x);
-        const bCls = x.ok
-          ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300"
-          : "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300";
-        const fotoCell = x.catatanFoto
-          ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">📷 ${esc(x.catatanFoto)}</span>`
-          : `<span class="text-slate-400">-</span>`;
+        const bCls = x.ok ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300" : "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300";
+        const fotoCell = x.catatanFoto ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">📷 ${esc(x.catatanFoto)}</span>` : `<span class="text-slate-400">-</span>`;
         return `<tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">
           <td class="p-3 font-mono whitespace-nowrap">${esc(fmtSlash(x.m.tgl))}</td>
           <td class="p-3 font-semibold whitespace-nowrap">${esc(x.m.cluster || x.f.cluster || "-")}</td>
@@ -1677,11 +1341,7 @@
         </tr>`;
       }).join("");
     }
-
-    on("hBody", "click", e => {
-      const btn = e.target.closest(".btn-hist-view");
-      if (btn && HIST && HIST.pics[+btn.dataset.hidx]) openHistModal(HIST.pics[+btn.dataset.hidx]);
-    });
+    on("hBody", "click", e => { const btn = e.target.closest(".btn-hist-view"); if (btn && HIST && HIST.pics[+btn.dataset.hidx]) openHistModal(HIST.pics[+btn.dataset.hidx]); });
 
     function openHistModal(x) {
       const fmtSlash = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-";
@@ -1691,12 +1351,10 @@
         $("hmEval").className = `p-3 rounded-xl text-xs font-semibold border ${x.ok ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300" : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"}`;
         $("hmEval").textContent = `${x.shortLabel} — ${x.detail}` + (x.catatanFoto ? ` | 📷 ${x.catatanFoto}` : "");
       }
-      if ($("hmMetrics")) {
-        $("hmMetrics").innerHTML = `
-          <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Jml LKP Non-Bayar</div><div class="font-mono font-bold text-sm mt-0.5">${x.jml}</div></div>
-          <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Rata-rata Panjang</div><div class="font-mono font-bold text-sm mt-0.5">${Math.floor(x.avgLen)} kar</div></div>
-          <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Kemiripan</div><div class="font-mono font-bold text-sm mt-0.5">${Math.floor(x.sim)}%</div></div>`;
-      }
+      if ($("hmMetrics")) $("hmMetrics").innerHTML = `
+        <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Jml LKP Non-Bayar</div><div class="font-mono font-bold text-sm mt-0.5">${x.jml}</div></div>
+        <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Rata-rata Panjang</div><div class="font-mono font-bold text-sm mt-0.5">${Math.floor(x.avgLen)} kar</div></div>
+        <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800"><div class="text-[10px] uppercase text-slate-400">Kemiripan</div><div class="font-mono font-bold text-sm mt-0.5">${Math.floor(x.sim)}%</div></div>`;
       if ($("hmBody")) $("hmBody").textContent = x.kesimpulan || "(Tidak ada keterangan)";
       if ($("histModal")) $("histModal").classList.remove("hidden");
     }
@@ -1720,34 +1378,25 @@
         byPT.get(k).push(h);
       }
       for (const r of results) if (r.kontrak) ph.set(r.kontrak, r);
-
       const pics = [], det = [];
       for (const [, m] of base) {
         const rs = byPT.get(m.idpic + "|" + m.tgl) || [], f = rs[0] || {};
         const seen = new Set(), uniqueKets = [];
         for (const h of rs) {
-          const raw = String(h.ket || "").trim();
-          if (!raw) continue;
+          const raw = String(h.ket || "").trim(); if (!raw) continue;
           const key = raw.toUpperCase();
           if (!seen.has(key)) { seen.add(key); uniqueKets.push(raw); }
         }
         const kesimpulan = uniqueKets.map(x => "• " + x).join("\n");
         const ev = evalSmartLogic(rs.length, uniqueKets);
         const catatanFoto = buildPhotoFlagNote(m.idpic, m.tgl);
-        pics.push({
-          m, f, jml: rs.length, kesimpulan, ok: ev.ok, status: ev.status,
-          shortLabel: ev.shortLabel, detail: ev.detail, tag: ev.tag,
-          avgLen: ev.avgLen, sim: ev.sim, catatanFoto
-        });
+        pics.push({ m, f, jml: rs.length, kesimpulan, ok: ev.ok, status: ev.status, shortLabel: ev.shortLabel, detail: ev.detail, tag: ev.tag, avgLen: ev.avgLen, sim: ev.sim, catatanFoto });
         for (const h of rs) {
           const p = ph.get(h.kontrak);
           det.push({
-            "TGL LKP": m.tgl, "CLUSTER": m.cluster || f.cluster || "", "ID PIC": m.idpic,
-            "NAMA PIC": m.nama || h.nama, "NO KONTRAK": h.kontrak, "KETERANGAN": h.ket,
-            "PANJANG KARAKTER": String(h.ket || "").trim().length,
-            "AUTO UPDATE": isAutoUpdate(h.ket) ? "YA" : "TIDAK",
-            "STATUS PIC": ev.status, "KESESUAIAN HISTORIS LKP": ev.shortLabel,
-            "DETAIL EVALUASI": ev.detail, "CATATAN FOTO": catatanFoto,
+            "TGL LKP": m.tgl, "CLUSTER": m.cluster || f.cluster || "", "ID PIC": m.idpic, "NAMA PIC": m.nama || h.nama, "NO KONTRAK": h.kontrak, "KETERANGAN": h.ket,
+            "PANJANG KARAKTER": String(h.ket || "").trim().length, "AUTO UPDATE": isAutoUpdate(h.ket) ? "YA" : "TIDAK", "STATUS PIC": ev.status,
+            "KESESUAIAN HISTORIS LKP": ev.shortLabel, "DETAIL EVALUASI": ev.detail, "CATATAN FOTO": catatanFoto,
             "DETEKSI AI FOTO": p ? `${p.ai || "-"} (${p.aiScore || "-"})` : "foto belum diperiksa"
           });
         }
@@ -1761,17 +1410,15 @@
       if ($("hStatusSel")) $("hStatusSel").value = H_FILT;
       document.querySelectorAll(".kpi-hist").forEach(x => {
         const onK = x === b;
-        x.classList.toggle("border-blue-600", onK);
-        x.classList.toggle("dark:border-[#FF9900]", onK);
-        x.classList.toggle("border-slate-200", !onK);
-        x.classList.toggle("dark:border-slate-700", !onK);
+        x.classList.toggle("border-blue-600", onK); x.classList.toggle("dark:border-[#FF9900]", onK);
+        x.classList.toggle("border-slate-200", !onK); x.classList.toggle("dark:border-slate-700", !onK);
       });
       renderHistoryTable();
     }));
     on("hStatusSel", "change", e => { H_FILT = e.target.value; renderHistoryTable(); });
     on("hq", "input", e => { H_QRY = e.target.value.trim().toLowerCase(); renderHistoryTable(); });
 
-    /* ---------- Audit Foto Table (Incremental DOM + Event Delegation) ---------- */
+    /* ---------- Audit Foto table ---------- */
     function badgeHtml(status) {
       const map = {
         "VALID": "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300",
@@ -1781,7 +1428,6 @@
       };
       return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${map[status] || ""}"><span class="w-1.5 h-1.5 rounded-full bg-current"></span>${esc(status)}</span>`;
     }
-
     function openPhotoModal(r) {
       if ($("pmBadge")) $("pmBadge").innerHTML = badgeHtml(r.status);
       if ($("pmTitle")) $("pmTitle").textContent = `${r.nama || "PIC"} — ${r.kontrak || "Tanpa Kontrak"}`;
@@ -1791,28 +1437,20 @@
       const cab = [r.idcab, r.nmcab].filter(Boolean).join(" ");
       if ($("pmMeta")) $("pmMeta").textContent = `${r.wilayah || "-"} · ${cab || "-"} · ${r.kontrak || "-"}`;
       if ($("pmDates")) $("pmDates").textContent = `URL: ${r.urlDate || "-"} | Stamp: ${r.stampDate || "-"}`;
-      if ($("pmGps")) {
-        $("pmGps").innerHTML = r.gps
-          ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-[#FF9900] hover:underline">${esc(r.gps)} ↗</a>`
-          : "-";
-      }
+      if ($("pmGps")) $("pmGps").innerHTML = r.gps ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-[#FF9900] hover:underline">${esc(r.gps)} ↗</a>` : "-";
       if ($("pmOcr")) $("pmOcr").textContent = r.ocr || "(OCR tidak aktif / tidak terbaca)";
       if ($("pmLink")) $("pmLink").href = r.url || "#";
       if ($("photoModal")) $("photoModal").classList.remove("hidden");
     }
-
     function rowHtml(r, idx) {
       const fmtSlash = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-";
-      const gpsCell = r.gps
-        ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-[#FF9900] hover:underline font-mono">${esc(r.gps)} ↗</a>`
-        : "-";
-      const otherFindings = [
+      const gpsCell = r.gps ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(r.gps)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-[#FF9900] hover:underline font-mono">${esc(r.gps)} ↗</a>` : "-";
+      const other = [
         r.urlDate ? `<div><span class="text-slate-400">URL:</span> <span class="font-mono">${esc(r.urlDate)}</span></div>` : "",
         r.stampDate ? `<div><span class="text-slate-400">Stamp:</span> <span class="font-mono">${esc(r.stampDate)}</span></div>` : "",
         r.gps ? `<div><span class="text-slate-400">GPS:</span> ${gpsCell}</div>` : "",
         r.ocr ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[190px]" title="${esc(r.ocr)}">OCR: ${esc(r.ocr)}</div>` : ""
       ].filter(Boolean).join("") || '<span class="text-slate-400">-</span>';
-
       return `
         <td class="p-2.5">${r.thumb ? `<button type="button" data-pidx="${idx}" class="btn-thumb block group relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700"><img src="${r.thumb}" alt="Thumb" class="w-12 h-12 object-cover group-hover:scale-105 transition"></button>` : ""}</td>
         <td class="p-2.5 font-mono whitespace-nowrap">${esc(fmtSlash(r.tgl))}</td>
@@ -1824,98 +1462,56 @@
         <td class="p-2.5 max-w-[220px] font-medium">${esc((r.reason || "").toUpperCase()) || '<span class="text-slate-400 font-normal">-</span>'}</td>
         <td class="p-2.5">${badgeHtml(r.status)}</td>
         <td class="p-2.5"><div class="font-medium">${esc(r.ai || "-")}</div>${r.aiScore ? `<div class="text-[11px] font-mono text-slate-500">skor ${esc(r.aiScore)}</div>` : ""}${r.dup ? `<div class="text-[11px] font-mono text-rose-600 dark:text-rose-400">Duplikat: ${esc(r.dup)}</div>` : ""}</td>
-        <td class="p-2.5 text-[11px] space-y-0.5">${otherFindings}</td>`;
+        <td class="p-2.5 text-[11px] space-y-0.5">${other}</td>`;
     }
-
     function vis(tr) {
       const hide = !!((FILT && tr.dataset.s !== FILT) || (WIL_FILT && tr.dataset.w !== WIL_FILT) || (QRY && !tr.dataset.q.includes(QRY)));
       tr.classList.toggle("hidden", hide);
     }
     function fill(tr, r, idx) {
       tr.innerHTML = rowHtml(r, idx);
-      tr.dataset.s = r.status;
-      tr.dataset.w = r.wilayah || "(tanpa wilayah)";
+      tr.dataset.s = r.status; tr.dataset.w = r.wilayah || "(tanpa wilayah)";
       tr.dataset.q = [r.nama, r.kontrak, r.idpic, r.wilayah, r.idcab, r.nmcab, r.reason, r.status, r.ai, r.ocr].join(" ").toLowerCase();
       vis(tr);
     }
     function shown() {
-      const tb = $("body");
-      if (!tb) return;
-      let n = 0;
-      for (const tr of tb.children) if (!tr.classList.contains("hidden")) n++;
+      const tb = $("body"); if (!tb) return;
+      let n = 0; for (const tr of tb.children) if (!tr.classList.contains("hidden")) n++;
       if ($("shown")) $("shown").textContent = `Menampilkan ${n} dari ${results.length}`;
     }
     function addRow(r, idx) {
-      const tb = $("body");
-      if (!tb) return;
-      const tr = document.createElement("tr");
-      tr.className = "hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
-      fill(tr, r, idx);
-      tb.appendChild(tr);
+      const tb = $("body"); if (!tb) return;
+      const tr = document.createElement("tr"); tr.className = "hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
+      fill(tr, r, idx); tb.appendChild(tr);
     }
-    function updateRow(i, r) {
-      const tb = $("body");
-      if (!tb) return;
-      const tr = tb.children[i];
-      if (tr) fill(tr, r, i);
-    }
-    function applyFotoFilters() {
-      const tb = $("body");
-      if (!tb) return;
-      for (const tr of tb.children) vis(tr);
-      shown();
-    }
+    function updateRow(i, r) { const tb = $("body"); if (!tb) return; const tr = tb.children[i]; if (tr) fill(tr, r, i); }
+    function applyFotoFilters() { const tb = $("body"); if (!tb) return; for (const tr of tb.children) vis(tr); shown(); }
     function rebuildFotoTable() {
-      const tb = $("body");
-      if (!tb) return;
+      const tb = $("body"); if (!tb) return;
       const frag = document.createDocumentFragment();
       for (let i = 0; i < results.length; i++) {
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
-        fill(tr, results[i], i);
-        frag.appendChild(tr);
+        const tr = document.createElement("tr"); tr.className = "hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
+        fill(tr, results[i], i); frag.appendChild(tr);
       }
-      tb.innerHTML = "";
-      tb.appendChild(frag);
-      shown();
+      tb.innerHTML = ""; tb.appendChild(frag); shown();
     }
-    on("body", "click", e => {
-      const btn = e.target.closest(".btn-thumb");
-      if (btn && results[+btn.dataset.pidx]) openPhotoModal(results[+btn.dataset.pidx]);
-    });
+    on("body", "click", e => { const btn = e.target.closest(".btn-thumb"); if (btn && results[+btn.dataset.pidx]) openPhotoModal(results[+btn.dataset.pidx]); });
 
     function reasonKey(s) {
-      return s
-        .replace(/^Tanggal stamp \d+ != tanggal URL .*/, "Tanggal stamp ≠ tanggal URL")
-        .replace(/^Tanggal stamp \d+ != TGL LKP/, "Tanggal stamp ≠ TGL LKP")
-        .replace(/^Foto sama dengan kontrak .*/, "Duplikat dengan kontrak lain");
+      return s.replace(/^Tanggal stamp \d+ != tanggal URL .*/, "Tanggal stamp ≠ tanggal URL").replace(/^Tanggal stamp \d+ != TGL LKP/, "Tanggal stamp ≠ TGL LKP").replace(/^Foto sama dengan kontrak .*/, "Duplikat dengan kontrak lain");
     }
-
     function renderBreak() {
       const rc = {}, wc = {};
       for (const r of results) {
-        (r.reason ? r.reason.split(" | ") : []).forEach(x => {
-          const k = reasonKey(x);
-          rc[k] = (rc[k] || 0) + 1;
-        });
-        const w = r.wilayah || "(tanpa wilayah)";
-        const o = wc[w] || (wc[w] = { t: 0, v: 0, c: 0, x: 0, f: 0 });
+        (r.reason ? r.reason.split(" | ") : []).forEach(x => { const k = reasonKey(x); rc[k] = (rc[k] || 0) + 1; });
+        const w = r.wilayah || "(tanpa wilayah)", o = wc[w] || (wc[w] = { t: 0, v: 0, c: 0, x: 0, f: 0 });
         o.t++;
-        if (r.status === "VALID") o.v++;
-        else if (r.status === "PERLU CEK") o.c++;
-        else if (r.status === "TIDAK VALID") o.x++;
-        else o.f++;
+        if (r.status === "VALID") o.v++; else if (r.status === "PERLU CEK") o.c++; else if (r.status === "TIDAK VALID") o.x++; else o.f++;
       }
       const rs = Object.entries(rc).sort((a, b) => b[1] - a[1]);
       if ($("why")) {
-        $("why").innerHTML = rs.length
-          ? rs.map(([k, n]) => `<button type="button" data-rk="${esc(k)}" class="chip-why px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 transition">${esc(k)}: <b class="font-mono">${n}</b></button>`).join("")
-          : `<span class="text-xs text-slate-400">Belum ada temuan.</span>`;
-        $("why").querySelectorAll(".chip-why").forEach(b => b.addEventListener("click", () => {
-          if ($("q")) $("q").value = b.dataset.rk;
-          QRY = b.dataset.rk.toLowerCase();
-          applyFotoFilters();
-        }));
+        $("why").innerHTML = rs.length ? rs.map(([k, n]) => `<button type="button" data-rk="${esc(k)}" class="chip-why px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 transition">${esc(k)}: <b class="font-mono">${n}</b></button>`).join("") : `<span class="text-xs text-slate-400">Belum ada temuan.</span>`;
+        $("why").querySelectorAll(".chip-why").forEach(b => b.addEventListener("click", () => { if ($("q")) $("q").value = b.dataset.rk; QRY = b.dataset.rk.toLowerCase(); applyFotoFilters(); }));
       }
       if ($("wtab")) {
         $("wtab").innerHTML = `<thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300"><tr><th class="p-2.5">Wilayah</th><th class="p-2.5">Total</th><th class="p-2.5 text-emerald-600">Valid</th><th class="p-2.5 text-amber-600">Perlu Cek</th><th class="p-2.5 text-rose-600">Tidak Valid</th><th class="p-2.5">Gagal</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">` +
@@ -1923,96 +1519,58 @@
       }
       if ($("wilFilterFoto")) {
         const cur = $("wilFilterFoto").value;
-        $("wilFilterFoto").innerHTML = `<option value="">Semua Wilayah</option>` +
-          Object.keys(wc).sort().map(w => `<option value="${esc(w)}"${w === cur ? " selected" : ""}>${esc(w)} (${wc[w].t})</option>`).join("");
+        $("wilFilterFoto").innerHTML = `<option value="">Semua Wilayah</option>` + Object.keys(wc).sort().map(w => `<option value="${esc(w)}"${w === cur ? " selected" : ""}>${esc(w)} (${wc[w].t})</option>`).join("");
       }
     }
-
     function summary() {
       const c = s => results.filter(r => r.status === s).length;
       const cv = c("VALID"), cc = c("PERLU CEK"), cx = c("TIDAK VALID"), cf = c("GAGAL DOWNLOAD");
       const tt = results.length || 1, pc = n => (n / tt * 100).toFixed(1) + "%";
       if ($("badgeFoto")) $("badgeFoto").textContent = results.length;
       if ($("nT")) $("nT").textContent = results.length;
-      if ($("nV")) $("nV").textContent = cv;
-      if ($("nC")) $("nC").textContent = cc;
-      if ($("nX")) $("nX").textContent = cx;
-      if ($("nF")) $("nF").textContent = cf;
-      if ($("pV")) $("pV").textContent = pc(cv);
-      if ($("pC")) $("pC").textContent = pc(cc);
-      if ($("pX")) $("pX").textContent = pc(cx);
-      if ($("pF")) $("pF").textContent = pc(cf);
-      if ($("dist")) {
-        $("dist").innerHTML = [
-          ["bg-emerald-500", cv, "Valid"],
-          ["bg-amber-500", cc, "Perlu cek"],
-          ["bg-rose-600", cx, "Tidak valid"],
-          ["bg-slate-400", cf, "Gagal download"]
-        ].map(([k, n, l]) => n ? `<div class="${k} h-full" style="width:${n / tt * 100}%" title="${l}: ${n} (${pc(n)})"></div>` : "").join("");
-      }
+      if ($("nV")) $("nV").textContent = cv; if ($("nC")) $("nC").textContent = cc; if ($("nX")) $("nX").textContent = cx; if ($("nF")) $("nF").textContent = cf;
+      if ($("pV")) $("pV").textContent = pc(cv); if ($("pC")) $("pC").textContent = pc(cc); if ($("pX")) $("pX").textContent = pc(cx); if ($("pF")) $("pF").textContent = pc(cf);
+      if ($("dist")) $("dist").innerHTML = [["bg-emerald-500", cv, "Valid"], ["bg-amber-500", cc, "Perlu cek"], ["bg-rose-600", cx, "Tidak valid"], ["bg-slate-400", cf, "Gagal download"]].map(([k, n, l]) => n ? `<div class="${k} h-full" style="width:${n / tt * 100}%" title="${l}: ${n} (${pc(n)})"></div>` : "").join("");
       if ($("rsub")) $("rsub").textContent = `${results.length}${TOTAL ? " dari " + TOTAL : ""} foto diperiksa`;
       if ($("exp2")) $("exp2").disabled = !results.length;
       if ($("pb")) $("pb").style.width = (TOTAL ? Math.min(100, results.length / TOTAL * 100) : 0) + "%";
-      if (results.length) {
-        if ($("emptyFoto")) $("emptyFoto").classList.add("hidden");
-        if ($("fotoContent")) $("fotoContent").classList.remove("hidden");
-      }
+      if (results.length) { if ($("emptyFoto")) $("emptyFoto").classList.add("hidden"); if ($("fotoContent")) $("fotoContent").classList.remove("hidden"); }
       shown();
       if (results.length % 10 === 0 || (TOTAL && results.length >= TOTAL)) renderBreak();
     }
-
+    function resetKpiHighlight() {
+      document.querySelectorAll(".kpi-foto").forEach((x, i) => {
+        x.classList.toggle("border-blue-600", i === 0); x.classList.toggle("dark:border-[#FF9900]", i === 0);
+        x.classList.toggle("border-slate-200", i !== 0); x.classList.toggle("dark:border-slate-700", i !== 0);
+      });
+    }
     document.querySelectorAll(".kpi-foto").forEach(b => b.addEventListener("click", () => {
       FILT = b.dataset.f;
       document.querySelectorAll(".kpi-foto").forEach(x => {
         const onK = x === b;
-        x.classList.toggle("border-blue-600", onK);
-        x.classList.toggle("dark:border-[#FF9900]", onK);
-        x.classList.toggle("border-slate-200", !onK);
-        x.classList.toggle("dark:border-slate-700", !onK);
+        x.classList.toggle("border-blue-600", onK); x.classList.toggle("dark:border-[#FF9900]", onK);
+        x.classList.toggle("border-slate-200", !onK); x.classList.toggle("dark:border-slate-700", !onK);
       });
       applyFotoFilters();
     }));
     on("q", "input", e => { QRY = e.target.value.trim().toLowerCase(); applyFotoFilters(); });
     on("wilFilterFoto", "change", e => { WIL_FILT = e.target.value; applyFotoFilters(); });
-    on("btnResetFoto", "click", () => {
-      FILT = ""; QRY = ""; WIL_FILT = "";
-      if ($("q")) $("q").value = "";
-      if ($("wilFilterFoto")) $("wilFilterFoto").value = "";
-      document.querySelectorAll(".kpi-foto").forEach((x, i) => {
-        x.classList.toggle("border-blue-600", i === 0);
-        x.classList.toggle("dark:border-[#FF9900]", i === 0);
-        x.classList.toggle("border-slate-200", i !== 0);
-        x.classList.toggle("dark:border-slate-700", i !== 0);
-      });
-      applyFotoFilters();
-    });
+    on("btnResetFoto", "click", () => { FILT = ""; QRY = ""; WIL_FILT = ""; if ($("q")) $("q").value = ""; if ($("wilFilterFoto")) $("wilFilterFoto").value = ""; resetKpiHighlight(); applyFotoFilters(); });
     on("stop", "click", () => { stopFlag = true; if ($("st")) $("st").textContent = "Menghentikan..."; });
 
-    /* ---------- Run Bulk Audit ---------- */
+    /* ---------- Jalankan pemeriksaan ---------- */
     on("go", "click", async () => {
       const pasted = ($("urls") ? $("urls").value : "").match(new RegExp(URL_RE.source, "g")) || [];
       let list = [];
-      if (pasted.length) {
-        list = pasted.map(u => rowMap.has(u) ? { ...rowMap.get(u) } : { file: "", tgl: "", wilayah: "", idcab: "", nmcab: "", kontrak: "", idpic: "", nama: "", url: u });
-      } else if (rows.length) {
-        list = rows.map(r => ({ ...r }));
-      }
-      if (!list.length) {
-        notify(loadedFiles.length ? "Pilih Wilayah di Langkah 2 terlebih dahulu." : "Unggah file Excel, tempel URL, atau klik ✨ Muat Data Demo.", "warn");
-        return;
-      }
+      if (pasted.length) list = pasted.map(u => rowMap.has(u) ? { ...rowMap.get(u) } : { file: "", tgl: "", wilayah: "", idcab: "", nmcab: "", kontrak: "", idpic: "", nama: "", url: u });
+      else if (rows.length) list = rows.map(r => ({ ...r }));
+      if (!list.length) { notify(loadedFiles.length ? "Pilih Wilayah di Langkah 2 terlebih dahulu." : "Unggah file Excel, tempel URL, atau klik ✨ Muat Data Demo.", "warn"); return; }
 
       list = list.map((r, i) => ({ ...r, key: r.kontrak ? `${r.tgl}|${r.kontrak}|${r.idpic}` : "u" + i }));
       results = []; stopFlag = false; TOTAL = list.length; FILT = ""; QRY = ""; WIL_FILT = "";
       if ($("q")) $("q").value = "";
       if ($("body")) $("body").innerHTML = "";
-      document.querySelectorAll(".kpi-foto").forEach((x, i) => {
-        x.classList.toggle("border-blue-600", i === 0);
-        x.classList.toggle("dark:border-[#FF9900]", i === 0);
-        x.classList.toggle("border-slate-200", i !== 0);
-        x.classList.toggle("dark:border-slate-700", i !== 0);
-      });
-
+      resetKpiHighlight();
       switchTab("foto");
       if ($("exp")) $("exp").classList.add("hidden");
       if ($("go")) $("go").disabled = true;
@@ -2038,54 +1596,42 @@
       }
 
       if ($("st")) $("st").textContent = `Terhubung via [${preferred}]. Memuat model AI (±90 MB pertama kali)...`;
-      let clip = null;
-      try {
-        const L = await loadClip();
-        clip = L.fn;
-        if ($("st")) $("st").textContent = `Model AI siap (mode ${L.mode}).`;
-      } catch (e) {
-        notify("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message, "warn");
-      }
+      let ai = null;
+      try { ai = await loadAI(); if ($("st")) $("st").textContent = `Model AI siap (mode ${ai.mode}).`; }
+      catch (e) { notify("Model AI gagal dimuat, pemeriksaan isi foto dilewati: " + e.message, "warn"); }
+      const classify = ai ? ai.classify : null;
 
-      const pre = new Map(), t0 = Date.now();
-      for (let i = 0; i < list.length && !stopFlag; i++) {
-        const eta = i ? Math.round((Date.now() - t0) / i * (list.length - i) / 1000) : 0;
-        if ($("st")) $("st").textContent = `Memeriksa ${i + 1} / ${list.length}` + (eta ? ` · sisa ±${eta >= 60 ? Math.round(eta / 60) + " menit" : eta + " dtk"}` : "");
-        for (let k = i; k < Math.min(i + 3, list.length); k++) if (!pre.has(k)) pre.set(k, getPhoto(list[k].url));
-        const r = await processRow(list[i], ocr, clip, pre.get(i));
-        pre.delete(i);
-        verdict(r);
-        results.push(r);
-        addRow(r, results.length - 1);
-        summary();
-      }
+      await runLanes({
+        total: list.length,
+        lanes: ai ? ai.lanes : 2,
+        task: async i => { const r = await processRow(list[i], ocr, classify); verdict(r); return r; },
+        isStopped: () => stopFlag,
+        onFlush: r => { results.push(r); addRow(r, results.length - 1); },
+        onProgress: (n, eta) => {
+          summary();
+          if ($("st")) $("st").textContent = `Memeriksa ${n} / ${list.length}` + (ai ? ` · ${ai.lanes} jalur paralel` : "") + (eta ? ` · sisa ±${eta >= 60 ? Math.round(eta / 60) + " menit" : eta + " dtk"}` : "");
+        }
+      });
 
-      /* 2 retry rounds for non-404 failed downloads with 3-photo parallel prefetch */
-      for (let round = 1; round <= 2 && !stopFlag; round++) {
+      /* 3 ronde cek ulang untuk GAGAL DOWNLOAD (404 dicoba ulang di ronde 1) */
+      for (let round = 1; round <= 3 && !stopFlag; round++) {
         const idxs = [];
         results.forEach((r, i) => {
-          if (r.status === "GAGAL DOWNLOAD" && r.reason !== "URL tidak valid" && r.reason !== "Foto tidak ditemukan (404)") idxs.push(i);
+          if (r.status === "GAGAL DOWNLOAD" && r.reason !== "URL tidak valid" && (r.reason !== "Foto tidak ditemukan (404)" || round === 1)) idxs.push(i);
         });
         if (!idxs.length) break;
-        const rpre = new Map();
         for (let k = 0; k < idxs.length && !stopFlag; k++) {
-          if ($("st")) $("st").textContent = `Cek ulang gagal download — ronde ${round}/2 (${k + 1} / ${idxs.length})`;
-          for (let m = k; m < Math.min(k + 3, idxs.length); m++) if (!rpre.has(m)) rpre.set(m, getPhoto(list[idxs[m]].url));
-          const r = await processRow(list[idxs[k]], ocr, clip, rpre.get(k));
-          rpre.delete(k);
-          verdict(r);
-          results[idxs[k]] = r;
-          updateRow(idxs[k], r);
-          summary();
+          if ($("st")) $("st").textContent = `Cek ulang gagal download — ronde ${round}/3 (${k + 1} / ${idxs.length})`;
+          const r = await processRow(list[idxs[k]], ocr, classify);
+          verdict(r); results[idxs[k]] = r; updateRow(idxs[k], r); summary();
         }
       }
-
+      if (ai) ai.close();
       if (ocr) await ocr.terminate();
+
       findDups(results);
       results.forEach(verdict);
-      rebuildFotoTable();
-      summary();
-      renderBreak();
+      rebuildFotoTable(); summary(); renderBreak();
       try { buildHistory(); } catch (e) { notify("Analisis history gagal: " + e.message, "warn"); }
 
       if ($("pb") && !stopFlag) $("pb").style.width = "100%";
@@ -2098,40 +1644,18 @@
       notify("Pemeriksaan selesai! Anda dapat memfilter hasil atau mengunduh Excel.", "ok");
     });
 
-    /* ---------- Export Excel (5 Sheets + Ringkasan Validity) ---------- */
+    /* ---------- Export Excel ---------- */
     function exportExcel() {
       if (!results.length && !HIST) { notify("Belum ada data untuk diekspor.", "warn"); return; }
       if (typeof XLSX === "undefined") { notify("Library SheetJS (XLSX) belum termuat.", "bad"); return; }
-
       const fmt = d => d ? d.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "";
-      const FOTO_HDR = [
-        "TGL PENUGASAN", "CLUSTER", "ID CABANG", "NAMA CABANG", "NO KONTRAK", "ID PIC", "NAMA PIC",
-        "FOTO KUNJUNGAN", "KETERANGAN", "VALIDITY", "DETEKSI AI", "SKOR AI", "DUPLIKAT DENGAN",
-        "TGL URL", "TGL STAMP", "GPS STAMP", "OCR STAMP", "SUMBER FILE"
-      ];
-      const FOTO_W = [14, 14, 12, 20, 18, 10, 24, 68, 48, 16, 28, 10, 18, 12, 12, 22, 48, 24];
-
+      const FOTO_HDR = ["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","NO KONTRAK","ID PIC","NAMA PIC","FOTO KUNJUNGAN","KETERANGAN","VALIDITY","DETEKSI AI","SKOR AI","DUPLIKAT DENGAN","TGL URL","TGL STAMP","GPS STAMP","OCR STAMP","SUMBER FILE"];
+      const FOTO_W = [14,14,12,20,18,10,24,68,48,16,28,10,18,12,12,22,48,24];
       const all = results.map(r => ({
-        "TGL PENUGASAN": fmt(r.tgl),
-        "CLUSTER": r.wilayah || "",
-        "ID CABANG": r.idcab || "",
-        "NAMA CABANG": r.nmcab || "",
-        "NO KONTRAK": r.kontrak || "",
-        "ID PIC": r.idpic || "",
-        "NAMA PIC": r.nama || "",
-        "FOTO KUNJUNGAN": r.url || "",
-        "KETERANGAN": (r.reason || "").toUpperCase(),
-        "VALIDITY": r.status || "",
-        "DETEKSI AI": r.ai || "",
-        "SKOR AI": r.aiScore || "",
-        "DUPLIKAT DENGAN": r.dup || "",
-        "TGL URL": r.urlDate || "",
-        "TGL STAMP": r.stampDate || "",
-        "GPS STAMP": r.gps || "",
-        "OCR STAMP": r.ocr || "",
-        "SUMBER FILE": r.file || ""
+        "TGL PENUGASAN": fmt(r.tgl), "CLUSTER": r.wilayah || "", "ID CABANG": r.idcab || "", "NAMA CABANG": r.nmcab || "", "NO KONTRAK": r.kontrak || "", "ID PIC": r.idpic || "", "NAMA PIC": r.nama || "",
+        "FOTO KUNJUNGAN": r.url || "", "KETERANGAN": (r.reason || "").toUpperCase(), "VALIDITY": r.status || "", "DETEKSI AI": r.ai || "", "SKOR AI": r.aiScore || "", "DUPLIKAT DENGAN": r.dup || "",
+        "TGL URL": r.urlDate || "", "TGL STAMP": r.stampDate || "", "GPS STAMP": r.gps || "", "OCR STAMP": r.ocr || "", "SUMBER FILE": r.file || ""
       }));
-
       const flagged = all.filter(r => r["VALIDITY"] !== "VALID");
       const wb = XLSX.utils.book_new();
       const add = (data, name, wd, hdr) => {
@@ -2139,66 +1663,26 @@
         ws["!cols"] = (wd || FOTO_W).map(w => ({ wch: w }));
         XLSX.utils.book_append_sheet(wb, ws, name);
       };
-
-      /* Sheet 1: KUALITAS LKP FOTO + RINGKASAN VALIDITY / JUMLAH / PERSENTASE */
-      const totalAll = results.length;
-      const cntSt = s => results.filter(r => r.status === s).length;
-      const pctSt = n => totalAll ? (n / totalAll * 100).toFixed(1) + "%" : "0.0%";
-      const vSummary = [
-        ["VALID", cntSt("VALID"), pctSt(cntSt("VALID"))],
-        ["PERLU CEK", cntSt("PERLU CEK"), pctSt(cntSt("PERLU CEK"))],
-        ["TIDAK VALID", cntSt("TIDAK VALID"), pctSt(cntSt("TIDAK VALID"))],
-        ["GAGAL DOWNLOAD", cntSt("GAGAL DOWNLOAD"), pctSt(cntSt("GAGAL DOWNLOAD"))],
-        ["TOTAL", totalAll, totalAll ? "100.0%" : "0.0%"]
-      ];
-      const kualitasRows = [];
-      const maxRows = Math.max(flagged.length, vSummary.length);
+      const totalAll = results.length, cntSt = s => results.filter(r => r.status === s).length, pctSt = n => totalAll ? (n / totalAll * 100).toFixed(1) + "%" : "0.0%";
+      const vSummary = [["VALID", cntSt("VALID"), pctSt(cntSt("VALID"))], ["PERLU CEK", cntSt("PERLU CEK"), pctSt(cntSt("PERLU CEK"))], ["TIDAK VALID", cntSt("TIDAK VALID"), pctSt(cntSt("TIDAK VALID"))], ["GAGAL DOWNLOAD", cntSt("GAGAL DOWNLOAD"), pctSt(cntSt("GAGAL DOWNLOAD"))], ["TOTAL", totalAll, totalAll ? "100.0%" : "0.0%"]];
+      const kualitasRows = [], maxRows = Math.max(flagged.length, vSummary.length);
       for (let i = 0; i < maxRows; i++) {
         const left = i < flagged.length ? FOTO_HDR.map(h => flagged[i][h]) : Array(FOTO_HDR.length).fill("");
-        const right = i < vSummary.length ? vSummary[i] : ["", "", ""];
-        kualitasRows.push([...left, "", ...right]);
+        kualitasRows.push([...left, "", ...(i < vSummary.length ? vSummary[i] : ["", "", ""])]);
       }
-      const wsKualitas = XLSX.utils.aoa_to_sheet([[...FOTO_HDR, "", "RINGKASAN VALIDITY", "JUMLAH", "PERSENTASE"], ...kualitasRows]);
-      wsKualitas["!cols"] = [...FOTO_W, 4, 22, 12, 14].map(w => ({ wch: w }));
-      XLSX.utils.book_append_sheet(wb, wsKualitas, "KUALITAS LKP FOTO");
-
-      /* Sheet 2: AUDIT KEASLIAN FOTO */
+      const wsK = XLSX.utils.aoa_to_sheet([[...FOTO_HDR, "", "RINGKASAN VALIDITY", "JUMLAH", "PERSENTASE"], ...kualitasRows]);
+      wsK["!cols"] = [...FOTO_W, 4, 22, 12, 14].map(w => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, wsK, "KUALITAS LKP FOTO");
       add(all, "AUDIT KEASLIAN FOTO", FOTO_W, FOTO_HDR);
 
-      /* Sheets 3, 4, 5: History Sheets */
       if (HIST) {
-        const H1 = ["TGL PENUGASAN", "CLUSTER", "ID CABANG", "NAMA CABANG", "ID PIC", "NAMA PIC", "KESESUAIAN HISTORIS LKP", "CATATAN FOTO", "DETAIL KESESUAIAN HISTORIS LKP"];
-        add(HIST.pics.filter(x => !x.ok).map(x => ({
-          "TGL PENUGASAN": fmt(x.m.tgl),
-          "CLUSTER": x.m.cluster || x.f.cluster || "",
-          "ID CABANG": x.m.idcab || x.f.idcab || "",
-          "NAMA CABANG": x.m.nmcab || x.f.nmcab || "",
-          "ID PIC": x.m.idpic,
-          "NAMA PIC": x.m.nama || x.f.nama || "",
-          "KESESUAIAN HISTORIS LKP": x.shortLabel,
-          "CATATAN FOTO": x.catatanFoto || "",
-          "DETAIL KESESUAIAN HISTORIS LKP": x.detail
-        })), "KUALITAS LKP HISTORY", [14, 14, 12, 22, 10, 26, 42, 46, 54], H1);
-
-        const HS = ["NAMA WILAYAH", "TGL LKP", "ID CABANG", "NAMA CABANG", "ID PIC", "NAMA PIC", "JML LKP (NON-BAYAR)", "KESIMPULAN KETERANGAN", "STATUS", "DETAIL EVALUASI", "CATATAN FOTO"];
-        add(HIST.pics.map(x => ({
-          "NAMA WILAYAH": x.m.cluster || x.f.cluster || "",
-          "TGL LKP": fmt(x.m.tgl),
-          "ID CABANG": x.m.idcab || x.f.idcab || "",
-          "NAMA CABANG": x.m.nmcab || x.f.nmcab || "",
-          "ID PIC": x.m.idpic,
-          "NAMA PIC": x.m.nama || x.f.nama || "",
-          "JML LKP (NON-BAYAR)": x.jml,
-          "KESIMPULAN KETERANGAN": x.kesimpulan,
-          "STATUS": x.status,
-          "DETAIL EVALUASI": x.detail,
-          "CATATAN FOTO": x.catatanFoto || ""
-        })), "SUMMARY HISTORY LKP", [14, 12, 12, 22, 10, 26, 18, 80, 14, 56, 46], HS);
-
-        const H2 = ["TGL LKP", "CLUSTER", "ID PIC", "NAMA PIC", "NO KONTRAK", "KETERANGAN", "PANJANG KARAKTER", "AUTO UPDATE", "STATUS PIC", "KESESUAIAN HISTORIS LKP", "DETAIL EVALUASI", "CATATAN FOTO", "DETEKSI AI FOTO"];
-        add(HIST.det.map(d => ({ ...d, "TGL LKP": fmt(d["TGL LKP"]) })), "AUDIT HISTORY LKP", [12, 14, 10, 26, 18, 80, 16, 12, 14, 42, 52, 46, 34], H2);
+        const H1 = ["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","KESESUAIAN HISTORIS LKP","CATATAN FOTO","DETAIL KESESUAIAN HISTORIS LKP"];
+        add(HIST.pics.filter(x => !x.ok).map(x => ({ "TGL PENUGASAN": fmt(x.m.tgl), "CLUSTER": x.m.cluster || x.f.cluster || "", "ID CABANG": x.m.idcab || x.f.idcab || "", "NAMA CABANG": x.m.nmcab || x.f.nmcab || "", "ID PIC": x.m.idpic, "NAMA PIC": x.m.nama || x.f.nama || "", "KESESUAIAN HISTORIS LKP": x.shortLabel, "CATATAN FOTO": x.catatanFoto || "", "DETAIL KESESUAIAN HISTORIS LKP": x.detail })), "KUALITAS LKP HISTORY", [14,14,12,22,10,26,42,46,54], H1);
+        const HS = ["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI","CATATAN FOTO"];
+        add(HIST.pics.map(x => ({ "NAMA WILAYAH": x.m.cluster || x.f.cluster || "", "TGL LKP": fmt(x.m.tgl), "ID CABANG": x.m.idcab || x.f.idcab || "", "NAMA CABANG": x.m.nmcab || x.f.nmcab || "", "ID PIC": x.m.idpic, "NAMA PIC": x.m.nama || x.f.nama || "", "JML LKP (NON-BAYAR)": x.jml, "KESIMPULAN KETERANGAN": x.kesimpulan, "STATUS": x.status, "DETAIL EVALUASI": x.detail, "CATATAN FOTO": x.catatanFoto || "" })), "SUMMARY HISTORY LKP", [14,12,12,22,10,26,18,80,14,56,46], HS);
+        const H2 = ["TGL LKP","CLUSTER","ID PIC","NAMA PIC","NO KONTRAK","KETERANGAN","PANJANG KARAKTER","AUTO UPDATE","STATUS PIC","KESESUAIAN HISTORIS LKP","DETAIL EVALUASI","CATATAN FOTO","DETEKSI AI FOTO"];
+        add(HIST.det.map(d => ({ ...d, "TGL LKP": fmt(d["TGL LKP"]) })), "AUDIT HISTORY LKP", [12,14,10,26,18,80,16,12,14,42,52,46,34], H2);
       }
-
       const ds = [...new Set(results.map(r => r.tgl || r.urlDate).filter(Boolean))].sort();
       const fdn = d => d.replace(/(\d{4})(\d{2})(\d{2})/, "$3-$2-$1");
       const dp = !ds.length ? "" : ds.length === 1 ? " " + fdn(ds[0]) : ` ${fdn(ds[0])} to ${fdn(ds[ds.length - 1])}`;
@@ -2208,74 +1692,57 @@
     on("exp", "click", exportExcel);
     on("exp2", "click", exportExcel);
 
-    /* ---------- Demo Data (Instant Offline Preview with Inline SVG Thumbnails) ---------- */
+    /* ---------- Demo data ---------- */
     function makeDemoThumb(bg, title, sub, stamp) {
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">` +
-        `<rect width="320" height="240" fill="${bg}"/>` +
-        `<circle cx="270" cy="48" r="82" fill="rgba(255,255,255,0.12)"/>` +
-        `<text x="20" y="108" fill="#ffffff" font-family="Inter,sans-serif" font-size="20" font-weight="700">${esc(title)}</text>` +
-        `<text x="20" y="138" fill="rgba(255,255,255,0.88)" font-family="monospace" font-size="13">${esc(sub)}</text>` +
-        `<rect y="204" width="320" height="36" fill="rgba(0,0,0,0.48)"/>` +
-        `<text x="16" y="226" fill="#e2e8f0" font-family="monospace" font-size="11">${esc(stamp)}</text>` +
-        `</svg>`;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240"><rect width="320" height="240" fill="${bg}"/><circle cx="270" cy="48" r="82" fill="rgba(255,255,255,0.12)"/><text x="20" y="108" fill="#ffffff" font-family="Inter,sans-serif" font-size="20" font-weight="700">${esc(title)}</text><text x="20" y="138" fill="rgba(255,255,255,0.88)" font-family="monospace" font-size="13">${esc(sub)}</text><rect y="204" width="320" height="36" fill="rgba(0,0,0,0.48)"/><text x="16" y="226" fill="#e2e8f0" font-family="monospace" font-size="11">${esc(stamp)}</text></svg>`;
       return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     }
-
     function loadDemoData() {
+      const U = (d, n) => `http://backend.sehati.co.id/api/getImage?module=collection&date=${d}&image=demo${n}.png`;
+      const mk = (o, thumbArgs) => ({ file: "Monitoring_LKP_Demo.xlsx", dup: "", ocr: "", stampDate: "", gps: "", ai: "", aiScore: "", ...o, thumb: makeDemoThumb(...thumbArgs) });
       results = [
-        { tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7086250001494", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260903&image=demo1.png", status: "TIDAK VALID", reason: "BAYAR TAPI FOTO JALAN", urlDate: "20260903", stampDate: "20260903", gps: "-8.634510, 116.345210", ai: "Foto jalan/lantai/motor tanpa orang", aiScore: "89.6%", ocr: "Kamis, 03 Sep 2026 10:15 -8.634510, 116.345210 Kopang", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#be123c", "TIDAK VALID · Jalan", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 10:15 · -8.6345, 116.3452") },
-        { tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7086260000355", idpic: "13426", nama: "ASTIADI", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260903&image=demo2.png", status: "TIDAK VALID", reason: "FOTO TEMPAT SAMA DENGAN DIBAWAH", urlDate: "20260903", stampDate: "20260903", gps: "-8.631120, 116.348900", ai: "Foto orang di depan rumah", aiScore: "78.4%", ocr: "Kamis, 03 Sep 2026 11:02 -8.631120, 116.348900 Kopang", dup: "7086260000351", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#9f1239", "TIDAK VALID · Duplikat", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 11:02 · -8.6311, 116.3489") },
-        { tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7087260000376", idpic: "4291", nama: "BAMBANG", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260903&image=demo3.png", status: "TIDAK VALID", reason: "BAYAR TAPI FOTO UANG", urlDate: "20260903", stampDate: "20260903", gps: "-8.629800, 116.351100", ai: "FOTO UANG", aiScore: "93.2%", ocr: "Kamis, 03 Sep 2026 13:20 -8.629800, 116.351100 Kopang", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#be123c", "TIDAK VALID · Uang", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 13:20 · -8.6298, 116.3511") },
-        { tgl: "20260904", wilayah: "LOMBOK-2", idcab: "7082", nmcab: "PRAYA", kontrak: "7082260000614", idpic: "8181", nama: "MUSMULIADI", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260904&image=demo4.png", status: "PERLU CEK", reason: "FOTO TIDAK JELAS", urlDate: "20260904", stampDate: "20260904", gps: "-8.705194, 116.276321", ai: "FOTO BLUR / TIDAK JELAS", aiScore: "100.0%", ocr: "Jumat, 04 Sep 2026 09:58 -8.705194, 116.276321 Praya", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#b45309", "PERLU CEK · Blur", "LOMBOK-2 · 7082 PRAYA", "04 Sep 2026 09:58 · -8.7052, 116.2763") },
-        { tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7068", nmcab: "PRINGGASELA", kontrak: "7068260000190", idpic: "14122", nama: "AHMAD FATHONI", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260905&image=demo5.png", status: "TIDAK VALID", reason: "FOTO TEMPAT SAMA DENGAN DIBAWAH", urlDate: "20260905", stampDate: "20260905", gps: "-8.584744, 116.469810", ai: "Hanya foto rumah", aiScore: "81.0%", ocr: "Sabtu, 05 Sep 2026 14:40 -8.584744, 116.469810 Pringgasela", dup: "7068260000195", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#9f1239", "TIDAK VALID · Duplikat", "LOMBOK-3 · 7068 PRINGGASELA", "05 Sep 2026 14:40 · -8.5847, 116.4698") },
-        { tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7088", nmcab: "BATUKLIANG", kontrak: "7088260000402", idpic: "12199", nama: "WAHYU HIDAYAT", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260905&image=demo6.png", status: "GAGAL DOWNLOAD", reason: "FOTO TIDAK DITEMUKAN (404)", urlDate: "20260905", stampDate: "", gps: "", ai: "", aiScore: "", ocr: "", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#475569", "GAGAL DOWNLOAD", "LOMBOK-3 · 7088 BATUKLIANG", "HTTP 404 · Dihentikan instan") },
-        { tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7081", nmcab: "AIKMEL", kontrak: "7081260000211", idpic: "8991", nama: "RAHUL SANI", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260905&image=demo7.png", status: "VALID", reason: "", urlDate: "20260905", stampDate: "20260905", gps: "-8.665937, 116.559796", ai: "Selfie PIC di depan rumah/bangunan", aiScore: "88.4%", ocr: "Sabtu, 05 Sep 2026 10:15 -8.665937, 116.559796 Aikmel", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#0f766e", "VALID · Selfie Rumah", "LOMBOK-3 · 7081 AIKMEL", "05 Sep 2026 10:15 · -8.6659, 116.5598") },
-        { tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7084", nmcab: "PRINGGABAYA", kontrak: "7084260000318", idpic: "12723", nama: "AHMAD FATONI", url: "http://backend.sehati.co.id/api/getImage?module=collection&date=20260905&image=demo8.png", status: "VALID", reason: "", urlDate: "20260905", stampDate: "20260905", gps: "-8.523100, 116.642300", ai: "Selfie PIC di warung/toko", aiScore: "91.2%", ocr: "Sabtu, 05 Sep 2026 11:30 -8.523100, 116.642300 Pringgabaya", dup: "", file: "Monitoring_LKP_Demo.xlsx", thumb: makeDemoThumb("#047857", "VALID · Warung/Toko", "LOMBOK-3 · 7084 PRINGGABAYA", "05 Sep 2026 11:30 · -8.5231, 116.6423") }
+        mk({ tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7086250001494", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", url: U("20260903", 1), status: "TIDAK VALID", reason: "FOTO JALAN", urlDate: "20260903", stampDate: "20260903", gps: "-8.634510, 116.345210", ai: "Foto jalan/lantai/motor tanpa orang", aiScore: "89.6%", ocr: "Kamis, 03 Sep 2026 10:15 -8.634510, 116.345210 Kopang" }, ["#be123c", "TIDAK VALID · Jalan", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 10:15"]),
+        mk({ tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7086260000355", idpic: "13426", nama: "ASTIADI", url: U("20260903", 2), status: "TIDAK VALID", reason: "Foto sama dengan kontrak 7086260000351", urlDate: "20260903", stampDate: "20260903", gps: "-8.631120, 116.348900", ai: "Foto orang di depan rumah", aiScore: "78.4%", dup: "7086260000351" }, ["#9f1239", "TIDAK VALID · Duplikat", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 11:02"]),
+        mk({ tgl: "20260903", wilayah: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG", kontrak: "7087260000376", idpic: "4291", nama: "BAMBANG", url: U("20260903", 3), status: "TIDAK VALID", reason: "FOTO UANG", urlDate: "20260903", stampDate: "20260903", gps: "-8.629800, 116.351100", ai: "FOTO UANG", aiScore: "93.2%" }, ["#be123c", "TIDAK VALID · Uang", "LOMBOK-1 · 7086 KOPANG", "03 Sep 2026 13:20"]),
+        mk({ tgl: "20260904", wilayah: "LOMBOK-2", idcab: "7082", nmcab: "PRAYA", kontrak: "7082260000614", idpic: "8181", nama: "MUSMULIADI", url: U("20260904", 4), status: "TIDAK VALID", reason: "FOTO BLUR / TIDAK JELAS", urlDate: "20260904", stampDate: "20260904", gps: "-8.705194, 116.276321", ai: "FOTO BLUR / TIDAK JELAS", aiScore: "100.0%" }, ["#b45309", "Blur", "LOMBOK-2 · 7082 PRAYA", "04 Sep 2026 09:58"]),
+        mk({ tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7088", nmcab: "BATUKLIANG", kontrak: "7088260000402", idpic: "12199", nama: "WAHYU HIDAYAT", url: U("20260905", 6), status: "GAGAL DOWNLOAD", reason: "Foto tidak ditemukan (404)", urlDate: "20260905", failed: true }, ["#475569", "GAGAL DOWNLOAD", "LOMBOK-3 · 7088 BATUKLIANG", "HTTP 404"]),
+        mk({ tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7081", nmcab: "AIKMEL", kontrak: "7081260000211", idpic: "8991", nama: "RAHUL SANI", url: U("20260905", 7), status: "VALID", reason: "", urlDate: "20260905", stampDate: "20260905", gps: "-8.665937, 116.559796", ai: "Selfie PIC di depan rumah/bangunan", aiScore: "88.4%" }, ["#0f766e", "VALID · Selfie Rumah", "LOMBOK-3 · 7081 AIKMEL", "05 Sep 2026 10:15"]),
+        mk({ tgl: "20260905", wilayah: "LOMBOK-3", idcab: "7084", nmcab: "PRINGGABAYA", kontrak: "7084260000318", idpic: "12723", nama: "AHMAD FATONI", url: U("20260905", 8), status: "VALID", reason: "", urlDate: "20260905", stampDate: "20260905", gps: "-8.523100, 116.642300", ai: "Selfie PIC di warung/toko", aiScore: "91.2%" }, ["#047857", "VALID · Warung/Toko", "LOMBOK-3 · 7084 PRINGGABAYA", "05 Sep 2026 11:30"])
       ];
       TOTAL = results.length;
       monRows = [
         { tgl: "20260905", idpic: "8991", nama: "RAHUL SANI", cluster: "LOMBOK-3", idcab: "7081", nmcab: "AIKMEL" },
         { tgl: "20260903", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", cluster: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG" },
         { tgl: "20260904", idpic: "8181", nama: "MUSMULIADI", cluster: "LOMBOK-2", idcab: "7082", nmcab: "PRAYA" },
-        { tgl: "20260905", idpic: "14122", nama: "AHMAD FATHONI", cluster: "LOMBOK-3", idcab: "7068", nmcab: "PRINGGASELA" },
         { tgl: "20260905", idpic: "12199", nama: "WAHYU HIDAYAT", cluster: "LOMBOK-3", idcab: "7088", nmcab: "BATUKLIANG" },
         { tgl: "20260905", idpic: "12723", nama: "AHMAD FATONI", cluster: "LOMBOK-3", idcab: "7084", nmcab: "PRINGGABAYA" },
         { tgl: "20260903", idpic: "15850", nama: "ABDUL HAMID", cluster: "LOMBOK-1", idcab: "7090", nmcab: "SANDUBAYA" }
       ];
+      const H = (tgl, idpic, nama, kontrak, ket, cluster, idcab, nmcab) => ({ tgl, idpic, nama, kontrak, ket, stBayar: "BELUM BAYAR", cluster, idcab, nmcab });
       histRows = [
-        { tgl: "20260905", idpic: "8991", nama: "RAHUL SANI", kontrak: "7081260000211", ket: "Bertemu istri konsumen Ibu Sari di rumah, konsumen sedang kerja proyek luar kota. Janji bayar Rp 1.250.000 tgl 25 Sep via VA setelah gajian, sudah diedukasi denda harian dan akan di-FU ulang tgl 24.", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7081", nmcab: "AIKMEL" },
-        { tgl: "20260905", idpic: "8991", nama: "RAHUL SANI", kontrak: "7081260000215", ket: "Kunjungan ke warung konsumen Bpk Hendra, usaha sedang sepi minggu ini namun komitmen bayar parsial Rp 600.000 hari Jumat sore. Titip surat pengingat dan jadwal kunjungan ulang hari Sabtu.", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7081", nmcab: "AIKMEL" },
-        { tgl: "20260903", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", kontrak: "7086250001494", ket: "Rumah kosong tidak ada orang", stBayar: "BELUM BAYAR", cluster: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG" },
-        { tgl: "20260903", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", kontrak: "7086250001495", ket: "Rumah kosong tidak ada orang", stBayar: "BELUM BAYAR", cluster: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG" },
-        { tgl: "20260903", idpic: "14644", nama: "SAMSUL RIZAL.S.PD", kontrak: "7086250001496", ket: "Rumah kosong tidak ada orang", stBayar: "BELUM BAYAR", cluster: "LOMBOK-1", idcab: "7086", nmcab: "KOPANG" },
-        { tgl: "20260904", idpic: "8181", nama: "MUSMULIADI", kontrak: "7082260000614", ket: "Belum ada dana, janji minggu depan", stBayar: "BELUM BAYAR", cluster: "LOMBOK-2", idcab: "7082", nmcab: "PRAYA" },
-        { tgl: "20260904", idpic: "8181", nama: "MUSMULIADI", kontrak: "7082260000619", ket: "Rumah sepi, titip pesan tetangga", stBayar: "BELUM BAYAR", cluster: "LOMBOK-2", idcab: "7082", nmcab: "PRAYA" },
-        { tgl: "20260905", idpic: "14122", nama: "AHMAD FATHONI", kontrak: "7068260000190", ket: "Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari anak, akan di-FU lagi besok", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7068", nmcab: "PRINGGASELA" },
-        { tgl: "20260905", idpic: "14122", nama: "AHMAD FATHONI", kontrak: "7068260000191", ket: "Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari istri, akan di-FU lagi besok", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7068", nmcab: "PRINGGASELA" },
-        { tgl: "20260905", idpic: "14122", nama: "AHMAD FATHONI", kontrak: "7068260000192", ket: "Sudah dikunjungi di rumah konsumen namun belum bisa bayar hari ini karena menunggu kiriman dari keluarga, akan di-FU lagi besok", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7068", nmcab: "PRINGGASELA" },
-        { tgl: "20260905", idpic: "12199", nama: "WAHYU HIDAYAT", kontrak: "7088260000402", ket: "Konsumen tidak ada di rumah, titip surat ke keluarga", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7088", nmcab: "BATUKLIANG" },
-        { tgl: "20260905", idpic: "12723", nama: "AHMAD FATONI", kontrak: "7084260000318", ket: "Bertemu langsung konsumen di kios pasar, janji pelunasan angsuran Rp 950.000 besok siang setelah penjualan hasil panen, akan di-FU pagi via WA.", stBayar: "BELUM BAYAR", cluster: "LOMBOK-3", idcab: "7084", nmcab: "PRINGGABAYA" },
-        { tgl: "20260903", idpic: "15850", nama: "ABDUL HAMID", kontrak: "7090260000101", ket: "AUTO UPDATE BY SYSTEM", stBayar: "BELUM BAYAR", cluster: "LOMBOK-1", idcab: "7090", nmcab: "SANDUBAYA" }
+        H("20260905", "8991", "RAHUL SANI", "7081260000211", "Bertemu istri konsumen Ibu Sari di rumah, konsumen sedang kerja proyek luar kota. Janji bayar Rp 1.250.000 tgl 25 Sep via VA setelah gajian, sudah diedukasi denda harian dan akan di-FU ulang tgl 24.", "LOMBOK-3", "7081", "AIKMEL"),
+        H("20260905", "8991", "RAHUL SANI", "7081260000215", "Kunjungan ke warung konsumen Bpk Hendra, usaha sedang sepi minggu ini namun komitmen bayar parsial Rp 600.000 hari Jumat sore. Titip surat pengingat dan jadwal kunjungan ulang hari Sabtu.", "LOMBOK-3", "7081", "AIKMEL"),
+        H("20260903", "14644", "SAMSUL RIZAL.S.PD", "7086250001494", "Rumah kosong tidak ada orang", "LOMBOK-1", "7086", "KOPANG"),
+        H("20260903", "14644", "SAMSUL RIZAL.S.PD", "7086250001495", "Rumah kosong tidak ada orang", "LOMBOK-1", "7086", "KOPANG"),
+        H("20260903", "14644", "SAMSUL RIZAL.S.PD", "7086250001496", "Rumah kosong tidak ada orang", "LOMBOK-1", "7086", "KOPANG"),
+        H("20260904", "8181", "MUSMULIADI", "7082260000614", "Belum ada dana, janji minggu depan", "LOMBOK-2", "7082", "PRAYA"),
+        H("20260904", "8181", "MUSMULIADI", "7082260000619", "Rumah sepi, titip pesan tetangga", "LOMBOK-2", "7082", "PRAYA"),
+        H("20260905", "12199", "WAHYU HIDAYAT", "7088260000402", "Konsumen tidak ada di rumah, titip surat ke keluarga", "LOMBOK-3", "7088", "BATUKLIANG"),
+        H("20260905", "12723", "AHMAD FATONI", "7084260000318", "Bertemu langsung konsumen di kios pasar, janji pelunasan angsuran Rp 950.000 besok siang setelah penjualan hasil panen, akan di-FU pagi via WA.", "LOMBOK-3", "7084", "PRINGGABAYA"),
+        H("20260903", "15850", "ABDUL HAMID", "7090260000101", "AUTO UPDATE BY SYSTEM", "LOMBOK-1", "7090", "SANDUBAYA")
       ];
-
       if ($("wilAll")) $("wilAll").checked = true;
       wilCheckboxes.forEach(c => { c.checked = true; });
-      updateWilayahUI();
-      rebuildFotoTable();
-      summary();
-      renderBreak();
-      buildHistory();
+      updateWilayahUI(); rebuildFotoTable(); summary(); renderBreak(); buildHistory();
       if ($("pb")) $("pb").style.width = "100%";
       if ($("exp")) $("exp").classList.remove("hidden");
-      if ($("st")) $("st").textContent = "Mode Demo aktif: 8 foto & 7 PIC History dimuat.";
+      if ($("st")) $("st").textContent = "Mode Demo aktif: 6 foto & 6 PIC History dimuat.";
       switchTab("foto");
       notify("Data Demo dimuat! Coba klik thumbnail foto, tab Kualitas LKP History, atau Download Excel (.xlsx).", "ok");
     }
-
     on("btnDemo", "click", loadDemoData);
     on("btnDemoBar", "click", loadDemoData);
 
-    /* Initial UI sync */
     updateWilayahUI();
   })();
   </script>

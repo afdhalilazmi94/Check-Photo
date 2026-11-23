@@ -853,7 +853,8 @@ function candidates(u){
   const c=[{kind:"direct",via:"img",src:u},...(u.startsWith("http:")?[{kind:"https",via:"img",src:h}]:[]),
     {kind:"wsrv",via:"fetch",src:"https://wsrv.nl/?url="+encodeURIComponent(h)},
     {kind:"corsproxy",via:"fetch",src:"https://corsproxy.io/?url="+encodeURIComponent(h)},
-    {kind:"allorigins",via:"fetch",src:"https://api.allorigins.win/raw?url="+encodeURIComponent(h)}];
+    {kind:"allorigins",via:"fetch",src:"https://api.allorigins.win/raw?url="+encodeURIComponent(h)},
+    ...(u.startsWith("http:")?[{kind:"wsrv_http",via:"fetch",src:"https://wsrv.nl/?url="+encodeURIComponent(u)}]:[])];
   if(preferred)c.sort((x,y)=>(y.kind===preferred)-(x.kind===preferred));
   return c;
 }
@@ -872,6 +873,15 @@ async function fetchPhoto(c){
       return {bmp:await createImageBitmap(blob),blob}}finally{clearTimeout(t)}
   }
   return viaImg(c.src);
+}
+const testImg=(src,cors)=>new Promise(ok=>{const i=new Image();if(cors)i.crossOrigin="Anonymous";const t=setTimeout(()=>ok(false),10000);
+  i.onload=()=>{clearTimeout(t);ok(true)};i.onerror=()=>{clearTimeout(t);ok(false)};i.src=src+(src.includes("?")?"&":"?")+"_t="+Date.now()});
+async function diagnose(u){
+  if($("proxy").value.trim())return "Custom Proxy URL tidak bisa dijangkau / salah alamat.";
+  const h=u.replace(/^http:/,"https:");
+  const [a,b,c,d]=await Promise.all([testImg(u,false),testImg(h,false),testImg(u,true),testImg(h,true)]),y=v=>v?"BISA":"GAGAL";
+  const why=(c||d)?"Pembacaan piksel bisa (seharusnya berhasil, coba lagi).":(a||b)?"Server foto tidak mengirim izin CORS, dan semua fallback proxy publik juga gagal menjangkau server foto.":"Foto tidak bisa dimuat sama sekali (diblokir browser, butuh login/VPN, atau URL salah).";
+  return `${why}\n\nHalaman: ${location.origin}\n- http, tampil saja: ${y(a)}\n- https, tampil saja: ${y(b)}\n- http, baca piksel (CORS): ${y(c)}\n- https, baca piksel (CORS): ${y(d)}`;
 }
 async function canFetchAny(urls){
   for(const u of urls)for(const c of candidates(u)){try{(await fetchPhoto(c)).bmp.close();preferred=c.kind;return true}catch{}}
@@ -1243,20 +1253,51 @@ function rowHtml(r,idx){
     <td class="p-2.5"><div class="font-medium">${esc(r.ai||"-")}</div>${r.aiScore?`<div class="text-[11px] text-slate-500">skor ${esc(r.aiScore)}</div>`:""}${r.dup?`<div class="text-[11px] text-rose-600 dark:text-rose-400">Duplikat: ${esc(r.dup)}</div>`:""}</td>
     <td class="p-2.5 text-[11px] space-y-0.5">${otherFindings}</td>`;
 }
-function renderFotoTable(){
-  const list=results.map((r,i)=>({r,i})).filter(({r})=>{
-    if(FILT&&r.status!==FILT)return false;
-    if(WIL_FILT&&(r.wilayah||"(tanpa wilayah)")!==WIL_FILT)return false;
-    if(QRY){
-      const hay=[r.nama,r.kontrak,r.idpic,r.wilayah,r.idcab,r.nmcab,r.reason,r.status,r.ai,r.ocr].join(" ").toLowerCase();
-      if(!hay.includes(QRY))return false;
-    }
-    return true;
-  });
-  $("shown").textContent=`Menampilkan ${list.length} dari ${results.length}`;
-  $("body").innerHTML=list.map(({r,i})=>`<tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">${rowHtml(r,i)}</tr>`).join("");
-  $("body").querySelectorAll(".btn-thumb").forEach(b=>b.onclick=()=>openPhotoModal(results[+b.dataset.pidx]));
+function vis(tr){
+  const hide=!!((FILT&&tr.dataset.s!==FILT)||(WIL_FILT&&tr.dataset.w!==WIL_FILT)||(QRY&&!tr.dataset.q.includes(QRY)));
+  tr.classList.toggle("hidden",hide);
 }
+function fill(tr,r,idx){
+  tr.innerHTML=rowHtml(r,idx);
+  tr.dataset.s=r.status;
+  tr.dataset.w=r.wilayah||"(tanpa wilayah)";
+  tr.dataset.q=[r.nama,r.kontrak,r.idpic,r.wilayah,r.idcab,r.nmcab,r.reason,r.status,r.ai,r.ocr].join(" ").toLowerCase();
+  vis(tr);
+}
+function shown(){
+  let n=0;for(const tr of $("body").children)if(!tr.classList.contains("hidden"))n++;
+  $("shown").textContent=`Menampilkan ${n} dari ${results.length}`;
+}
+function addRow(r,idx){
+  const tr=document.createElement("tr");
+  tr.className="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
+  fill(tr,r,idx);
+  $("body").appendChild(tr);
+}
+function updateRow(i,r){
+  const tr=$("body").children[i];
+  if(tr)fill(tr,r,i);
+}
+function applyFotoFilters(){
+  for(const tr of $("body").children)vis(tr);
+  shown();
+}
+function rebuildFotoTable(){
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<results.length;i++){
+    const tr=document.createElement("tr");
+    tr.className="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition";
+    fill(tr,results[i],i);
+    frag.appendChild(tr);
+  }
+  $("body").innerHTML="";
+  $("body").appendChild(frag);
+  shown();
+}
+$("body").addEventListener("click",e=>{
+  const btn=e.target.closest(".btn-thumb");
+  if(btn&&results[+btn.dataset.pidx])openPhotoModal(results[+btn.dataset.pidx]);
+});
 function reasonKey(s){return s.replace(/^Tanggal stamp \d+ != tanggal URL .*/,"Tanggal stamp ≠ tanggal URL").replace(/^Tanggal stamp \d+ != TGL LKP/,"Tanggal stamp ≠ TGL LKP").replace(/^Foto sama dengan kontrak .*/,"Duplikat dengan kontrak lain")}
 function renderBreak(){
   const rc={},wc={};
@@ -1267,7 +1308,7 @@ function renderBreak(){
   }
   const rs=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
   $("why").innerHTML=rs.length?rs.map(([k,n])=>`<button type="button" data-rk="${esc(k)}" class="chip-why px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer">${esc(k)}: <b>${n}</b></button>`).join(""):`<span class="text-xs text-slate-400">Belum ada temuan.</span>`;
-  $("why").querySelectorAll(".chip-why").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.rk;QRY=b.dataset.rk.toLowerCase();renderFotoTable()});
+  $("why").querySelectorAll(".chip-why").forEach(b=>b.onclick=()=>{$("q").value=b.dataset.rk;QRY=b.dataset.rk.toLowerCase();applyFotoFilters()});
   $("wtab").innerHTML=`<thead class="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300"><tr><th class="p-2.5">Wilayah</th><th class="p-2.5">Total</th><th class="p-2.5 text-emerald-600">Valid</th><th class="p-2.5 text-amber-600">Perlu Cek</th><th class="p-2.5 text-rose-600">Tidak Valid</th><th class="p-2.5">Gagal</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-700">`+
     Object.entries(wc).sort().map(([w,o])=>`<tr><td class="p-2.5 font-semibold">${esc(w)}</td><td class="p-2.5 tabular">${o.t}</td><td class="p-2.5 tabular">${o.v}</td><td class="p-2.5 tabular">${o.c}</td><td class="p-2.5 tabular">${o.x}</td><td class="p-2.5 tabular">${o.f}</td></tr>`).join("")+"</tbody>";
   const cur=$("wilFilterFoto").value;
@@ -1284,17 +1325,17 @@ function summary(){
   $("exp2").disabled=!results.length;
   $("pb").style.width=(TOTAL?Math.min(100,results.length/TOTAL*100):0)+"%";
   if(results.length){$("emptyFoto").classList.add("hidden");$("fotoContent").classList.remove("hidden")}
-  renderFotoTable();
+  shown();
   if(results.length%10===0||(TOTAL&&results.length>=TOTAL))renderBreak();
 }
 document.querySelectorAll(".kpi-foto").forEach(b=>b.onclick=()=>{
   FILT=b.dataset.f;
   document.querySelectorAll(".kpi-foto").forEach(x=>{x.classList.toggle("border-blue-600",x===b);x.classList.toggle("border-slate-200",x!==b);x.classList.toggle("dark:border-slate-700",x!==b)});
-  renderFotoTable();
+  applyFotoFilters();
 });
-$("q").oninput=e=>{QRY=e.target.value.trim().toLowerCase();renderFotoTable()};
-$("wilFilterFoto").onchange=e=>{WIL_FILT=e.target.value;renderFotoTable()};
-$("btnResetFoto").onclick=()=>{FILT="";QRY="";WIL_FILT="";$("q").value="";$("wilFilterFoto").value="";document.querySelectorAll(".kpi-foto").forEach((x,i)=>{x.classList.toggle("border-blue-600",i===0);x.classList.toggle("border-slate-200",i!==0);x.classList.toggle("dark:border-slate-700",i!==0)});renderFotoTable()};
+$("q").oninput=e=>{QRY=e.target.value.trim().toLowerCase();applyFotoFilters()};
+$("wilFilterFoto").onchange=e=>{WIL_FILT=e.target.value;applyFotoFilters()};
+$("btnResetFoto").onclick=()=>{FILT="";QRY="";WIL_FILT="";$("q").value="";$("wilFilterFoto").value="";document.querySelectorAll(".kpi-foto").forEach((x,i)=>{x.classList.toggle("border-blue-600",i===0);x.classList.toggle("border-slate-200",i!==0);x.classList.toggle("dark:border-slate-700",i!==0)});applyFotoFilters()};
 $("exp2").onclick=()=>$("exp").onclick();
 $("stop").onclick=()=>{stopFlag=true;$("st").textContent="Menghentikan..."};
 
@@ -1305,11 +1346,13 @@ $("go").onclick=async()=>{
   else if(rows.length)list=rows.map(r=>({...r}));
   if(!list.length){notify(loadedFiles.length?"Pilih Wilayah di Langkah 2 terlebih dahulu.":"Unggah file Excel, tempel URL, atau klik ✨ Muat Data Demo.","warn");return}
   list=list.map((r,i)=>({...r,key:r.kontrak?`${r.tgl}|${r.kontrak}|${r.idpic}`:"u"+i}));
-  results=[];stopFlag=false;TOTAL=list.length;FILT="";QRY="";WIL_FILT="";$("q").value="";
+  results=[];stopFlag=false;TOTAL=list.length;FILT="";QRY="";WIL_FILT="";$("q").value="";$("body").innerHTML="";
+  document.querySelectorAll(".kpi-foto").forEach((x,i)=>{x.classList.toggle("border-blue-600",i===0);x.classList.toggle("border-slate-200",i!==0);x.classList.toggle("dark:border-slate-700",i!==0)});
   switchTab("foto");$("exp").classList.add("hidden");$("go").disabled=true;$("stop").classList.remove("hidden");summary();
   preferred=null;$("st").textContent="Mengetes koneksi ke server foto...";
   if(!(await canFetchAny(list.slice(0,3).map(r=>r.url)))){
-    notify("Koneksi ke server foto gagal (CORS/jaringan). Isi Custom Proxy URL di Langkah 3 atau jalankan local_server.py.","bad");
+    const diag=await diagnose(list[0].url);
+    notify("Diagnosa: "+diag+"\n\nSolusi: isi Custom Proxy URL di Langkah 3 atau jalankan local_server.py.","bad");
     $("go").disabled=false;$("stop").classList.add("hidden");$("st").textContent="Koneksi gagal.";return;
   }
   const needOcr=["t_sx","t_sy","t_lat0","t_lat1","t_lon0","t_lon1"].some(isOn);let ocr=null;
@@ -1322,18 +1365,18 @@ $("go").onclick=async()=>{
     const eta=i?Math.round((Date.now()-t0)/i*(list.length-i)/1000):0;
     $("st").textContent=`Memeriksa ${i+1} / ${list.length}`+(eta?` · sisa ±${eta>=60?Math.round(eta/60)+" menit":eta+" dtk"}`:"");
     for(let k=i;k<Math.min(i+3,list.length);k++)if(!pre.has(k))pre.set(k,getPhoto(list[k].url));
-    const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);summary();
+    const r=await processRow(list[i],ocr,clip,pre.get(i));pre.delete(i);verdict(r);results.push(r);addRow(r,results.length-1);summary();
   }
   for(let round=1;round<=3&&!stopFlag;round++){
     const idxs=[];results.forEach((r,i)=>{if(r.status==="GAGAL DOWNLOAD"&&r.reason!=="URL tidak valid")idxs.push(i)});
     if(!idxs.length)break;
     for(let k=0;k<idxs.length&&!stopFlag;k++){
-      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1}/${idxs.length})`;
-      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;summary();
+      $("st").textContent=`Cek ulang gagal download — ronde ${round}/3 (${k+1} / ${idxs.length})`;
+      const r=await processRow(list[idxs[k]],ocr,clip);verdict(r);results[idxs[k]]=r;updateRow(idxs[k],r);summary();
     }
   }
   if(ocr)await ocr.terminate();
-  findDups(results);results.forEach(verdict);summary();renderBreak();
+  findDups(results);results.forEach(verdict);rebuildFotoTable();summary();renderBreak();
   try{buildHistory()}catch(e){notify("Analisis history gagal: "+e.message,"warn")}
   $("pb").style.width=stopFlag?$("pb").style.width:"100%";
   $("st").textContent=stopFlag?`Dihentikan di ${results.length} foto.`:`Selesai. ${results.length} foto diperiksa.`;
@@ -1482,7 +1525,7 @@ function loadDemoData(){
   ];
   monRows=demoMon;histRows=demoHist;
   $("wilAll").checked=true;wilCheckboxes.forEach(c=>c.checked=true);updateWilayahUI();
-  summary();renderBreak();buildHistory();
+  rebuildFotoTable();summary();renderBreak();buildHistory();
   $("pb").style.width="100%";$("exp").classList.remove("hidden");
   $("st").textContent="Mode Demo aktif: 8 foto (VALID, PERLU CEK, TIDAK VALID, GAGAL DOWNLOAD) & 7 PIC History dimuat.";
   switchTab("foto");

@@ -422,13 +422,13 @@
           <div class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Ringkasan Kategori Smart Logic</div>
           <div id="hsum" class="flex flex-wrap gap-2"></div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-3">
-            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code>TIDAK SESUAI</code> dengan 8 kolom standar + <code>CATATAN FOTO</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
+            Ekspor Excel menyertakan: <b>KUALITAS LKP HISTORY</b> (khusus <code>TIDAK SESUAI</code> dengan 9 kolom standar: <code>KESESUAIAN HISTORIS LKP</code>, <code>CATATAN FOTO</code>, &amp; <code>DETAIL KESESUAIAN HISTORIS LKP</code>), <b>SUMMARY HISTORY LKP</b> (semua PIC), dan <b>AUDIT HISTORY LKP</b> (rincian per kontrak).
           </p>
         </div>
 
         <!-- History Filter Bar -->
         <div class="flex flex-wrap items-center gap-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm">
-          <input type="text" id="hq" placeholder="Cari PIC, Cluster, Cabang, ID PIC, Kesesuaian, atau Catatan Foto..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <input type="text" id="hq" placeholder="Cari PIC, Cluster, Cabang, ID PIC, Kesesuaian, Detail, atau Catatan Foto..." class="flex-1 min-w-[200px] px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <select id="hStatusSel" class="px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Semua Status</option>
             <option value="TIDAK SESUAI">Tidak Sesuai</option>
@@ -438,7 +438,7 @@
           <span id="hShown" class="text-xs text-slate-500 dark:text-slate-400 ml-auto font-medium tabular"></span>
         </div>
 
-        <!-- History Table (Exact 8 Columns + Preview Action) -->
+        <!-- History Table (Exact 9 Columns + Preview Action) -->
         <div class="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
           <div class="overflow-x-auto max-h-[62vh]">
             <table class="w-full text-xs text-left border-collapse">
@@ -452,6 +452,7 @@
                   <th class="p-3 whitespace-nowrap">NAMA PIC</th>
                   <th class="p-3">KESESUAIAN HISTORIS LKP</th>
                   <th class="p-3">CATATAN FOTO</th>
+                  <th class="p-3">DETAIL KESESUAIAN HISTORIS LKP</th>
                   <th class="p-3 text-right whitespace-nowrap">AKSI</th>
                 </tr>
               </thead>
@@ -1071,16 +1072,16 @@ function avgSeqSim(items){
   return cnt?(tot/cnt)*100:0;
 }
 function evalSmartLogic(jml,uniqueKets){
-  if(!jml)return {ok:false,status:"TIDAK SESUAI",tag:"no_data",detail:"TIDAK ADA DATA HISTORY LKP",avgLen:0,sim:0};
+  if(!jml)return {ok:false,status:"TIDAK SESUAI",tag:"no_data",shortLabel:"PENULISAN HISTORIS TERLALU SINGKAT",detail:"Tidak ada data History LKP untuk tanggal ini",avgLen:0,sim:0};
   const nonAuto=uniqueKets.filter(k=>!isAutoUpdate(k));
-  if(!nonAuto.length)return {ok:false,status:"TIDAK SESUAI",tag:"auto",detail:"HANYA BERISI PESAN SISTEM / AUTO UPDATE",avgLen:0,sim:0};
-  if(nonAuto.length===1&&jml>=3)return {ok:false,status:"TIDAK SESUAI",tag:"copypaste",detail:`COPY PASTE IDENTIK (1 KETERANGAN UNTUK ${jml} LKP)`,avgLen:nonAuto[0].length,sim:100};
+  if(!nonAuto.length)return {ok:false,status:"TIDAK SESUAI",tag:"auto",shortLabel:"PENULISAN HISTORIS TERLALU SINGKAT",detail:"Hanya berisi pesan Sistem / Auto Update",avgLen:0,sim:0};
+  if(nonAuto.length===1&&jml>=3)return {ok:false,status:"TIDAK SESUAI",tag:"copypaste",shortLabel:"MASIH KURANG PENJELASAN DAN COPY PASTE",detail:`Copy Paste Identik (1 keterangan untuk ${jml} LKP)`,avgLen:nonAuto[0].length,sim:100};
   const avgLen=nonAuto.reduce((s,k)=>s+k.length,0)/nonAuto.length;
-  if(avgLen<60)return {ok:false,status:"TIDAK SESUAI",tag:"short",detail:`PENULISAN HISTORIS TERLALU SINGKAT (RATA-RATA ${Math.floor(avgLen)} KAR)`,avgLen,sim:0};
+  if(avgLen<60)return {ok:false,status:"TIDAK SESUAI",tag:"short",shortLabel:"PENULISAN HISTORIS TERLALU SINGKAT",detail:`Kurang Informatif (Rata-rata ${Math.floor(avgLen)} karakter)`,avgLen,sim:0};
   const sim=avgSeqSim(nonAuto);
-  if(nonAuto.length>=3&&sim>=80)return {ok:false,status:"TIDAK SESUAI",tag:"extreme",detail:`EXTREME TEMPLATE / COPY PASTE (KEMIRIPAN ${Math.floor(sim)}%)`,avgLen,sim};
-  if(nonAuto.length>=3&&sim>=60&&avgLen<150)return {ok:false,status:"TIDAK SESUAI",tag:"templated",detail:`MASIH KURANG PENJELASAN DAN COPY PASTE (KEMIRIPAN ${Math.floor(sim)}%, PANJANG ${Math.floor(avgLen)} KAR)`,avgLen,sim};
-  return {ok:true,status:"SESUAI",tag:"ok",detail:`HISTORY SESUAI DAN PENYELESAIAN ${jml} KONTRAK`,avgLen,sim};
+  if(nonAuto.length>=3&&sim>=80)return {ok:false,status:"TIDAK SESUAI",tag:"extreme",shortLabel:"MASIH KURANG PENJELASAN DAN COPY PASTE",detail:`Extreme Template (Kemiripan sangat tinggi ${Math.floor(sim)}%)`,avgLen,sim};
+  if(nonAuto.length>=3&&sim>=60&&avgLen<150)return {ok:false,status:"TIDAK SESUAI",tag:"templated",shortLabel:"MASIH KURANG PENJELASAN DAN COPY PASTE",detail:`Templated / Kurang Informatif (Kemiripan ${Math.floor(sim)}%, Panjang ${Math.floor(avgLen)} kar)`,avgLen,sim};
+  return {ok:true,status:"SESUAI",tag:"ok",shortLabel:`HISTORY SESUAI DAN PENYELESAIAN ${jml} KONTRAK`,detail:"Valid, Bervariasi & Informatif",avgLen,sim};
 }
 
 function buildPhotoFlagNote(picId,tgl){
@@ -1113,7 +1114,7 @@ function renderHistoryTable(){
     if(H_FILT==="FOTO_FLAG"){if(!x.catatanFoto)return false}
     else if(H_FILT&&x.status!==H_FILT)return false;
     if(H_QRY){
-      const hay=[x.m.cluster,x.m.idcab,x.m.nmcab,x.m.idpic,x.m.nama,x.detail,x.status,x.catatanFoto].join(" ").toLowerCase();
+      const hay=[x.m.cluster,x.m.idcab,x.m.nmcab,x.m.idpic,x.m.nama,x.shortLabel,x.detail,x.status,x.catatanFoto].join(" ").toLowerCase();
       if(!hay.includes(H_QRY))return false;
     }
     return true;
@@ -1132,8 +1133,9 @@ function renderHistoryTable(){
       <td class="p-3 whitespace-nowrap">${esc(x.m.nmcab||x.f.nmcab||"-")}</td>
       <td class="p-3 font-mono whitespace-nowrap">${esc(x.m.idpic)}</td>
       <td class="p-3 font-medium whitespace-nowrap">${esc(x.m.nama||x.f.nama||"-")}</td>
-      <td class="p-3"><span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${bCls}">${esc(x.detail)}</span></td>
+      <td class="p-3"><span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${bCls}">${esc(x.shortLabel)}</span></td>
       <td class="p-3">${fotoCell}</td>
+      <td class="p-3 text-slate-600 dark:text-slate-300">${esc(x.detail)}</td>
       <td class="p-3 text-right whitespace-nowrap"><button type="button" data-hidx="${idx}" class="btn-hist-view px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer">Lihat Keterangan</button></td>
     </tr>`;
   }).join("");
@@ -1144,7 +1146,7 @@ function openHistModal(x){
   $("hmTitle").textContent=`${x.m.nama||x.m.idpic} (${x.m.idpic})`;
   $("hmSub").textContent=`Cluster: ${x.m.cluster||"-"} · Cabang: ${x.m.idcab||"-"} ${x.m.nmcab||""} · TGL PENUGASAN: ${fmtSlash(x.m.tgl)} · ${x.jml} LKP Non-Bayar`;
   $("hmEval").className=`p-3 rounded-xl text-xs font-semibold border ${x.ok?"bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300":"bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"}`;
-  $("hmEval").textContent=`${x.status} — ${x.detail}`+(x.catatanFoto?` | 📷 ${x.catatanFoto}`:"");
+  $("hmEval").textContent=`${x.shortLabel} — ${x.detail}`+(x.catatanFoto?` | 📷 ${x.catatanFoto}`:"");
   $("hmBody").textContent=x.kesimpulan||"(Tidak ada keterangan)";
   $("histModal").classList.remove("hidden");
 }
@@ -1166,13 +1168,13 @@ function buildHistory(){
     const kesimpulan=uniqueKets.map(x=>"• "+x).join("\n");
     const ev=evalSmartLogic(rs.length,uniqueKets);
     const catatanFoto=buildPhotoFlagNote(m.idpic,m.tgl);
-    pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim,catatanFoto});
+    pics.push({m,f,jml:rs.length,kesimpulan,ok:ev.ok,status:ev.status,shortLabel:ev.shortLabel,detail:ev.detail,tag:ev.tag,avgLen:ev.avgLen,sim:ev.sim,catatanFoto});
     for(const h of rs){
       const p=ph.get(h.kontrak);
       det.push({
         "TGL LKP":m.tgl,"CLUSTER":m.cluster||f.cluster||"","ID PIC":m.idpic,"NAMA PIC":m.nama||h.nama,"NO KONTRAK":h.kontrak,
         "KETERANGAN":h.ket,"PANJANG KARAKTER":String(h.ket||"").trim().length,"AUTO UPDATE":isAutoUpdate(h.ket)?"YA":"TIDAK",
-        "STATUS PIC":ev.status,"DETAIL EVALUASI":ev.detail,"CATATAN FOTO":catatanFoto,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
+        "STATUS PIC":ev.status,"KESESUAIAN HISTORIS LKP":ev.shortLabel,"DETAIL EVALUASI":ev.detail,"CATATAN FOTO":catatanFoto,"DETEKSI AI FOTO":p?`${p.ai||"-"} (${p.aiScore||"-"})`:"foto belum diperiksa"
       });
     }
   }
@@ -1362,7 +1364,7 @@ $("exp").onclick=()=>{
   add(flagged,"KUALITAS LKP FOTO",FOTO_W,FOTO_HDR);
   add(all,"AUDIT KEASLIAN FOTO",FOTO_W,FOTO_HDR);
   if(HIST){
-    const H1=["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","KESESUAIAN HISTORIS LKP","CATATAN FOTO"];
+    const H1=["TGL PENUGASAN","CLUSTER","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","KESESUAIAN HISTORIS LKP","CATATAN FOTO","DETAIL KESESUAIAN HISTORIS LKP"];
     add(HIST.pics.filter(x=>!x.ok).map(x=>({
       "TGL PENUGASAN":fmt(x.m.tgl),
       "CLUSTER":x.m.cluster||x.f.cluster||"",
@@ -1370,9 +1372,10 @@ $("exp").onclick=()=>{
       "NAMA CABANG":x.m.nmcab||x.f.nmcab||"",
       "ID PIC":x.m.idpic,
       "NAMA PIC":x.m.nama||x.f.nama||"",
-      "KESESUAIAN HISTORIS LKP":x.detail,
-      "CATATAN FOTO":x.catatanFoto||""
-    })),"KUALITAS LKP HISTORY",[14,14,12,22,10,26,56,44],H1);
+      "KESESUAIAN HISTORIS LKP":x.shortLabel,
+      "CATATAN FOTO":x.catatanFoto||"",
+      "DETAIL KESESUAIAN HISTORIS LKP":x.detail
+    })),"KUALITAS LKP HISTORY",[14,14,12,22,10,26,42,44,54],H1);
     const HS=["NAMA WILAYAH","TGL LKP","ID CABANG","NAMA CABANG","ID PIC","NAMA PIC","JML LKP (NON-BAYAR)","KESIMPULAN KETERANGAN","STATUS","DETAIL EVALUASI","CATATAN FOTO"];
     add(HIST.pics.map(x=>({
       "NAMA WILAYAH":x.m.cluster||x.f.cluster||"",
@@ -1441,9 +1444,9 @@ $("btnDemo").onclick=()=>{
   $("wilAll").checked=true;wilCheckboxes.forEach(c=>c.checked=true);updateWilayahUI();
   summary();renderBreak();buildHistory();
   $("pb").style.width="100%";$("exp").classList.remove("hidden");
-  $("st").textContent="Mode Demo aktif: 6 foto (format KUALITAS LKP FOTO) & 5 PIC History dimuat.";
-  switchTab("foto");
-  notify("Data Demo berhasil dimuat! Tab Audit Foto menampilkan struktur KUALITAS LKP FOTO terbaru.","ok");
+  $("st").textContent="Mode Demo aktif: 6 foto & 5 PIC History (9 kolom KUALITAS LKP HISTORY) dimuat.";
+  switchTab("history");
+  notify("Data Demo berhasil dimuat! Tab Kualitas LKP History menampilkan kolom KESESUAIAN HISTORIS LKP, CATATAN FOTO, dan DETAIL KESESUAIAN HISTORIS LKP.","ok");
 };
 
 updateWilayahUI();
